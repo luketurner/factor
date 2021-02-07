@@ -12,6 +12,7 @@ factorycalculator = "factorycalculator:cli"
 python = "^3.8"
 dearpygui = "^0.6.166"
 typer = "^0.3.2"
+toolz = "^0.11.1"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
