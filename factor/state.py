@@ -1,7 +1,7 @@
 """
 State module
 
-Procides the State class, which is the core of the app's state management.
+Provides the State class, which is the core of the app's state management.
 
 All application state is centrally stored in a single instance of the State class.
 The class provides methods for querying the state, updating it, and for adding
