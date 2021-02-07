@@ -1,11 +1,11 @@
-# factory-calculator
+# factor
 
 A GUI companion tool for factory-builder games like Factorio or Satisfactory.
 
 Usage:
 
 ```
-poetry run factorycalculator
+poetry run factor
 ```
 
 The tool is game-agnostic, so it needs to be "told" about what items, recipes, etc. are available in the game you're playing.

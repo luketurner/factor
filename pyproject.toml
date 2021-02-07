@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "factorycalculator"
+name = "factor"
 version = "0.1.0"
 description = ""
 authors = ["Luke Turner <github@luketurner.org>"]
 license = "MIT"
 
 [tool.poetry.scripts]
-factorycalculator = "factorycalculator:cli"
+factor = "factor:cli"
 
 [tool.poetry.dependencies]
 python = "^3.8"
