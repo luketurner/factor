@@ -12,7 +12,8 @@ def create_and_open_factory():
     "world": {
       "factories": {
         factoryid: {
-          "goals": {}
+          "goals": {},
+          "name": "Unnamed Factory"
         }
       }
     }
@@ -21,11 +22,14 @@ def create_and_open_factory():
 
 
 def show_factory(factoryid):
+  factory = get_data("State").get_in(["world", "factories", factoryid])
+  if not factory:
+    return
   if does_item_exist(f"Factory-{factoryid}"):
     if not is_item_shown(f"Factory-{factoryid}"):
       show_item(f"Factory-{factoryid}")
   else:
-    with window(f"Factory-{factoryid}"):
+    with window(f"Factory-{factoryid}", label=factory["name"]):
       with tab_bar(f"Factory-{factoryid}-Tabbar"):
         with tab(f"Factory-{factoryid}-Statistics", label="Statistics"):
           pass
