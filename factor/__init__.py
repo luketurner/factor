@@ -13,6 +13,7 @@ from .state import State
 INIT = []
 
 from .item_editor import show_item_editor
+from .factory import create_and_open_factory
 
 
 def main():
@@ -38,8 +39,13 @@ def main():
 
         with menu_bar("Main Menu Bar"):
 
-            with menu("View"):
-                add_menu_item("Item editor...", callback=show_item_editor)
+            with menu("Factory"):
+                add_menu_item("New Factory...", callback=create_and_open_factory)
+
+            with menu("World"):
+                add_menu_item("Edit items...", callback=show_item_editor)
+
+            with menu("Debug"):
                 add_menu_item("About window...", callback=show_about)
                 add_menu_item("Debug window...", callback=show_debug)
                 add_menu_item("Log window...", callback=show_logger)
