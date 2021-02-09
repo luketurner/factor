@@ -44,6 +44,12 @@ def patcher(keys):
     return lambda s: get_data("State").assoc_in(keys, get_value(s))
 
 
+def observe_dict(keys, on_change):
+    def observer(patch, new, old):
+        if get_in(keys, patch):
+            on_change(get_in(keys, new))
+
+
 class State(object):
     def __init__(self, initial_state={}):
         self.state = initial_state
@@ -69,6 +75,9 @@ class State(object):
         Observers are registered with a unique name, such that if another observer registers with the same name, it will overwrite
         the previous observer."""
         self.observers[obs_name] = obs_fn
+
+    def unobserve(self, obs_name):
+        del self.observers[obs_name]
 
     def assoc_in(self, keys, value):
         patch = toolz.assoc_in({}, keys, value)

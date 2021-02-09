@@ -3,14 +3,14 @@ from dearpygui.simple import *
 from toolz import get_in
 
 from . import INIT
-from .factory import create_and_open_factory, show_factory
+from .factory import create_and_show_factory, show_factory
 from .item_editor import show_item_editor
 
 def add_main_menu():
     with menu_bar("Main Menu Bar"):
 
         with menu("Factory"):
-            add_menu_item("New Factory...", callback=create_and_open_factory)
+            add_menu_item("New Factory...", callback=create_and_show_factory)
             with menu("MainMenuFactoryOpen", label="Open factory", enabled=False):
                 pass
 

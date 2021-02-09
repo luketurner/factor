@@ -17,6 +17,7 @@ def _init():
     state.observe("item_editor", _observer)
     state.init({"ui": {"item_editor": {"selected": {}, "form": {}}}})
     with window("ItemEditor"):
+        add_input_text("ItemEditorQuickInput", label="Quick Add", callback=_quickadd)
         with child("ItemEditorList"):
             add_text("ItemEditorListEmptyText", default_value="No items!")
         with group("ItemEditorForm"):
@@ -61,6 +62,15 @@ def _observer(patch, new, old):
                         callback_data=itemid,
                         default_value=itemid in selected_items,
                     )
+
+
+def _quickadd(sender):
+    value = get_value(sender)
+    # if len(value) > 0 and value[-1] == "\t":
+    #     # set_value(sender, "hi")
+    #     state = get_data("State")
+    #     state.patch({"world": {"items": {str(uuid4()): {"name": value}}}})
+
 
 
 def _create():
