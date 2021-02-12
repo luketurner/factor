@@ -17,13 +17,51 @@ The next step, when we'll actually start doing useful calculations, is creating 
 
 ## Development
 
+This section of the README describes how to compile and run Factor on your own computer. Note that this isn't necessary for normal usage (you can visit https://factor.luketurner.org instead), but is necessary if you want to hack on Factor yourself.
+
+Factor source code is available in two locations:
+
+- https://git.sr.ht/~luketurner/factor
+- https://github.com/luketurner/factor
+
+The project is written with Clojurescript and compiled with [shadow-cljs](https://github.com/thheller/shadow-cljs). In order to compile the site, you will need:
+
+- Java SDK 8
+- Node 6+ (w/NPM)
+
+Before you build the site, install Node dependencies (this will pull in the `shadow-cljs` toolchain as well as runtime JS dependencies):
+
 ``` bash
-# install deps
-npm i
+git clone https://git.sr.ht/~luketurner/factor
+cd factor
+npm install
+```
 
-# start dev server with reloading and nREPL
-npm run start
+All common operations in the project are exposed as NPM scripts. To generate a minified, production-ready bundle, run:
 
-# build production
+``` bash
 npm run build
 ```
+
+The resulting site will be in the `public/` directory, and can be served by any HTTP server, for example:
+
+``` bash
+cd public
+python -m http.server
+```
+
+For building/running Factor during development, run:
+
+``` bash
+npm run shart
+```
+
+This will:
+
+- Compile Factor and automatically recompile when source files are modified.
+- Serve Factor at `localhost:8080`
+- Provide an nREPL server
+
+(Tip: The VSCode extension [Calva](https://github.com/BetterThanTomorrow/calva) provides quick-and-easy nREPL integration: Install the extension, run `npm run start`, and do `Ctrl-Alt-c Ctrl-Alt-c`, then hit `Enter` three times, and you've got a REPL!)
+
+My "official" version of Factor ([factor.luketurner.org](https://factor.luketurner.org)) is published from https://git.sr.ht/~luketurner/factor, via [builds.sr.ht](https://builds.sr.ht/) and [Netlify](https://www.netlify.com/).
