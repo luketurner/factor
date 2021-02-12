@@ -1,7 +1,7 @@
 (ns factor.widgets
   (:require [reagent.core :as reagent]))
 
-(defn rate-picker [value on-change]
+(defn input-rate [value on-change]
   [:input.rate-picker {:type "number"
                        :placeholder "--"
                        :value value
@@ -19,3 +19,4 @@
       [:div
        [dropdown options @value placeholder #(reset! value %)]
        [:button {:on-click #(on-submit @value)} "+"]])))
+
