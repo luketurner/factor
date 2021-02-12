@@ -53,7 +53,7 @@ python -m http.server
 For building/running Factor during development, run:
 
 ``` bash
-npm run shart
+npm run start
 ```
 
 This will:
