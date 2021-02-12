@@ -4,9 +4,12 @@
   "src/test"]
 
  :dependencies
- [[re-frame "1.1.2"]]
+ [[re-frame "1.1.2"]
+  [re-frisk "1.3.6"]
+  [garden "1.3.10"]]
 
  :dev-http {8080 "public"}
  :builds
  {:app {:target :browser
+        :devtools {:preloads [re-frisk.preload]}
         :modules {:main {:init-fn factor.app/init}}}}}

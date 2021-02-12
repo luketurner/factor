@@ -20,7 +20,7 @@ The next step, when we'll actually start doing useful calculations, is creating 
 # install deps
 npm i
 
-# start dev server with reloading
+# start dev server with reloading and nREPL
 npm run start
 
 # build production
