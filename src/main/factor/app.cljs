@@ -5,7 +5,8 @@
             [factor.factory :refer [factory-page]]
             [factor.machine :refer [machine-page]]
             [factor.recipe :refer [recipe-page]]
-            [factor.item :refer [item-page]]))
+            [factor.item :refer [item-page]]
+            [factor.world :refer [world-page]]))
 
 
 
@@ -40,12 +41,14 @@
     [:button {:on-click #(dispatch [:select-page :factories])} "Factories"]
     [:button {:on-click #(dispatch [:select-page :items])} "Items"]
     [:button {:on-click #(dispatch [:select-page :recipes])} "Recipes"]
-    [:button {:on-click #(dispatch [:select-page :machines])} "Machines"]]
+    [:button {:on-click #(dispatch [:select-page :machines])} "Machines"]
+    [:button {:on-click #(dispatch [:select-page :world])} "World"]]
    (case @(subscribe [:selected-page])
      :factories [factory-page]
      :items [item-page]
      :recipes [recipe-page]
      :machines [machine-page]
+     :world [world-page]
      [:p "Loading..."])])
 
 

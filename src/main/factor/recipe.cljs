@@ -14,6 +14,7 @@
 (reg-event-db :delete-recipe (fn [db [_ id]] (update-in db [:world :recipes] dissoc id)))
 (reg-sub :recipe (fn [db [_ id]] (get-in db [:world :recipes id])))
 (reg-sub :recipe-ids (fn [db] (-> db (get-in [:world :recipes]) (keys))))
+(reg-sub :recipe-count (fn [db] (-> db (get-in [:world :recipes]) (count))))
 
 (defn recipe-viewer [recipe-id]
   (let [{:keys [input output machines]} @(subscribe [:recipe recipe-id])]
