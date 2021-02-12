@@ -1,0 +1,23 @@
+image: alpine/latest
+packages:
+  - openjdk8
+  - nodejs
+  - npm
+sources:
+  - https://git.sr.ht/~luketurner/factor
+secrets:
+  - 2346e7bd-e472-477e-bec8-75e7907a8815
+tasks:
+  - install-node-modules: |
+      cd factor
+      npm i --no-progress
+      npm i netlify-cli --quiet --no-progress
+  - build-js: |
+      cd factor
+      npm run build
+      rm public/js/manifest.edn
+  - deploy: |
+      source ~/netlify_config
+      cd factor
+      node_modules/.bin/netlify deploy --site="$NETLIFY_SITE_ID" --dir=public --prod
+  
