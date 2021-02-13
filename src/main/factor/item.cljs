@@ -47,19 +47,23 @@
     [:p "No items."]))
 
 
-(defn item-editor [item-id]
-  (let [item @(subscribe [:item item-id])
-        update-name #(dispatch [:update-item item-id (assoc item :name (.-value (.-target %)))])
-        delete-item #(dispatch [:delete-item item-id])]
-    [:div
-     [:input {:type "text" :value (:name item) :on-change update-name}]
+(defn item-editor [{:keys [id focused]}]
+  (let [item @(subscribe [:item id])
+        update-name #(dispatch [:update-item id (assoc item :name (.-value (.-target %)))])
+        delete-item #(dispatch [:delete-item id])]
+    [hotkeys {"del" [:delete-item id]}
+     [:input {:type "text" :value (:name item) :on-change update-name :auto-focus focused}]
      [:button {:on-click delete-item} "-"]]))
 
 (defn item-page []
   (let [items @(subscribe [:item-ids])]
-    [hotkeys {:create-item "enter"}
-     [:h2 "items"]
-     (if (not-empty items)
-       (into [:div] (for [id items] [item-editor id]))
-       [:p "You don't have any items."])
-     [:button {:on-click #(dispatch [:create-item]) :auto-focus true} "Add item"]]))
+    
+     [:div
+      [:h2 "items"]
+      [hotkeys {"enter" [:create-item]}
+       (if (not-empty items)
+         (into [:div] 
+               (for [id items]
+                 [item-editor {:id id :focused (= id (last items))}]))
+         [:p "You don't have any items."])]
+      [:button {:on-click #(dispatch [:create-item])} "Add item"]]))

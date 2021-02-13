@@ -1,19 +1,24 @@
 (ns factor.widgets
   (:require [reagent.core :as reagent]
             [re-frame.core :refer [dispatch]]
-            ["react-hotkeys" :as rhk :refer [GlobalHotKeys HotKeys]]))
+            ["react-hotkeys" :as rhk :refer [HotKeys]]))
 
 (rhk/configure #js {"ignoreTags" #js []})
 
-(defn hotkeys [keymap & children]
-  (let [handlers (clj->js (into {} (for [[k _] keymap] [k #(dispatch [k])])))
-        keymap (clj->js keymap)]
+(defn hotkeys
+  "Wrapper for react-hotkeys. Instead of specifying keymaps and handlers separately,
+   the keymap is a dict of form { keys event-to-dispatch }.
+   The dict's key is a string or vector of strings, and the value is a vector that will
+   be dispatched as a re-frame event.)"
+  [keymap & children]
+  (let [handler-for (fn [ev] (fn [e]
+                               (.stopPropagation e)
+                               (dispatch ev)))
+        handlers (clj->js (into {} (for [[_ ev] keymap] 
+                                     [(str ev) (handler-for ev)])))
+        keymap (clj->js (into {} (for [[keys ev] keymap]
+                                   [(str ev) keys])))]
     (into [:> HotKeys {:key-map keymap :handlers handlers}] children)))
-
-(defn global-hotkeys [keymap]
-  (let [handlers (clj->js (into {} (for [[k _] keymap] [k #(dispatch [k])])))
-        keymap (clj->js keymap)]
-    [:> GlobalHotKeys {:key-map keymap :handlers handlers}]))
 
 (defn input-rate [value on-change]
   [:input.rate-picker {:type "number"
