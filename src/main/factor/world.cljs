@@ -17,6 +17,7 @@
         update-world-data #(dispatch [:world-import (str->world (.-value (.-target %)))])
         wipe-world #(dispatch [:world-reset])]
     [:div
+     [:h2 "world"]
      [:dl
       [:dt "Statistics"]
       [:dd

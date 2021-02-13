@@ -3,8 +3,8 @@
 
 (defn input-rate [value on-change]
   [:input.rate-picker {:type "number"
-                       :placeholder "--"
-                       :value value
+                       :value (or value 0)
+                       :min 0
                        :on-change #(-> % (.-target) (.-value) (on-change))}])
 
 (defn dropdown [options value placeholder on-change]

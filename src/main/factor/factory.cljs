@@ -50,5 +50,5 @@
     [:div
      (if (not-empty factories)
        (into [:div] (for [fact-id factories] [factory-editor fact-id]))
-       [:p "You don't have any factories."])
+       [:h2 "factories" [:p "You don't have any factories."]])
      [:button {:on-click #(dispatch [:create-factory])} "Add factory"]]))

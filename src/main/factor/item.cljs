@@ -58,7 +58,8 @@
 (defn item-page []
   (let [items @(subscribe [:item-ids])]
     [:div
+     [:h2 "items"]
      (if (not-empty items)
-       (into [:div] (for [id items] [item-editor id]))
+       (into [:p] (for [id items] [item-editor id]))
        [:p "You don't have any items."])
      [:button {:on-click #(dispatch [:create-item])} "Add item"]]))

@@ -9,12 +9,20 @@
                  :output {}
                  :machines #{}})
 
-(reg-event-db :create-recipe (fn [db] (assoc-in db [:world :recipes (new-uuid)] (recipe))))
+(reg-event-db :create-recipe 
+              (fn [db [_ opt]]
+                (let [id (new-uuid)]
+                  (cond-> db
+                    true (assoc-in [:world :recipes id] (recipe))
+                    (= opt :expanded) (assoc-in [:ui :recipes :expanded id] true)))))
 (reg-event-db :update-recipe (fn [db [_ id v]] (assoc-in db [:world :recipes id] v)))
 (reg-event-db :delete-recipe (fn [db [_ id]] (update-in db [:world :recipes] dissoc id)))
 (reg-sub :recipe (fn [db [_ id]] (get-in db [:world :recipes id])))
 (reg-sub :recipe-ids (fn [db] (-> db (get-in [:world :recipes]) (keys))))
 (reg-sub :recipe-count (fn [db] (-> db (get-in [:world :recipes]) (count))))
+
+(reg-event-db :toggle-recipe-expanded (fn [db [_ id]] (update-in db [:ui :recipes :expanded id] not)))
+(reg-sub :recipe-is-expanded (fn [db [_ id]] (get-in db [:ui :recipes :expanded id] false)))
 
 (defn recipe-viewer [recipe-id]
   (let [{:keys [input output machines]} @(subscribe [:recipe recipe-id])]
@@ -33,8 +41,13 @@
         display-name (if (not-empty output)
                        (str "Recipe:" (string/join ", " output-item-names))
                        "New Recipe")
-        upd #(dispatch [:update-recipe recipe-id %])]
-    [:details [:summary display-name]
+        upd #(dispatch [:update-recipe recipe-id %])
+        is-expanded @(subscribe [:recipe-is-expanded recipe-id])
+        toggle-expanded #(dispatch [:toggle-recipe-expanded recipe-id])]
+    [:details {:open is-expanded :on-click toggle-expanded} 
+     [:summary
+      display-name
+      [:button {:on-click #(dispatch [:delete-recipe recipe-id])} "-"]]
      [:dl
       [:dt "Inputs"]
       [:dd [item-rate-list-editor input #(upd (assoc recipe :input %))]]
@@ -44,9 +57,11 @@
       [:dd [machine-list-editor machines #(upd (assoc recipe :machines %))]]]]))
 
 (defn recipe-page []
-  (let [recipes @(subscribe [:recipe-ids])]
+  (let [recipes @(subscribe [:recipe-ids])
+        create-recipe #(dispatch [:create-recipe :expanded])]
     [:div
+     [:h2 "recipes"]
      (if (not-empty recipes)
-       (into [:div] (for [id recipes] [recipe-editor id]))
+       (into [:p] (for [id recipes] [recipe-editor id]))
        [:p "You don't have any recipes."])
-     [:button {:on-click #(dispatch [:create-recipe])} "Add recipe"]]))
+     [:button {:on-click create-recipe} "Add recipe"]]))

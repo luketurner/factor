@@ -22,15 +22,17 @@
                                              :machines {}}}))
 
 (def app-styles
-  (css [:body {:font "20px VT323" :margin 0}]
+  (css [:html {:font "20px VT323"}]
+       [:body {:margin 0}]
+       [:* {:box-sizing "border-box"}]
        [:.app-container {:min-height "100vh" :max-width "1024px" :margin "auto" :display "flex" :flex-flow "row wrap" :align-items "start"}]
        [:footer {:width "100%" :align-self "end" :text-align "center"}]
-       [:h2 {:font-size "2rem" :margin "2rem 0"}
+       [:h1 {:font-size "1.5rem" :margin "1.5rem 0"}]
+       [:h2 {:font-size "1.5rem" :margin "1.5rem 0"}
         [:button {:font-size "1rem"}]]
-       [:nav {:margin-right "2rem" :font-size "1.25rem"}
-        [:p {:margin "0.5rem 0" :text-align "right"}]
+       [:nav {:margin "0 1rem"}
+        [:p {:margin "0.5rem 0" :text-align "right" :font-size "1.15rem"}]
         [:a {:color "inherit" :text-decoration "inherit"}]]
-       [:h2 {:border-bottom "1px solid black"}]
        [:.factory-name {:font-size "inherit"}]
        [:button {:margin-left "1rem" :font "inherit" :border "none" :background "none" :cursor "pointer" :text-transform "uppercase"}]
        [:button:hover {:color "white" :background-color "black"}]
@@ -39,7 +41,7 @@
        [:dd {:margin-left "4rem" :margin-bottom "1rem"}]
        [:ul {:padding "0"}]
        [:li {:list-style "none"}]
-       [:.rate-picker {:width "5em"}]
+       [:.rate-picker {:width "3em"}]
        [:.dropdown {:width "11em"}]
        [:input :select {:font "inherit" :border "none"}]))
 
@@ -49,10 +51,14 @@
      (when (= selected-page page) ":") (name page)]))
 
 (defn home-page []
-  [:p "Welcome home!"])
+  [:div
+   [:h2 "home"]
+   [:p "Welcome home!"]])
 
 (defn help-page []
-  [:p "Get your help here. (Once the page is finished.)"])
+  [:div
+   [:h2 "help"]
+   [:p "Get your help here. (Once the page is finished.)"]])
 
 (defn app []
   (let [selected-page @(subscribe [:selected-page])]
@@ -81,4 +87,5 @@
 
 (defn init []
   (dispatch [:initialize-db])
+  (dispatch [:create-factory]) ; first one's free! ;)
   (render [app] (js/document.getElementById "app")))
