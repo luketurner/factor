@@ -26,12 +26,12 @@
        [:body {:margin 0}]
        [:* {:box-sizing "border-box"}]
        [:.app-container {:min-height "100vh" :max-width "1024px" :margin "auto" :display "flex" :flex-flow "row wrap" :align-items "start"}]
-       [:footer {:width "100%" :align-self "end" :text-align "center"}]
+       [:footer {:width "100%" :align-self "end" :text-align "center" :margin "1rem 0"}]
        [:h1 {:font-size "1.5rem" :margin "1.5rem 0"}]
-       [:h2 {:font-size "1.5rem" :margin "1.5rem 0"}
+       [:h2 {:font-size "1.5rem" :margin "1.5rem 0" :font-weight "normal"}
         [:button {:font-size "1rem"}]]
-       [:nav {:margin "0 1rem"}
-        [:p {:margin "0.5rem 0" :text-align "right" :font-size "1.15rem"}]
+       [:nav {:margin "0 2rem"}
+        [:p {:margin "0.5rem 0" :text-align "right"}]
         [:a {:color "inherit" :text-decoration "inherit"}]]
        [:.factory-name {:font-size "inherit"}]
        [:button {:margin-left "1rem" :font "inherit" :border "none" :background "none" :cursor "pointer" :text-transform "uppercase"}]
@@ -52,7 +52,7 @@
 
 (defn home-page []
   [:div
-   [:h2 "home"]
+   [:h2 "overview"]
    [:p "Welcome home!"]])
 
 (defn help-page []
