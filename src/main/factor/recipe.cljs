@@ -62,6 +62,6 @@
     [:div
      [:h2 "recipes"]
      (if (not-empty recipes)
-       (into [:p] (for [id recipes] [recipe-editor id]))
+       (into [:div] (for [id recipes] [recipe-editor id]))
        [:p "You don't have any recipes."])
      [:button {:on-click create-recipe} "Add recipe"]]))

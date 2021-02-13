@@ -50,6 +50,6 @@
     [:div
      [:h2 "machines"]
      (if (not-empty machines)
-       (into [:p] (for [id machines] [machine-editor id]))
+       (into [:div] (for [id machines] [machine-editor id]))
        [:p "You don't have any machines."])
      [:button {:on-click #(dispatch [:create-machine])} "Add machine"]]))

@@ -60,6 +60,6 @@
     [hotkeys {:create-item "enter"}
      [:h2 "items"]
      (if (not-empty items)
-       (into [:p] (for [id items] [item-editor id]))
+       (into [:div] (for [id items] [item-editor id]))
        [:p "You don't have any items."])
      [:button {:on-click #(dispatch [:create-item]) :auto-focus true} "Add item"]]))
