@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [subscribe dispatch reg-event-db reg-sub]]
             [reagent.core :as reagent]
             [factor.util :refer [new-uuid]]
-            [factor.widgets :refer [dropdown input-rate]]))
+            [factor.widgets :refer [dropdown input-rate hotkeys]]))
 
 (defn item [] {:name "Unnamed item"})
 
@@ -57,9 +57,9 @@
 
 (defn item-page []
   (let [items @(subscribe [:item-ids])]
-    [:div
+    [hotkeys {:create-item "enter"}
      [:h2 "items"]
      (if (not-empty items)
        (into [:p] (for [id items] [item-editor id]))
        [:p "You don't have any items."])
-     [:button {:on-click #(dispatch [:create-item])} "Add item"]]))
+     [:button {:on-click #(dispatch [:create-item]) :auto-focus true} "Add item"]]))

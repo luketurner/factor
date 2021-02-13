@@ -1,5 +1,19 @@
 (ns factor.widgets
-  (:require [reagent.core :as reagent]))
+  (:require [reagent.core :as reagent]
+            [re-frame.core :refer [dispatch]]
+            ["react-hotkeys" :as rhk :refer [GlobalHotKeys HotKeys]]))
+
+(rhk/configure #js {"ignoreTags" #js []})
+
+(defn hotkeys [keymap & children]
+  (let [handlers (clj->js (into {} (for [[k _] keymap] [k #(dispatch [k])])))
+        keymap (clj->js keymap)]
+    (into [:> HotKeys {:key-map keymap :handlers handlers}] children)))
+
+(defn global-hotkeys [keymap]
+  (let [handlers (clj->js (into {} (for [[k _] keymap] [k #(dispatch [k])])))
+        keymap (clj->js keymap)]
+    [:> GlobalHotKeys {:key-map keymap :handlers handlers}]))
 
 (defn input-rate [value on-change]
   [:input.rate-picker {:type "number"
