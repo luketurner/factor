@@ -24,9 +24,15 @@
 (reg-event-db :toggle-recipe-expanded (fn [db [_ id]] (update-in db [:ui :recipes :expanded id] not)))
 (reg-sub :recipe-is-expanded (fn [db [_ id]] (get-in db [:ui :recipes :expanded id] false)))
 
-(defn recipe-viewer [recipe-id]
-  (let [{:keys [input output machines]} @(subscribe [:recipe recipe-id])]
-    [:details [:summary (first (keys output))]
+
+
+(defn recipe-viewer [recipe-id times]
+  (let [{:keys [input output machines]} @(subscribe [:recipe recipe-id])
+        output-item-names (for [[o _] output] (:name @(subscribe [:item o])))
+        display-name (if (not-empty output)
+                       (str "Recipe:" (string/join ", " output-item-names))
+                       "New Recipe")]
+    [:details [:summary (str (when times (str times "x ")) display-name)]
      [:dl
       [:dt "Inputs"]
       [:dd [item-rate-list input]]
@@ -34,6 +40,9 @@
       [:dd [item-rate-list output]]
       [:dt "Machines"]
       [:dd [machine-list machines]]]]))
+
+(defn recipe-viewer-list [recipe-map]
+  (into [:ul] (for [[r t] recipe-map] [recipe-viewer r t])))
 
 (defn recipe-editor [recipe-id]
   (let [{:keys [input output machines] :as recipe} @(subscribe [:recipe recipe-id])
