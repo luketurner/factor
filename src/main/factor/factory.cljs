@@ -8,11 +8,11 @@
    :input {}
    :output {}})
 
-(reg-event-db :create-factory (fn [db] (assoc-in db [:factories (new-uuid)] (factory))))
-(reg-event-db :update-factory (fn [db [_ id factory]] (assoc-in db [:factories id] factory)))
-(reg-event-db :delete-factory (fn [db [_ id]] (update-in db [:factories] dissoc id)))
-(reg-sub :factory (fn [db [_ id]] (get-in db [:factories id])))
-(reg-sub :factory-ids (fn [db] (-> db (get-in [:factories]) (keys))))
+(reg-event-db :create-factory (fn [db] (assoc-in db [:world :factories (new-uuid)] (factory))))
+(reg-event-db :update-factory (fn [db [_ id factory]] (assoc-in db [:world :factories id] factory)))
+(reg-event-db :delete-factory (fn [db [_ id]] (update-in db [:world :factories] dissoc id)))
+(reg-sub :factory (fn [db [_ id]] (get-in db [:world :factories id])))
+(reg-sub :factory-ids (fn [db] (-> db (get-in [:world :factories]) (keys))))
 
 
 (defn factory-editor [factory-id]

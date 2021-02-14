@@ -1,13 +1,38 @@
 (ns factor.world
-  (:require [re-frame.core :refer [subscribe reg-sub dispatch reg-event-db]]
+  (:require [re-frame.core :refer [reg-cofx inject-cofx reg-event-fx reg-global-interceptor ->interceptor reg-fx subscribe reg-sub dispatch reg-event-db]]
             [clojure.edn :as edn]))
 
-(reg-event-db :world-import (fn [db [_ w]] (assoc db :world w)))
-(reg-event-db :world-reset (fn [db] (assoc db :world {})))
-(reg-sub :world-data (fn [db _] (get db :world)))
+(def empty-world {:items {} :machines {} :recipes {} :factories {}})
 
 (defn world->str [world] (pr-str world))
 (defn str->world [s] (edn/read-string s))
+
+(reg-sub :world-data (fn [db _] (get db :world)))
+
+(reg-event-db :world-import (fn [db [_ w]] (assoc db :world w)))
+(reg-event-db :world-reset (fn [db] (assoc db :world {})))
+
+(reg-event-fx
+ :load-world
+ [(inject-cofx :localstorage :world)]
+ (fn [{{world :world} :localstorage db :db :as foo}]
+   {:db (assoc db :world (if (not-empty world) world empty-world))}))
+
+(reg-event-fx
+ :save-world
+ (fn [_ [_ world]]
+   {:localstorage {:world world}}))
+
+(reg-global-interceptor
+ (->interceptor
+  :id :world-saver
+  :after (fn [{{{old-world :world} :db} :coeffects
+               {{new-world :world} :db} :effects :as context}]
+           (when (and new-world (not= new-world old-world))
+             (dispatch [:save-world new-world]))
+           context)))
+
+
 
 (defn world-page []
   (let [item-count (or @(subscribe [:item-count]) "No")

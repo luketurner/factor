@@ -7,7 +7,8 @@
             [factor.machine :refer [machine-page]]
             [factor.recipe :refer [recipe-page]]
             [factor.item :refer [item-page]]
-            [factor.world :refer [world-page]]))
+            [factor.world :refer [world-page]]
+            [factor.localstorage]))
 
 
 
@@ -15,11 +16,12 @@
 (reg-event-db :select-page (fn [db [_ page]] (assoc-in db [:ui :selected-page] page)))
 (reg-sub :selected-page (fn [db _] (get-in db [:ui :selected-page])))
 
-(reg-event-db :initialize-db (fn [] {:ui {:selected-page :home}
-                                     :factories {}
-                                     :world {:items {}
-                                             :recipes {}
-                                             :machines {}}}))
+(reg-event-db :initialize-db (fn [] {:ui {:selected-page :home}}))
+
+;; (reg-fx :focus (fn [el] (.focus el)))
+;; (reg-event-fx :focus (fn [_ [_ el]] {:focus el}))
+
+
 
 (def app-styles
   (css [:html {:font "20px VT323"}]
@@ -87,5 +89,5 @@
 
 (defn init []
   (dispatch [:initialize-db])
-  (dispatch [:create-factory]) ; first one's free! ;)
+  (dispatch [:load-world])
   (render [app] (js/document.getElementById "app")))
