@@ -44,8 +44,8 @@
         upd #(dispatch [:update-recipe recipe-id %])
         is-expanded @(subscribe [:recipe-is-expanded recipe-id])
         toggle-expanded #(dispatch [:toggle-recipe-expanded recipe-id])]
-    [:details {:open is-expanded :on-click toggle-expanded} 
-     [:summary
+    [:details {:open is-expanded} 
+     [:summary {:on-click toggle-expanded}
       display-name
       [:button {:on-click #(dispatch [:delete-recipe recipe-id])} "-"]]
      [:dl
