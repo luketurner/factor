@@ -16,33 +16,22 @@
 
 
 (defn factory-editor [factory-id]
-  (let [{:keys [name input output] :as factory} @(subscribe [:factory factory-id])
+  (let [{:keys [name input output desired-output] :as factory} @(subscribe [:factory factory-id])
         upd #(dispatch [:update-factory factory-id %])]
     [:div
      [:h2
       [:input {:class "factory-name" :type "text" :value name :on-change #(upd (assoc factory :name (.-value (.-target %))))}]
       [:button {:on-click #(dispatch [:delete-factory factory-id])} "Delete"]]
      [:dl
+      [:dt "Desired Outputs"]
+      [:dd [item-rate-list-editor desired-output #(upd (assoc factory :desired-output %))]]
       [:dt "Outputs"]
-      [:dd [item-rate-list-editor output #(upd (assoc factory :output %))]]
+      [:dd [item-rate-list output]]
       [:dt "Inputs"]
       [:dd [item-rate-list input]]
       [:dt "Recipes"]
-      [:dd
-       [:details [:summary "Smelt steel" [:button "Avoid"]]
-        [:dl
-         [:dt "Inputs"]
-         [:dd [:ul
-               [:li "2 Iron ore"]
-               [:li "1 Coal ore"]]]
-         [:dt "Outputs"]
-         [:dd [:ul
-               [:li "2 Steel ore"]]]
-         [:dt "Machines"]
-         [:dd [:ul
-               [:li "Smelter"]]]]]]
-      [:dt "Consumption Tree"]
-      [:dd "..."]]]))
+      [:dd "No recipes."]
+      [:dd]]]))
 
 
 (defn factory-page []
@@ -50,5 +39,5 @@
     [:div
      (if (not-empty factories)
        (into [:div] (for [fact-id factories] [factory-editor fact-id]))
-       [:h2 "factories" [:p "You don't have any factories."]])
+       [:div [:h2 "factories"] [:p "You don't have any factories."]])
      [:button {:on-click #(dispatch [:create-factory])} "Add factory"]]))
