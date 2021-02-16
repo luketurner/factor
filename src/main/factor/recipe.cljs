@@ -1,81 +1,56 @@
 (ns factor.recipe
-  (:require [clojure.string :as string]
-            [re-frame.core :refer [subscribe dispatch reg-event-db reg-sub]]
-            [factor.util :refer [new-uuid]]
-            [factor.machine :refer [machine-list-editor machine-list]]
-            [factor.item :refer [item-rate-list-editor item-rate-list]]))
+  (:require [re-frame.core :refer [enrich]]
+            [medley.core :refer [filter-keys map-kv-vals]]))
 
 (defn recipe [] {:input {}
                  :output {}
                  :machines #{}})
 
-(reg-event-db :create-recipe 
-              (fn [db [_ opt]]
-                (let [id (new-uuid)]
-                  (cond-> db
-                    true (assoc-in [:world :recipes id] (recipe))
-                    (= opt :expanded) (assoc-in [:ui :recipes :expanded id] true)))))
-(reg-event-db :update-recipe (fn [db [_ id v]] (assoc-in db [:world :recipes id] v)))
-(reg-event-db :delete-recipe (fn [db [_ id]] (update-in db [:world :recipes] dissoc id)))
-(reg-sub :recipe (fn [db [_ id]] (get-in db [:world :recipes id])))
-(reg-sub :recipe-ids (fn [db] (-> db (get-in [:world :recipes]) (keys))))
-(reg-sub :recipe-count (fn [db] (-> db (get-in [:world :recipes]) (count))))
+;; (defn factory-references-recipe? [factory recipe-id]
+;;   (some #(contains? (% factory) recipe-id) [:recipes]))
 
-(reg-event-db :toggle-recipe-expanded (fn [db [_ id]] (update-in db [:ui :recipes :expanded id] not)))
-(reg-sub :recipe-is-expanded (fn [db [_ id]] (get-in db [:ui :recipes :expanded id] false)))
+;; (defn factories-with-recipe [factories recipe-id]
+;;   (filter-vals factories #(factory-references-recipe? % recipe-id)))
 
+;; (defn update-factories-for-recipe [factories recipe-id]
+;;   (map-vals (factories-with-recipe factories recipe-id)
+;;             #(-> %
+;;                  (dissoc-in [:recipes recipe-id]))))
+;;                  
+(defn recipe-has-reference?
+  [recipe id-type id]
+  (let [relevant-dicts (case id-type
+                         :item [:input :output]
+                         :machine [:machines])]
+    (some #(contains? (% recipe) id) relevant-dicts)))
 
+(defn update-foreign-keys
+  "Updates all foreign keys of the specified type in the recipe object."
+  [recipe fk-type {:keys [items machines]}]
+  (cond-> recipe
+    (#{:all :item} fk-type)
+    (-> (update :input #(filter-keys items %))
+        (update :output #(filter-keys items %)))
+    (#{:all :machine} fk-type) (update :recipes #(filter-keys machines %))))
 
-(defn recipe-viewer [recipe-id times]
-  (let [{:keys [input output machines]} @(subscribe [:recipe recipe-id])
-        output-item-names (for [[o _] output] (:name @(subscribe [:item o])))
-        display-name (if (not-empty output)
-                       (str "Recipe:" (string/join ", " output-item-names))
-                       "New Recipe")]
-    [:details [:summary (str (when times (str times "x ")) display-name)]
-     [:dl
-      [:dt "Inputs"]
-      [:dd [item-rate-list input]]
-      [:dt "Outputs"]
-      [:dd [item-rate-list output]]
-      [:dt "Machines"]
-      [:dd [machine-list machines]]]]))
-
-
-(defn recipe-viewer-list [recipe-map]
-  (into [:ul] (for [[r t] recipe-map] [recipe-viewer r t])))
-
-(defn recipe-editor [recipe-id times]
-  (let [{:keys [input output machines] :as recipe} @(subscribe [:recipe recipe-id])
-        output-item-names (for [[o _] output] (:name @(subscribe [:item o])))
-        display-name (if (not-empty output)
-                       (str "Recipe:" (string/join ", " output-item-names))
-                       "New Recipe")
-        upd #(dispatch [:update-recipe recipe-id %])
-        is-expanded @(subscribe [:recipe-is-expanded recipe-id])
-        toggle-expanded #(dispatch [:toggle-recipe-expanded recipe-id])]
-    [:details {:open is-expanded} 
-     [:summary {:on-click toggle-expanded}
-      (str (when times (str times "x ")) display-name)
-      [:button {:on-click #(dispatch [:delete-recipe recipe-id])} "-"]]
-     [:dl
-      [:dt "Inputs"]
-      [:dd [item-rate-list-editor input #(upd (assoc recipe :input %))]]
-      [:dt "Outputs"]
-      [:dd [item-rate-list-editor output #(upd (assoc recipe :output %))]]
-      [:dt "Machines"]
-      [:dd [machine-list-editor machines #(upd (assoc recipe :machines %))]]]]))
-
-(defn recipe-editor-list [recipe-map]
-  (into [:ul] (for [[r t] recipe-map] [recipe-editor r t])))
+(defn update-recipes
+  "Interceptor that updates the 'foreign key' relationships for recipes.
+   Naively recalculates for every event, whether or not the input data is identical.
+   
+   If the :with option is provided, the first element in the event will be taken as
+   an id, of type given by the :with option (e.g. {:with :item} will interpret the
+   first element as an item ID, and only recalculate recipes that reference it.)
+   Otherwise, every recipe will be updated."
+  [{:keys [with]}]
+  (enrich
+   (fn [{:keys [world] :as db} [_ id]]
+     (update-in
+      db [:world :recipes] map-kv-vals
+      (fn [[id recipe]]
+        (if (or (not with) (recipe-has-reference? recipe with id))
+          (update-foreign-keys recipe (or with :all) world)
+          recipe))))))
 
 
-(defn recipe-page []
-  (let [recipes @(subscribe [:recipe-ids])
-        create-recipe #(dispatch [:create-recipe :expanded])]
-    [:div
-     [:h2 "recipes"]
-     (if (not-empty recipes)
-       (into [:div] (for [id recipes] [recipe-editor id]))
-       [:p "You don't have any recipes."])
-     [:button {:on-click create-recipe} "Add recipe"]]))
+
+

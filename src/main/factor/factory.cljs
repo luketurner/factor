@@ -1,23 +1,30 @@
 (ns factor.factory
-  (:require [re-frame.core :refer [enrich reg-event-db reg-sub dispatch subscribe]]
-            [factor.util :refer [new-uuid]]
-            [factor.item :refer [item-rate-list item-rate-list-editor]]
-            [factor.recipe :refer [recipe-editor-list]]
-            [factor.machine :refer [machine-list]]
-            [medley.core :refer [filter-vals map-vals]]))
+  (:require [re-frame.core :refer [enrich]]
+            [medley.core :refer [filter-vals map-vals dissoc-in map-kv-vals filter-keys]]))
 
 (defn factory []
   {:name "Unnamed Factory"
    :input {}
    :output {}})
 
+(defn factory-references-item? [factory item-id]
+  (some #(contains? (% factory) item-id) [:input :output :desired-output]))
+
+(defn factories-with-item [factories item-id]
+  (filter-vals #(factory-references-item? % item-id) factories))
+
+(defn update-factories-for-item [factories item-id]
+  (map-vals #(-> %
+                 (dissoc-in [:input item-id])
+                 (dissoc-in [:output item-id])
+                 (dissoc-in [:desired-output item-id]))
+            (factories-with-item factories item-id)))
 
 (defn recipe-for-item [recipes item-id]
   (some (fn [[k {:keys [output]}]]
           (when (contains? output item-id) k)) recipes))
 
 
-; TODO -- doesn't store info about machines
 (defn apply-recipe [factory recipe-id recipe times]
   (let [input-change (map-vals #(* % times) (:input recipe))
         output-change (map-vals #(* % times) (:output recipe))
@@ -54,40 +61,59 @@
   (update-in db [:world :factories factory-id]
              #(satisfy-desired-outputs % (:world db))))
 
-(reg-event-db :create-factory (fn [db] (assoc-in db [:world :factories (new-uuid)] (factory))))
-(reg-event-db :update-factory
-              [(enrich recalc-factory)]
-              (fn [db [_ id factory]] (assoc-in db [:world :factories id] factory)))
-(reg-event-db :delete-factory (fn [db [_ id]] (update-in db [:world :factories] dissoc id)))
-(reg-sub :factory (fn [db [_ id]] (get-in db [:world :factories id])))
-(reg-sub :factory-ids (fn [db] (-> db (get-in [:world :factories]) (keys))))
+(defn factory-has-reference?
+  [factory id-type id]
+  (let [relevant-dicts (case id-type
+                         :item [:input :output :desired-output]
+                         :recipe [:recipes]
+                         :machine [:machines])]
+    (some #(contains? (% factory) id) relevant-dicts)))
+
+(defn update-foreign-keys
+  "Updates all foreign keys of the specified type in the factory object."
+  [factory fk-type {:keys [items recipes machines]}]
+  (cond-> factory
+    (#{:all :item} fk-type)
+    (-> (update :input #(filter-keys items %))
+        (update :output #(filter-keys items %))
+        (update :desired-output #(filter-keys items %)))
+    (#{:all :recipe} fk-type) (update :recipes #(filter-keys recipes %))
+    (#{:all :machine} fk-type) (update :machines #(filter-keys machines %))))
+
+(defn update-factories
+  "Interceptor that updates the 'foreign key' relationships and re-calculates 
+   the derived data in affected Factories. Naively recalculates for every event,
+   whether or not the input data is identical.
+   
+   If the :with option is provided, the first element in the event will be taken as
+   an id, of type given by the :with option (e.g. {:with :item} will interpret the
+   first element as an item ID, and only recalculate factories that reference it.)
+   Otherwise, every factory will be updated."
+  [{:keys [with]}]
+  (enrich
+   (fn [{:keys [world] :as db} [_ id]]
+     (update-in
+      db [:world :factories]
+      (fn [factories]
+        (map-kv-vals
+         (fn [id factory]
+           (if (or (not with)
+                   (if (:factory with)
+                     (= id with)
+                     (factory-has-reference? factory with id)))
+             (-> factory
+                 (update-foreign-keys (or with :all) world)
+                 (satisfy-desired-outputs world))
+             factory))
+         factories))))))
 
 
-(defn factory-editor [factory-id]
-  (let [{:keys [name input output desired-output recipes machines] :as factory} @(subscribe [:factory factory-id])
-        upd #(dispatch [:update-factory factory-id %])]
-    [:div
-     [:h2
-      [:input {:class "factory-name" :type "text" :value name :on-change #(upd (assoc factory :name (.-value (.-target %))))}]
-      [:button {:on-click #(dispatch [:delete-factory factory-id])} "Delete"]]
-     [:dl
-      [:dt "Desired Outputs"]
-      [:dd [item-rate-list-editor desired-output #(upd (assoc factory :desired-output %))]]
-      [:dt "Outputs"]
-      [:dd [item-rate-list output]]
-      [:dt "Inputs"]
-      [:dd [item-rate-list input]]
-      [:dt "Recipes"]
-      [:dd [recipe-editor-list recipes]]
-      [:dt "Machines"]
-      [:dd [machine-list machines]]
-      [:dd]]]))
 
+;; (reg-event-fx
+;;  :factory-item-deleted
+;;  (fn [{:keys [db]} [_ id]]
+;;    (let [factories (:factories (:world db))
+;;          updates (update-factories-for-item factories id)]
+;;      {:dispatch-n (for ([[id f] updates]
+;;                         [:update-factory id f]))})))
 
-(defn factory-page []
-  (let [factories @(subscribe [:factory-ids])]
-    [:div
-     (if (not-empty factories)
-       (into [:div] (for [fact-id factories] [factory-editor fact-id]))
-       [:div [:h2 "factories"] [:p "You don't have any factories."]])
-     [:button {:on-click #(dispatch [:create-factory])} "Add factory"]]))
