@@ -20,11 +20,3 @@
             (let [factory (get-in world [:factories factory-id])]
               [[:dispatch [:update-factory factory-id (update-foreign-keys factory type world)]]
                [:toast (str "Updating factory " factory-id " due to " (name type) " change.")]])))})))
-
-(defn update-factory-fks [{:keys [with]}]
-  (->interceptor
-   :after (fn [context]
-            (let [[_ id] (get-coeffect context :event)
-                  existing-fx (get-effect context :fx [])
-                  update-fx [:dispatch [:update-factories-with-fk with id]]]
-              (assoc-effect context :fx (conj existing-fx update-fx))))))
