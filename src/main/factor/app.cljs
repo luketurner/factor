@@ -2,7 +2,7 @@
   (:require [reagent.dom :refer [render]]
             [garden.core :refer [css]]
             [garden.selectors :as s]
-            [re-frame.core :refer [reg-event-db reg-sub subscribe dispatch]]
+            [re-frame.core :refer [reg-event-db reg-sub subscribe dispatch reg-fx]]
             [factor.factory.view :refer [factory-page]]
             [factor.factory.events]
             [factor.factory.subs]
@@ -27,6 +27,9 @@
 (reg-sub :selected-page (fn [db _] (get-in db [:ui :selected-page])))
 
 (reg-event-db :initialize-db (fn [] {:ui {:selected-page :home}}))
+
+; TODO -- for now, toast just sends to console
+(reg-fx :toast (fn [data] (println data)))
 
 ;; (reg-fx :focus (fn [el] (.focus el)))
 ;; (reg-event-fx :focus (fn [_ [_ el]] {:focus el}))

@@ -33,24 +33,5 @@
         (update :output #(filter-keys items %)))
     (#{:all :machine} fk-type) (update :recipes #(filter-keys machines %))))
 
-(defn update-recipes
-  "Interceptor that updates the 'foreign key' relationships for recipes.
-   Naively recalculates for every event, whether or not the input data is identical.
-   
-   If the :with option is provided, the first element in the event will be taken as
-   an id, of type given by the :with option (e.g. {:with :item} will interpret the
-   first element as an item ID, and only recalculate recipes that reference it.)
-   Otherwise, every recipe will be updated."
-  [{:keys [with]}]
-  (enrich
-   (fn [{:keys [world] :as db} [_ id]]
-     (update-in
-      db [:world :recipes] map-kv-vals
-      (fn [[id recipe]]
-        (if (or (not with) (recipe-has-reference? recipe with id))
-          (update-foreign-keys recipe (or with :all) world)
-          recipe))))))
-
-
 
 
