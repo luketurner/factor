@@ -12,6 +12,6 @@
       (if (not-empty items)
         (into [:div]
               (for [id items]
-                [item-editor id]))
+                [item-editor id (= id (last items))]))
         [:p "You don't have any items."])]
      [:button {:on-click #(dispatch [:create-item])} "Add item"]]))

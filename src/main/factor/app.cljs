@@ -2,7 +2,7 @@
   (:require [reagent.dom :refer [render]]
             [garden.core :refer [css]]
             [garden.selectors :as s]
-            [re-frame.core :refer [reg-event-db reg-sub subscribe dispatch reg-fx]]
+            [re-frame.core :refer [reg-event-fx reg-event-db reg-sub subscribe dispatch reg-fx]]
             [factor.factory.view :refer [factory-page]]
             [factor.factory.events]
             [factor.factory.subs]
@@ -30,11 +30,6 @@
 
 ; TODO -- for now, toast just sends to console
 (reg-fx :toast (fn [data] (println data)))
-
-;; (reg-fx :focus (fn [el] (.focus el)))
-;; (reg-event-fx :focus (fn [_ [_ el]] {:focus el}))
-
-
 
 (def app-styles
   (css [:html {:font "20px VT323"}]

@@ -33,10 +33,10 @@
     [:p "No items."]))
 
 
-(defn item-editor [id]
+(defn item-editor [id focused?]
   (let [item @(subscribe [:item id])
         update-name #(dispatch [:update-item id (assoc item :name (.-value (.-target %)))])
         delete-item #(dispatch [:delete-item id])]
     [hotkeys {"del" [:delete-item id]}
-     [:input {:type "text" :value (:name item) :on-change update-name}]
+     [:input {:type "text" :value (:name item) :on-change update-name :auto-focus focused?}]
      [:button {:on-click delete-item} "-"]]))
