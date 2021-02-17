@@ -35,8 +35,10 @@
   (css [:html {:font "20px VT323"}]
        [:body {:margin 0}]
        [:* {:box-sizing "border-box"}]
-       [:.app-container {:min-height "100vh" :max-width "1024px" :margin "auto" :display "flex" :flex-flow "row wrap" :align-items "start"}]
-       [:footer {:width "100%" :align-self "end" :text-align "center" :margin "1rem 0"}]
+       [:table {:border-spacing "0.5rem"}]
+       [:.app-container {:min-height "100vh" :max-width "1024px" :margin "auto" :display "flex" :flex-flow "column nowrap"}]
+       [:.main-container {:flex-grow "1" :display "flex" :flex-flow "row nowrap" :align-items "start"}]
+       [:footer {:width "100%" :text-align "center" :margin "1rem 0"}]
        [:h1 {:font-size "1.5rem" :margin "1.5rem 0"}]
        [:h2 {:font-size "1.5rem" :margin "1.5rem 0" :font-weight "normal"}
         [:button {:font-size "1rem"}]]
@@ -63,7 +65,18 @@
 (defn home-page []
   [:div
    [:h2 "overview"]
-   [:p "Welcome home!"]])
+   [:p "Welcome! Factor is a tool that helps with planning factories in video games (e.g. Factorio.)"]
+   [:p "Create a new factory using the " [:strong "factories"] " option in the sidebar, and specify what items the factory should output."]
+   [:p "Assuming you've also entered all your "
+    [:strong "items"] ", "
+    [:strong "recipes"] ", and "
+    [:strong "machines"] ", Factor will calculate what inputs and what number of machines your factory will require."]
+   [:p "If you have a lot of items/machines/recipes/etc. to input, these keyboard shortcuts might come in handy:"]
+   [:table
+    [:tbody
+     [:tr [:td "ENTER"] [:td "Add new entry"]]
+     [:tr [:td "DEL"] [:td "Delete current entry"]]]]
+   [:p "This project is a work-in-progress and not all features work yet. Be warned!"]])
 
 (defn help-page []
   [:div
@@ -74,24 +87,25 @@
   (let [selected-page @(subscribe [:selected-page])]
     [:div.app-container
      [:style app-styles]
-     [:nav
-      [:h1 [:a {:href "#" :on-click #(dispatch [:select-page :home])} "factor."]]
-      [:p [nav-link :factories]]
-      [:p [nav-link :items]]
-      [:p [nav-link :recipes]]
-      [:p [nav-link :machines]]
-      [:p [nav-link :world]]
-      [:p [:br] [nav-link :help]]
-      [:p [:a {:href "https://git.sr.ht/~luketurner/factor"} "view source"]]]
-     [:main (case selected-page
-              :home [home-page]
-              :factories [factory-page]
-              :items [item-page]
-              :recipes [recipe-page]
-              :machines [machine-page]
-              :world [world-page]
-              :help [help-page]
-              [:p "Loading..."])]
+     [:div.main-container
+      [:nav
+       [:h1 [:a {:href "#" :on-click #(dispatch [:select-page :home])} "factor."]]
+       [:p [nav-link :factories]]
+       [:p [nav-link :items]]
+       [:p [nav-link :recipes]]
+       [:p [nav-link :machines]]
+       [:p [nav-link :world]]
+       [:p [:br] [nav-link :help]]
+       [:p [:a {:href "https://git.sr.ht/~luketurner/factor"} "view source"]]]
+      [:main (case selected-page
+               :home [home-page]
+               :factories [factory-page]
+               :items [item-page]
+               :recipes [recipe-page]
+               :machines [machine-page]
+               :world [world-page]
+               :help [help-page]
+               [:p "Loading..."])]]
      [:footer "Copyright 2020 Luke Turner"]]))
 
 
