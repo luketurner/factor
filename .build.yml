@@ -19,6 +19,9 @@ tasks:
       cd factor
       npm run build
       rm public/js/manifest.edn
+  - run-tests: |
+      cd factor
+      npm run test
   - deploy: |
       source ~/netlify_config
       cd factor
