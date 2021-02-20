@@ -41,16 +41,26 @@
 (defn item-rate-editor-list [rates on-change]
   (let [unsaved-rates (reagent/atom [])
         dissoc-unsaved-rate! (fn [[k _]]
-                              (swap! unsaved-rates
-                                     (fn [xs] (into [] (filter #(not= k (% 0)) xs)))))
-        ; TODO -- this should emit :update-item event if updated rate-tuple is valid
-        update-unsaved-rate! (fn [[k rate-tuple :as kvp]] 
+                               (swap! unsaved-rates
+                                      (fn [xs] (into [] (filter #(not= k (% 0)) xs)))))
+        unsaved-rate-valid? (fn [[item rate]]
+                              (and (not-empty item)
+                                   (pos? rate)))
+        save-rate! (fn [[item rate]]
+                     (on-change (merge-with + rates {item rate})))
+        update-unsaved-rate! (fn [[k rate-tuple :as kvp]]
                                (swap!
                                 unsaved-rates
                                 (fn [xs]
                                   (into [] (filtered-update xs
-                                                   #(= (% 0) k)
-                                                   #(identity kvp))))))
+                                                            #(= (% 0) k)
+                                                            #(identity kvp))))))
+        update-or-save-unsaved-rate! (fn [[_ rate-tuple :as kvp]]
+                                      (if (unsaved-rate-valid? rate-tuple)
+                                        (do
+                                          (save-rate! rate-tuple)
+                                          (dissoc-unsaved-rate! kvp))
+                                        (update-unsaved-rate! kvp)))
         add-unsaved-rate! (fn [] (swap!
                                   unsaved-rates
                                   #(into [] (conj % [(inc (get (last @unsaved-rates) 0)) ["" 0]]))))]
@@ -70,7 +80,7 @@
                               :del-fn #(on-change (dissoc rates (% 0)))
                               :unsaved-row-fn (fn [[ix item-rate]]
                                                 [item-rate-editor item-rate
-                                                 #(update-unsaved-rate! [ix %])])
+                                                 #(update-or-save-unsaved-rate! [ix %])])
                               :unsaved-del-fn dissoc-unsaved-rate!}])))
 
 (defn item-editor [id focused?]
