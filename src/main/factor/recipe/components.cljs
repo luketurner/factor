@@ -1,7 +1,7 @@
 (ns factor.recipe.components
   (:require [re-frame.core :refer [subscribe dispatch]]
             [clojure.string :as string]
-            [factor.item.components :refer [item-rate-list-editor item-rate-list]]
+            [factor.item.components :refer [item-rate-editor-list item-rate-list]]
             [factor.machine.components :refer [machine-list machine-list-editor]]))
 
 (defn recipe-viewer [recipe-id times]
@@ -38,9 +38,9 @@
       [:button {:on-click #(dispatch [:delete-recipe recipe-id])} "-"]]
      [:dl
       [:dt "Inputs"]
-      [:dd [item-rate-list-editor input #(upd (assoc recipe :input %))]]
+      [:dd [item-rate-editor-list input #(upd (assoc recipe :input %))]]
       [:dt "Outputs"]
-      [:dd [item-rate-list-editor output #(upd (assoc recipe :output %))]]
+      [:dd [item-rate-editor-list output #(upd (assoc recipe :output %))]]
       [:dt "Machines"]
       [:dd [machine-list-editor machines #(upd (assoc recipe :machines %))]]]]))
 
