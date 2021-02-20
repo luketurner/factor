@@ -11,3 +11,6 @@
                   existing-fx (get-effect context :fx [])
                   update-fx [:dispatch (ev-fn ev)]]
               (assoc-effect context :fx (conj existing-fx update-fx))))))
+
+(defn filtered-update [xs filter-fn update-fn]
+  (for [x xs] (if (filter-fn x) (update-fn x) x)))

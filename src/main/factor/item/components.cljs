@@ -1,6 +1,7 @@
 (ns factor.item.components
   (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as reagent]
+            [factor.util :refer [filtered-update]]
             [factor.widgets :refer [dropdown input-rate input-text list-editor list-editor-validated]]))
 
 (defn item-picker [value on-change focused?]
@@ -38,36 +39,39 @@
    [item-picker itm #(on-change [% r] [itm r]) focused?]])
 
 (defn item-rate-editor-list [rates on-change]
-  (let [unsaved-rates (reagent/atom [])]
-    (println "unsaved-rates" @unsaved-rates)
+  (let [unsaved-rates (reagent/atom [])
+        dissoc-unsaved-rate! (fn [[k _]]
+                              (swap! unsaved-rates
+                                     (fn [xs] (into [] (filter #(not= k (% 0)) xs)))))
+        ; TODO -- this should emit :update-item event if updated rate-tuple is valid
+        update-unsaved-rate! (fn [[k rate-tuple :as kvp]] 
+                               (swap!
+                                unsaved-rates
+                                (fn [xs]
+                                  (into [] (filtered-update xs
+                                                   #(= (% 0) k)
+                                                   #(identity kvp))))))
+        add-unsaved-rate! (fn [] (swap!
+                                  unsaved-rates
+                                  #(into [] (conj % [(inc (get (last @unsaved-rates) 0)) ["" 0]]))))]
     (fn [rates on-change]
       [list-editor-validated {:data rates
                               :unsaved-data @unsaved-rates
-                              :row-fn (fn [rate]
-                                        [item-rate-editor rate
+                              :row-fn (fn [item-rate]
+                                        [item-rate-editor item-rate
                                          (fn [[nk nv] [ok _]]
                                            (when (or (not-empty nk)
                                                      (not-empty ok))
                                              (on-change (-> rates
                                                             (dissoc ok)
-                                                            (assoc nk nv)))))
-                                         (= rate (last rates))])
+                                                            (assoc nk nv)))))])
                               :empty-message [:p "No items."]
-                              :add-fn #(swap! unsaved-rates conj [(inc (get (last @unsaved-rates) 0)) ["" 0]])
+                              :add-fn add-unsaved-rate!
                               :del-fn #(on-change (dissoc rates (% 0)))
-                              :unsaved-row-fn (fn [[k [item rate]]]
-                                                [item-rate-editor [item rate]
-                                                 (fn [[item rate]]
-                                                   ; TODO -- dispatch :create-item event
-                                                   ; when data is valid
-                                                   (swap!
-                                                    unsaved-rates
-                                                    #(into [] (for [[k' _ :as old] %]
-                                                       (if (= k k')
-                                                         [k [item rate]]
-                                                         old)))))
-                                                 (= rate (last rates))])
-                              :unsaved-del-fn (fn [[k _]] (swap! unsaved-rates (filter #(not= k (% 0)))))}])))
+                              :unsaved-row-fn (fn [[ix item-rate]]
+                                                [item-rate-editor item-rate
+                                                 #(update-unsaved-rate! [ix %])])
+                              :unsaved-del-fn dissoc-unsaved-rate!}])))
 
 (defn item-editor [id focused?]
   (let [item @(subscribe [:item id])

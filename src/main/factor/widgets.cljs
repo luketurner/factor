@@ -61,12 +61,12 @@
         unsaved-row (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(unsaved-del-fn v)]}
                              (unsaved-row-fn v)
                              [:button {:on-click #(unsaved-del-fn v)} "-"]])]
-   [:div
-    [hotkeys {"enter" [(new-uuid) add-fn]}
-     (if (or (empty? data) (empty? unsaved-data)) empty-message
-         (into [:div] (concat (map row data)
-                              (map unsaved-row unsaved-data))))]
-    [:button {:on-click add-fn} "Add"]]))
+    [:div
+     [hotkeys {"enter" [(new-uuid) add-fn]}
+      (if (and (empty? data) (empty? unsaved-data)) empty-message
+          (into [:div] (concat (map row data)
+                               (map unsaved-row unsaved-data))))]
+     [:button {:on-click add-fn} "Add"]]))
 
 ;; (defn list-editor-stateful [{:keys [data row-fn add-fn del-fn empty-message]}]
 ;;   (let [unsaved-data (reagent/atom [])
