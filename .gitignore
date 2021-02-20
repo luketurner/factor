@@ -22,3 +22,4 @@ pom.xml.asc
 .calva
 .lsp
 .clj-kondo
+test-out

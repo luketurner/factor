@@ -11,6 +11,11 @@
 
  :dev-http {8080 "public"}
  :builds
- {:app {:target :browser
-        :devtools {:preloads [re-frisk.preload]}
-        :modules {:main {:init-fn factor.app/init}}}}}
+ {:app  {:target :browser
+         :devtools {:preloads [re-frisk.preload]}
+         :modules {:main {:init-fn factor.app/init}}}
+  :test {:target    :node-test
+         :autorun true
+         :output-to  "test-out/node-test.js"}
+  :citest {:target    :node-test
+           :output-to  "test-out/node-test.js"}}}

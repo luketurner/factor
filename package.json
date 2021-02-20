@@ -3,8 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "shadow-cljs watch app",
-    "build": "shadow-cljs release app"
+    "start": "shadow-cljs watch app test",
+    "build": "shadow-cljs release app",
+    "test": "shadow-cljs compile citest && node test-out/node-test.js"
   },
   "devDependencies": {
     "shadow-cljs": "^2.11.18"
