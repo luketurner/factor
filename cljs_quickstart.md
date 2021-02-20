@@ -172,6 +172,50 @@ tasks:
 
 Now, when you push your changes to Sourcehut, it should deploy your "Hello World" to your Netlify site.
 
+## Automated tests
+
+(Note -- I'm still figuring this out myself.)
+
+Automated tests are written with `cljs.test` and should live in the `src/test` directory. Example test file:
+
+``` clojure
+; src/test/myapp/foo-test.cljs
+(ns myapp.foo-test
+  (:require [cljs.test :refer [deftest is]]))
+
+(deftest example-test
+  (is (= 1 1) "one should equal itself"))
+```
+
+To run tests in Node (i.e. only for code that doesn't depend on browser APIs) add the `test` and `citest` builds to your `shadow-cljs.edn` in the `:builds` map:
+
+``` clojure
+:builds {
+  ...
+  :test {:target    :node-test
+         :autorun true
+         :output-to  "test-out/node-test.js"}
+  :citest {:target    :node-test
+           :output-to  "test-out/node-test.js"}}
+```
+
+The only difference is the CI test build doesn't include `:autorun`, because the :autorun parameter doesn't propagate the exit code (so even if tests fail, your build will succeed.)
+
+Instead, you can compile and run tests in your CI/CD pipeline with:
+
+``` bash
+shadow-cljs compile citest && node test-out/node-test.js
+```
+
+But, for local development, `:autorun` is much faster and more convenient. Add the `test` build to your `start` script in package.json:
+
+```
+"start": "shadow-cljs watch app test"
+```
+
+Now, tests are automatically recompiled and re-run whenever a test file (or any file referenced by a test file) is updated.
+
+(Don't forget to add `test-out` to your .gitignore)
 ## Further notes
 
 At this point, we can architect our app however we want.
@@ -209,7 +253,6 @@ To reference NPM packages, use strings in the `:require` list:
 - Writing views: `reagent`
 - Managing state: `re-frame`
 - Writing styles: `garden`
-- K
 
 ### Ergonomic Development
 
