@@ -170,6 +170,8 @@ tasks:
       node_modules/.bin/netlify deploy --site="$NETLIFY_SITE_ID" --dir=public --prod >/dev/null 2>&1
 ```
 
+> **Warning:** It's important to do `set +x` before sourcing the secret file `~/netlify_config`. If you don't, your Netlify secrets will end up in the build log, which is publicly visible. The same applies to any other usage of secrets in your `.build.yml`.
+
 ### Testing
 
 Now, when you push your changes to Sourcehut, it should deploy your "Hello World" to your Netlify site.
