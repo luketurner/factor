@@ -23,7 +23,9 @@ tasks:
       cd factor
       npm run test
   - deploy: |
+      set +x
       source ~/netlify_config
+      set -x
       cd factor
-      node_modules/.bin/netlify deploy --site="$NETLIFY_SITE_ID" --dir=public --prod
+      node_modules/.bin/netlify deploy --site="$NETLIFY_SITE_ID" --dir=public --prod >/dev/null 2>&1
   
