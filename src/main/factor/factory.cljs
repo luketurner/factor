@@ -58,7 +58,7 @@
 
 (defn recalc-factory [db [_ factory-id]]
   (update-in db [:world :factories factory-id]
-             #(satisfy-desired-outputs % (:world db))))
+             #(satisfy-desired-outputs {:desired-output (:desired-output %)} (:world db))))
 
 (defn factory-has-reference?
   [factory id-type id]
