@@ -162,6 +162,9 @@ tasks:
       cd $MY_APP_NAME
       npm run build
       rm public/js/manifest.edn
+  - run-tests: |
+      cd $MY_APP_NAME
+      npm run test
   - deploy: |
       set +x
       source ~/netlify_config
