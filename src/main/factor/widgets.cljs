@@ -56,11 +56,13 @@
 
 (defn list-editor-validated [{:keys [data row-fn add-fn del-fn unsaved-data unsaved-row-fn unsaved-del-fn empty-message]}]
   (let [row (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(del-fn v)]}
-                     (row-fn v)
-                     [:button {:on-click #(del-fn v)} "-"]])
+                     [:div.row
+                      (row-fn v)
+                      [:button {:on-click #(del-fn v)} "-"]]])
         unsaved-row (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(unsaved-del-fn v)]}
-                             (unsaved-row-fn v)
-                             [:button {:on-click #(unsaved-del-fn v)} "-"]])]
+                             [:div.row
+                              (unsaved-row-fn v)
+                              [:button {:on-click #(unsaved-del-fn v)} "-"]]])]
     [:div
      [hotkeys {"enter" [(new-uuid) add-fn]}
       (if (and (empty? data) (empty? unsaved-data)) empty-message
