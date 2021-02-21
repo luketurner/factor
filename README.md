@@ -59,9 +59,16 @@ npm run start
 This will:
 
 - Compile Factor and automatically recompile when source files are modified.
+- Run tests and automatically re-run when source files are modified.
 - Serve Factor at `localhost:8080`
 - Provide an nREPL server
 
 (Tip: The VSCode extension [Calva](https://github.com/BetterThanTomorrow/calva) provides quick-and-easy nREPL integration: Install the extension, run `npm run start`, and do `Ctrl-Alt-c Ctrl-Alt-c`, then hit `Enter` three times, and you've got a REPL!)
 
 My "official" version of Factor ([factor.luketurner.org](https://factor.luketurner.org)) is published from https://git.sr.ht/~luketurner/factor, via [builds.sr.ht](https://builds.sr.ht/) and [Netlify](https://www.netlify.com/).
+
+To run tests like the CI/CD pipeline will, use:
+
+``` bash
+npm run test
+```
