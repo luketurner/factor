@@ -163,9 +163,11 @@ tasks:
       npm run build
       rm public/js/manifest.edn
   - deploy: |
+      set +x
       source ~/netlify_config
+      set -x
       cd $MY_APP_NAME
-      node_modules/.bin/netlify deploy --site="$NETLIFY_SITE_ID" --dir=public --prod
+      node_modules/.bin/netlify deploy --site="$NETLIFY_SITE_ID" --dir=public --prod >/dev/null 2>&1
 ```
 
 ### Testing
