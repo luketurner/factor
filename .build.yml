@@ -9,7 +9,7 @@ secrets:
   # ~/netlify_config -- expected to have:
   #   NETLIFY_SITE_ID
   #   export NETLIFY_AUTH_TOKEN
-  - 18869b88-8dd8-45e8-b13b-b34c695a1e3b
+  - b85342d7-c4f8-4645-82b7-30d84586783e
 tasks:
   - install-node-modules: |
       cd factor
