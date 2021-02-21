@@ -1,6 +1,5 @@
 (ns factor.factory
-  (:require [re-frame.core :refer [enrich]]
-            [medley.core :refer [filter-vals map-vals dissoc-in map-kv-vals filter-keys]]))
+  (:require [medley.core :refer [filter-vals map-vals dissoc-in filter-keys]]))
 
 (defn factory []
   {:name "Unnamed Factory"
