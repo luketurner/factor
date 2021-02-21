@@ -7,26 +7,6 @@
 (defn item-picker [value on-change focused?]
   [dropdown @(subscribe [:item-names]) value "Select item..." on-change focused?])
 
-(defn item-rate-creator [on-create]
-  (let [rate (reagent/atom nil)
-        item (reagent/atom nil)]
-    (fn [on-create]
-      [:div
-       [input-rate @rate #(reset! rate %)]
-       [item-picker @item #(reset! item %)]
-       [:button {:on-click #(on-create @item @rate)} "+"]])))
-
-(defn item-rate-list-editor [items on-change]
-  (into
-   [:div]
-   (concat
-    (for [[item rate] items]
-      [:div
-       [input-rate rate #(on-change (assoc items item %))]
-       [item-picker item #(on-change (-> items (dissoc item) (assoc % rate)))]
-       [:button {:on-click #(on-change (dissoc items item))} "-"]])
-    [[item-rate-creator (fn [i r] (on-change (assoc items i r)))]])))
-
 (defn item-rate-list [rates]
   (if (not-empty rates)
     (into [:ul]
