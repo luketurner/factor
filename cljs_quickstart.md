@@ -168,9 +168,9 @@ tasks:
   - deploy: |
       set +x
       source ~/netlify_config
-      set -x
       cd $MY_APP_NAME
       node_modules/.bin/netlify deploy --site="$NETLIFY_SITE_ID" --dir=public --prod >/dev/null 2>&1
+      set -x
 ```
 
 > **Warning:** It's important to do `set +x` before sourcing the secret file `~/netlify_config`. If you don't, your Netlify secrets will end up in the build log, which is publicly visible. The same applies to any other usage of secrets in your `.build.yml`.
