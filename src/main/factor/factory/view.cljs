@@ -1,7 +1,7 @@
 (ns factor.factory.view
   (:require [re-frame.core :refer [subscribe dispatch]]
             [factor.recipe.components :refer [recipe-editor-list]]
-            [factor.item.components :refer [item-rate-list item-rate-list-editor]]
+            [factor.item.components :refer [item-rate-list item-rate-editor-list]]
             [factor.machine.components :refer [machine-list]]))
 
 (defn factory-editor [factory-id]
@@ -13,7 +13,7 @@
       [:button {:on-click #(dispatch [:delete-factory factory-id])} "Delete"]]
      [:dl
       [:dt "Desired Outputs"]
-      [:dd [item-rate-list-editor desired-output #(upd (assoc factory :desired-output %))]]
+      [:dd [item-rate-editor-list desired-output #(upd (assoc factory :desired-output %))]]
       [:dt "Outputs"]
       [:dd [item-rate-list output]]
       [:dt "Inputs"]
