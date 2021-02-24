@@ -20,6 +20,18 @@
         keymap (clj->js (into {} (for [[ks [k _]] keymap] [k ks])))]
     (into [:> HotKeys {:key-map keymap :handlers handlers}] children)))
 
+(defn deletable-row [{:keys [on-delete]} & children]
+  [hotkeys {"alt+backspace" [(new-uuid) on-delete]}
+   (into
+    [:div.row]
+    (conj (vec children) [button {:on-click on-delete} "-"]))])
+
+(defn addable-rows [{:keys [on-create]} & children]
+  [hotkeys {"enter" [(new-uuid) on-create]}
+   (into
+    [:div.rows]
+    (conj (vec children) [button {:on-click on-create} "Add"]))])
+
 (defn input-text [value on-change focused?]
   [:input {:type "text"
            :value value
@@ -47,30 +59,22 @@
        [dropdown options @value placeholder #(reset! value %)]
        [button {:on-click #(on-submit @value)} "+"]])))
 
+
 (defn list-editor [{:keys [data row-fn add-fn del-fn empty-message]}]
-  [:div
-   [hotkeys {"enter" [(new-uuid) add-fn]}
+  [addable-rows {:on-create add-fn}
    (if (not-empty data)
      (->> data
-          (map (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(del-fn v)]}
-                         (row-fn v)
-                         [button {:on-click #(del-fn v)} "-"]]))
+          (map (fn [v] [deletable-row {:on-delete #(del-fn v)} (row-fn v)]))
           (into [:div]))
-     empty-message)]
-  [button {:on-click add-fn} "Add"]])
+     empty-message)])
+
 
 (defn list-editor-validated [{:keys [data row-fn add-fn del-fn unsaved-data unsaved-row-fn unsaved-del-fn empty-message]}]
-  (let [row (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(del-fn v)]}
-                     [:div.row
-                      (row-fn v)
-                      [button {:on-click #(del-fn v)} "-"]]])
-        unsaved-row (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(unsaved-del-fn v)]}
-                             [:div.row
-                              (unsaved-row-fn v)
-                              [button {:on-click #(unsaved-del-fn v)} "-"]]])]
-    [:div
-     [hotkeys {"enter" [(new-uuid) add-fn]}
-      (if (and (empty? data) (empty? unsaved-data)) empty-message
-          (into [:div] (concat (map row data)
-                               (map unsaved-row unsaved-data))))]
-     [button {:on-click add-fn} "Add"]]))
+  (let [row (fn [v] [deletable-row {:on-delete #(del-fn v)}
+                     (row-fn v)])
+        unsaved-row (fn [v] [deletable-row {:on-delete #(unsaved-del-fn v)}
+                             (unsaved-row-fn v)])]
+    [addable-rows {:on-create add-fn}
+     (if (and (empty? data) (empty? unsaved-data)) empty-message
+         (into [:div] (concat (map row data)
+                              (map unsaved-row unsaved-data))))]))
