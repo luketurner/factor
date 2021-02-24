@@ -6,6 +6,11 @@
 
 (rhk/configure #js {"ignoreTags" #js []})
 
+(defn button [{:keys [on-click]} & children]
+  (into
+   [:button {:on-click #(if (fn? on-click) (on-click) (dispatch on-click))}]
+   children))
+
 (defn hotkeys
   "Wrapper for react-hotkeys. Instead of specifying keymaps and handlers separately,
    the keymap is a dict of form { keys [:handler-name handler-fn] }.
@@ -40,7 +45,7 @@
     (fn [options placeholder on-submit]
       [:div
        [dropdown options @value placeholder #(reset! value %)]
-       [:button {:on-click #(on-submit @value)} "+"]])))
+       [button {:on-click #(on-submit @value)} "+"]])))
 
 (defn list-editor [{:keys [data row-fn add-fn del-fn empty-message]}]
   [:div
@@ -49,23 +54,23 @@
      (->> data
           (map (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(del-fn v)]}
                          (row-fn v)
-                         [:button {:on-click #(del-fn v)} "-"]]))
+                         [button {:on-click #(del-fn v)} "-"]]))
           (into [:div]))
      empty-message)]
-  [:button {:on-click add-fn} "Add"]])
+  [button {:on-click add-fn} "Add"]])
 
 (defn list-editor-validated [{:keys [data row-fn add-fn del-fn unsaved-data unsaved-row-fn unsaved-del-fn empty-message]}]
   (let [row (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(del-fn v)]}
                      [:div.row
                       (row-fn v)
-                      [:button {:on-click #(del-fn v)} "-"]]])
+                      [button {:on-click #(del-fn v)} "-"]]])
         unsaved-row (fn [v] [hotkeys {"alt+backspace" [(new-uuid) #(unsaved-del-fn v)]}
                              [:div.row
                               (unsaved-row-fn v)
-                              [:button {:on-click #(unsaved-del-fn v)} "-"]]])]
+                              [button {:on-click #(unsaved-del-fn v)} "-"]]])]
     [:div
      [hotkeys {"enter" [(new-uuid) add-fn]}
       (if (and (empty? data) (empty? unsaved-data)) empty-message
           (into [:div] (concat (map row data)
                                (map unsaved-row unsaved-data))))]
-     [:button {:on-click add-fn} "Add"]]))
+     [button {:on-click add-fn} "Add"]]))

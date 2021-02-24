@@ -2,7 +2,8 @@
   (:require [re-frame.core :refer [subscribe dispatch]]
             [clojure.string :as string]
             [factor.item.components :refer [item-rate-editor-list item-rate-list]]
-            [factor.machine.components :refer [machine-list machine-list-editor]]))
+            [factor.machine.components :refer [machine-list machine-list-editor]]
+            [factor.widgets :refer [button]]))
 
 (defn recipe-viewer [recipe-id times]
   (let [{:keys [input output machines]} @(subscribe [:recipe recipe-id])
@@ -35,7 +36,7 @@
     [:details {:open is-expanded}
      [:summary {:on-click toggle-expanded}
       (str (when times (str times "x ")) display-name)
-      [:button {:on-click #(dispatch [:delete-recipe recipe-id])} "-"]]
+      [button {:on-click [:delete-recipe recipe-id]} "-"]]
      [:dl
       [:dt "Inputs"]
       [:dd [item-rate-editor-list input #(upd (assoc recipe :input %))]]

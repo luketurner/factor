@@ -1,6 +1,6 @@
 (ns factor.machine.components
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [factor.widgets :refer [dropdown dropdown-submitted]]))
+            [factor.widgets :refer [dropdown dropdown-submitted button]]))
 
 (defn machine-list [machines]
   (if (not-empty machines)
@@ -21,7 +21,7 @@
     (for [machine-id machines]
       [:div
        [machine-picker machine-id #(on-change (-> machines (disj machine-id) (conj %)))]
-       [:button {:on-click #(on-change (disj machines machine-id))} "-"]])
+       [button {:on-click #(on-change (disj machines machine-id))} "-"]])
     [[machine-picker-submitted (fn [m] (on-change (conj machines m)))]])))
 
 (defn machine-editor [machine-id]
@@ -30,4 +30,4 @@
         delete-machine #(dispatch [:delete-machine machine-id])]
     [:div
      [:input {:type "text" :value (:name machine) :on-change update-name}]
-     [:button {:on-click delete-machine} "-"]]))
+     [button {:on-click delete-machine} "-"]]))
