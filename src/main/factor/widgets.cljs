@@ -6,9 +6,10 @@
 
 (rhk/configure #js {"ignoreTags" #js []})
 
-(defn button [{:keys [on-click]} & children]
+(defn button [{:keys [on-click auto-focus]} & children]
   (into
-   [:button {:on-click #(if (fn? on-click) (on-click) (dispatch on-click))}]
+   [:button {:on-click #(if (fn? on-click) (on-click) (dispatch on-click))
+             :auto-focus auto-focus}]
    children))
 
 (defn hotkeys
@@ -26,11 +27,11 @@
     [:div.row]
     (conj (vec children) [button {:on-click on-delete} "-"]))])
 
-(defn addable-rows [{:keys [on-create]} & children]
-  [hotkeys {"enter" [(new-uuid) on-create]}
-   (into
-    [:div.rows]
-    (conj (vec children) [button {:on-click on-create} "Add"]))])
+(defn addable-rows [{:keys [on-create auto-focus]} & children]
+  [:<>
+   [hotkeys {"enter" [(new-uuid) on-create]}
+    (into [:div.rows] children)]
+   [button {:on-click on-create :auto-focus auto-focus} "Add"]])
 
 (defn input-text [value on-change focused?]
   [:input {:type "text"
@@ -61,7 +62,7 @@
 
 
 (defn list-editor [{:keys [data row-fn add-fn del-fn empty-message]}]
-  [addable-rows {:on-create add-fn}
+  [addable-rows {:on-create add-fn :auto-focus (empty? data)}
    (if (not-empty data)
      (->> data
           (map (fn [v] [deletable-row {:on-delete #(del-fn v)} (row-fn v)]))
