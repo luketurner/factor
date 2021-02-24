@@ -49,7 +49,7 @@
    [:table
     [:tbody
      [:tr [:td "ENTER"] [:td "Add new entry"]]
-     [:tr [:td "DEL"] [:td "Delete current entry"]]]]
+     [:tr [:td "ALT+BKSP"] [:td "Delete current entry"]]]]
    [:p "This project is a work-in-progress and not all features work yet. Be warned!"]])
 
 (defn help-page []
