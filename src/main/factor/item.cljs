@@ -1,3 +1,3 @@
 (ns factor.item)
 
-(defn item [] {:name "Unnamed item"})
+(defn item [] {:name ""})
