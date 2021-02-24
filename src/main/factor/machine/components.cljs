@@ -1,6 +1,6 @@
 (ns factor.machine.components
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [factor.widgets :refer [dropdown dropdown-submitted button]]))
+            [factor.widgets :refer [dropdown dropdown-submitted button input-text list-editor]]))
 
 (defn machine-list [machines]
   (if (not-empty machines)
@@ -24,10 +24,7 @@
        [button {:on-click #(on-change (disj machines machine-id))} "-"]])
     [[machine-picker-submitted (fn [m] (on-change (conj machines m)))]])))
 
-(defn machine-editor [machine-id]
+(defn machine-editor [machine-id focused?]
   (let [machine @(subscribe [:machine machine-id])
-        update-name #(dispatch [:update-machine machine-id (assoc machine :name (.-value (.-target %)))])
-        delete-machine #(dispatch [:delete-machine machine-id])]
-    [:div
-     [:input {:type "text" :value (:name machine) :on-change update-name}]
-     [button {:on-click delete-machine} "-"]]))
+        update-name #(dispatch [:update-machine machine-id (assoc machine :name %)])]
+    [input-text (:name machine) update-name focused?]))
