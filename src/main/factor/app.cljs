@@ -1,6 +1,7 @@
 (ns factor.app
   (:require [reagent.dom :refer [render]]
-            [re-frame.core :refer [reg-event-fx reg-event-db reg-sub subscribe dispatch reg-fx]]
+            [re-frame.core :refer [reg-global-interceptor ->interceptor reg-event-fx reg-event-db reg-sub subscribe dispatch reg-fx]]
+            [malli.core :as malli]
             [factor.factory.view :refer [factory-page]]
             [factor.factory.events]
             [factor.factory.subs]
@@ -25,7 +26,11 @@
 (reg-event-db :select-page (fn [db [_ page]] (assoc-in db [:ui :selected-page] page)))
 (reg-sub :selected-page (fn [db _] (get-in db [:ui :selected-page])))
 
-(reg-event-db :initialize-db (fn [] {:ui {:selected-page :home}}))
+(reg-event-db :initialize-db (fn [] {:ui {:selected-page :home}
+                                     :world {:items {}
+                                             :factories {}
+                                             :recipes {}
+                                             :machines {}}}))
 
 ; TODO -- for now, toast just sends to console
 (reg-fx :toast (fn [data] (println data)))
@@ -83,8 +88,47 @@
                [:p "Loading..."])]]
      [:footer "Copyright 2020 Luke Turner"]]))
 
+(def db-schema
+  [:map {:closed true}
+   [:world [:map {:closed true}
+            [:factories
+             [:map-of :string
+              [:map {:closed true}
+               [:name :string]
+               [:desired-output [:map-of :string number?]]
+               [:output [:map-of :string number?]]
+               [:input [:map-of :string number?]]
+               [:recipes [:map-of :string number?]]
+               [:machines [:map-of :string number?]]]]]
+            [:items
+             [:map-of :string
+              [:map {:closed true}
+               [:name :string]]]]
+            [:machines
+             [:map-of :string
+              [:map {:closed true}
+               [:names :string]
+               [:power number?]
+               [:speed number?]]]]
+            [:recipes
+             [:map-of :string
+              [:map {:closed true}
+               [:input [:map-of :string number?]]
+               [:output [:map-of :string number?]]
+               [:machines [:set :string]]]]]]]
+   [:ui [:map]]])
+
+(defn validate-db [schema]
+  (->interceptor
+   :id :db-validator
+   :after (fn [{{db :db} :effects :as ctx}]
+             (if (and db (not (malli/validate schema db)))
+               (throw (ex-info (str "validate failed:" (:errors (malli/explain schema db))) {}))
+               ctx))))
+
 
 (defn init []
   (dispatch [:initialize-db])
   (dispatch [:load-world])
+  (reg-global-interceptor (validate-db db-schema))
   (render [app] (js/document.getElementById "app")))

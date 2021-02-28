@@ -3,8 +3,11 @@
 
 (defn factory []
   {:name "Unnamed Factory"
+   :desired-output {}
    :input {}
-   :output {}})
+   :output {}
+   :machines {}
+   :recipes {}})
 
 (defn factory-references-item? [factory item-id]
   (some #(contains? (% factory) item-id) [:input :output :desired-output]))
