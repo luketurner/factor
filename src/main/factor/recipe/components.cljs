@@ -34,7 +34,7 @@
         upd #(dispatch [:update-recipe recipe-id %])
         del #(dispatch [:delete-recipe recipe-id])]
     [deletable-section {:on-delete del}
-     [collapsible-section {:summary summary}
+     [collapsible-section {:summary [:<> summary [button {:on-click del} "-"]]}
      [:dl
       [:dt "Inputs"]
       [:dd [item-rate-editor-list input #(upd (assoc recipe :input %))]]

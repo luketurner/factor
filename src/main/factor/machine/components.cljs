@@ -30,7 +30,7 @@
         set-power #(dispatch [:update-machine machine-id (assoc machine :power %)])
         set-speed #(dispatch [:update-machine machine-id (assoc machine :speed %)])]
     [deletable-section {:on-delete [:delete-machine machine-id]}
-     [collapsible-section {:summary (:name machine)}
+     [collapsible-section {:summary [:<> (:name machine) [button {:on-click [:delete-machine machine-id]} "-"]]}
      [:dl
       [:dt "Name"]
       [:dd [input-text (:name machine) set-name focused?]]

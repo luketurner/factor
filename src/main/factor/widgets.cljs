@@ -20,12 +20,12 @@
   [keymap & children]
   (let [handlers (clj->js (into {} (vals keymap)))
         keymap (clj->js (into {} (for [[ks [k _]] keymap] [k ks])))]
-    (into [:> HotKeys {:key-map keymap :handlers handlers}] children)))
+    (into [:> HotKeys {:component "" :key-map keymap :handlers handlers}] children)))
 
 (defn deletable-section [{:keys [on-delete]} & children]
+  
   (into 
-   [hotkeys {"alt+backspace" [(new-uuid) on-delete]}
-    [button {:on-click on-delete :class "right"} "-"]]
+   [hotkeys {"alt+backspace" [(new-uuid) on-delete]}]
    children))
 
 (defn deletable-row [{:keys [on-delete]} & children]
@@ -73,7 +73,7 @@
 (defn dropdown-submitted [options placeholder on-submit]
   (let [value (reagent/atom nil)]
     (fn [options placeholder on-submit]
-      [:div
+      [:<>
        [dropdown options @value placeholder #(reset! value %)]
        [button {:on-click #(on-submit @value)} "+"]])))
 
@@ -83,12 +83,12 @@
    (if (not-empty data)
      (->> data
           (map row-fn)
-          (into [:div]))
+          (into [:<>]))
      empty-message)])
 
 
 (defn list-editor-validated [{:keys [data row-fn add-fn unsaved-data unsaved-row-fn empty-message]}]
   [addable-rows {:on-create add-fn}
    (if (and (empty? data) (empty? unsaved-data)) empty-message
-       (into [:div] (concat (map row-fn data)
+       (into [:<>] (concat (map row-fn data)
                             (map unsaved-row-fn unsaved-data))))])

@@ -26,5 +26,4 @@
        [:.rate-picker {:width "3em"}]
        [:.dropdown {:width "11em"}]
        [:input :select {:font "inherit" :border "none"}]
-       [:.row {:display "flex" :flex-flow "row nowrap"}]
-       [:.right {:float "right"}]))
+       [:.row {:display "flex" :flex-flow "row nowrap"}]))
