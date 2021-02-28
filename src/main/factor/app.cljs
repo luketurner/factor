@@ -99,7 +99,7 @@
             [:machines
              [:map-of :string
               [:map {:closed true}
-               [:names :string]
+               [:name :string]
                [:power number?]
                [:speed number?]]]]
             [:recipes
