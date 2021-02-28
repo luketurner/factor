@@ -1,5 +1,7 @@
 (ns factor.styles
-  (:require [garden.core :refer [css]]))
+  (:require [garden.core :refer [css]]
+            [garden.units :refer [px percent]]
+            [garden.stylesheet :refer [at-media]]))
 
 (def app-styles
   (css [:html {:font "20px VT323"}]
@@ -12,9 +14,10 @@
        [:h1 {:font-size "1.5rem" :margin "1.5rem 0"}]
        [:h2 {:font-size "1.5rem" :margin "1.5rem 0" :font-weight "normal"}
         [:button {:font-size "1rem"}]]
-       [:nav {:margin "0 2rem"}
+       [:nav {:margin "0 2rem" :display "flex" :flex-flow "column"}
         [:p {:margin "0.5rem 0" :text-align "right"}]
-        [:a {:color "inherit" :text-decoration "inherit"}]]
+        [:a {:color "inherit" :text-decoration "inherit"}]
+        [:.spacer {:height "1rem"}]]
        [:.factory-name {:font-size "inherit"}]
        [:button {:margin-left "1rem" :font "inherit" :border "none" :background "none" :cursor "pointer" :text-transform "uppercase"}]
        [:button:hover {:color "white" :background-color "black"}]
@@ -26,4 +29,11 @@
        [:.rate-picker {:width "3em"}]
        [:.dropdown {:width "11em"}]
        [:input :select {:font "inherit" :border "none"}]
-       [:.row {:display "flex" :flex-flow "row nowrap"}]))
+       [:.row {:display "flex" :flex-flow "row nowrap"}]
+       (at-media {:max-width (px 1024)}
+                 [:.app-container {:margin "0 1rem"}]
+                 [:.main-container {:flex-flow "column nowrap"}]
+                 [:nav {:flex-flow "row wrap" :align-items "space-between"}
+                  [:h1 {:width (percent 100) :margin 0 :text-align "center"}]
+                  [:p {:margin "0 1rem"}]
+                  [:.spacer {:display "none"}]])))

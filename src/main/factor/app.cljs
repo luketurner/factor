@@ -69,7 +69,8 @@
        [:p [nav-link :recipes]]
        [:p [nav-link :machines]]
        [:p [nav-link :world]]
-       [:p [:br] [nav-link :help]]
+       [:p.spacer]
+       [:p [nav-link :help]]
        [:p [:a {:href "https://git.sr.ht/~luketurner/factor"} "view source"]]]
       [:main (case selected-page
                :home [home-page]
