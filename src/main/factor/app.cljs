@@ -1,5 +1,6 @@
 (ns factor.app
   (:require [reagent.dom :refer [render]]
+            [medley.core :refer [dissoc-in]]
             [re-frame.core :refer [reg-global-interceptor ->interceptor reg-event-fx reg-event-db reg-sub subscribe dispatch reg-fx]]
             [malli.core :as malli]
             [factor.factory.view :refer [factory-page]]
@@ -10,7 +11,8 @@
             [factor.localstorage]
             [factor.subs :refer [reg-all-subs]]
             [factor.events :refer [reg-all-events]]
-            [factor.styles :refer [app-styles]]))
+            [factor.styles :refer [app-styles]]
+            [factor.util :refer [add-fx]]))
 
 
 
@@ -114,10 +116,10 @@
   (->interceptor
    :id :db-validator
    :after (fn [{{db :db} :effects :as ctx}]
-             (if (and db (not (malli/validate schema db)))
-               (throw (ex-info (str "validate failed:" (:errors (malli/explain schema db))) {}))
-               ctx))))
-
+            (let [invalid? (and db (not (malli/validate schema db)))]
+              (cond-> ctx
+                invalid? (dissoc-in [:effects :db])
+                invalid? (add-fx [:toast (str "validate failed: " (pr-str (malli/explain schema db)))]))))))
 
 (defn init []
   (reg-all-subs)
