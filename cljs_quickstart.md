@@ -68,8 +68,14 @@ Create `src/main/myapp/core.cljs` "Hello World" `init` function:
 (defn app []
   [:h1 "Hello World!"])
 
-(defn init []
+(defn render-app []
   (render [app] (js/document.getElementById "app")))
+
+(defn init []
+  (render-app))
+
+(defn after-load []
+  (render-app))
 ```
 
 ### Configure shadow-cljs.edn
@@ -90,7 +96,8 @@ Update the `shadow-cljs.edn` to look kinda like this.
  :dev-http {8080 "public"}
  :builds
  {:app {:target :browser
-        :devtools {:preloads [re-frisk.preload]}
+        :devtools {:preloads [re-frisk.preload]
+                   :after-load myapp.core/after-load}
         :modules {:main {:init-fn myapp.core/init}}}}}
 ```
 
@@ -269,3 +276,11 @@ The `npm run start` command already includes file watching and nREPL support. Co
   - I recommend running `npm run start` manually in the terminal, then use Calva's `Connect to an existing REPL server in your project`
 
 - The development-only `re-frisk` dashboards are great for observing state propagation through your app. It can answer the question "what happened?" and obviates (most) debug logging.
+
+### Hot-Reloading
+
+Assuming you copied this example exactly, your `core.cljs` file should already have an `after-load` function that will be called every hot-reload. This file should:
+
+1. Re-register event handlers, interceptors, and fx handlers.
+2. Re-register subscriptions.
+3. Re-render the React/Reagent view.
