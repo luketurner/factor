@@ -44,12 +44,11 @@
                                              (update-unsaved-rate! kvp)))
             add-unsaved-rate! (fn [] (swap!
                                       unsaved-rates
-                                      #(into [] (conj % [(inc (get (last @unsaved-rates) 0)) ["" 0]]))))
-            delete-rate! #(on-change (dissoc rates (% 0)))]
+                                      #(into [] (conj % [(inc (get (last @unsaved-rates) 0)) ["" 0]]))))]
         [list-editor-validated {:data rates
                                 :unsaved-data @unsaved-rates
                                 :row-fn (fn [item-rate]
-                                          [deletable-row {:on-delete delete-rate!}
+                                          [deletable-row {:on-delete #(on-change (dissoc rates (item-rate 0)))}
                                            [item-rate-editor item-rate
                                             (fn [[nk nv] [ok _]]
                                               (when (or (not-empty nk)
