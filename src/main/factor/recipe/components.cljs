@@ -3,7 +3,7 @@
             [clojure.string :as string]
             [factor.item.components :refer [item-rate-editor-list item-rate-list]]
             [factor.machine.components :refer [machine-list machine-list-editor]]
-            [factor.widgets :refer [button]]))
+            [factor.widgets :refer [button collapsible-section deletable-section]]))
 
 (defn recipe-viewer [recipe-id times]
   (let [{:keys [input output machines]} @(subscribe [:recipe recipe-id])
@@ -30,20 +30,18 @@
         display-name (if (not-empty output)
                        (str "Recipe:" (string/join ", " output-item-names))
                        "New Recipe")
+        summary (str (when times (str times "x ")) display-name)
         upd #(dispatch [:update-recipe recipe-id %])
-        is-expanded @(subscribe [:recipe-is-expanded recipe-id])
-        toggle-expanded #(dispatch [:toggle-recipe-expanded recipe-id])]
-    [:details {:open is-expanded}
-     [:summary {:on-click toggle-expanded}
-      (str (when times (str times "x ")) display-name)
-      [button {:on-click [:delete-recipe recipe-id]} "-"]]
+        del #(dispatch [:delete-recipe recipe-id])]
+    [deletable-section {:on-delete del}
+     [collapsible-section {:summary summary}
      [:dl
       [:dt "Inputs"]
       [:dd [item-rate-editor-list input #(upd (assoc recipe :input %))]]
       [:dt "Outputs"]
       [:dd [item-rate-editor-list output #(upd (assoc recipe :output %))]]
       [:dt "Machines"]
-      [:dd [machine-list-editor machines #(upd (assoc recipe :machines %))]]]]))
+      [:dd [machine-list-editor machines #(upd (assoc recipe :machines %))]]]]]))
 
 (defn recipe-editor-list [recipe-map]
   (into [:ul] (for [[r t] recipe-map] [recipe-editor r t])))

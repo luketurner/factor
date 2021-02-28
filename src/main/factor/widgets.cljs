@@ -6,9 +6,10 @@
 
 (rhk/configure #js {"ignoreTags" #js []})
 
-(defn button [{:keys [on-click auto-focus]} & children]
+(defn button [{:keys [on-click auto-focus class]} & children]
   (into
-   [:button {:on-click #(if (fn? on-click) (on-click) (dispatch on-click))
+   [:button {:class class
+             :on-click #(if (fn? on-click) (on-click) (dispatch on-click))
              :auto-focus auto-focus}]
    children))
 
@@ -21,8 +22,14 @@
         keymap (clj->js (into {} (for [[ks [k _]] keymap] [k ks])))]
     (into [:> HotKeys {:key-map keymap :handlers handlers}] children)))
 
+(defn deletable-section [{:keys [on-delete]} & children]
+  (into 
+   [hotkeys {"alt+backspace" [(new-uuid) on-delete]}
+    [button {:on-click on-delete :class "right"} "-"]]
+   children))
+
 (defn deletable-row [{:keys [on-delete]} & children]
-  [hotkeys {"alt+backspace" [(new-uuid) on-delete]}
+  [deletable-section {:on-delete on-delete}
    (into
     [:div.row]
     (conj (vec children) [button {:on-click on-delete} "-"]))])
@@ -32,6 +39,16 @@
    [hotkeys {"enter" [(new-uuid) on-create]}
     (into [:div.rows] children)]
    [button {:on-click on-create :auto-focus auto-focus} "Add"]])
+
+(defn collapsible-section [{:keys [summary expanded on-toggle] :as props} & children]
+  (let [controlled? (contains? props :expanded)
+        expanded-atom (reagent/atom expanded)
+        toggle-expanded #(if controlled? on-toggle (swap! expanded-atom not))]
+    (fn [{:keys [summary expanded on-toggle]} & children]
+      (into [:details {:open @expanded-atom}
+             [:summary {:on-click toggle-expanded}
+              summary]]
+            children))))
 
 (defn input-text [value on-change focused?]
   [:input {:type "text"
@@ -61,21 +78,17 @@
        [button {:on-click #(on-submit @value)} "+"]])))
 
 
-(defn list-editor [{:keys [data row-fn add-fn del-fn empty-message]}]
+(defn list-editor [{:keys [data row-fn add-fn empty-message]}]
   [addable-rows {:on-create add-fn :auto-focus (empty? data)}
    (if (not-empty data)
      (->> data
-          (map (fn [v] [deletable-row {:on-delete #(del-fn v)} (row-fn v)]))
+          (map row-fn)
           (into [:div]))
      empty-message)])
 
 
-(defn list-editor-validated [{:keys [data row-fn add-fn del-fn unsaved-data unsaved-row-fn unsaved-del-fn empty-message]}]
-  (let [row (fn [v] [deletable-row {:on-delete #(del-fn v)}
-                     (row-fn v)])
-        unsaved-row (fn [v] [deletable-row {:on-delete #(unsaved-del-fn v)}
-                             (unsaved-row-fn v)])]
-    [addable-rows {:on-create add-fn}
-     (if (and (empty? data) (empty? unsaved-data)) empty-message
-         (into [:div] (concat (map row data)
-                              (map unsaved-row unsaved-data))))]))
+(defn list-editor-validated [{:keys [data row-fn add-fn unsaved-data unsaved-row-fn empty-message]}]
+  [addable-rows {:on-create add-fn}
+   (if (and (empty? data) (empty? unsaved-data)) empty-message
+       (into [:div] (concat (map row-fn data)
+                            (map unsaved-row-fn unsaved-data))))])

@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as reagent]
             [factor.util :refer [filtered-update]]
-            [factor.widgets :refer [dropdown input-rate input-text list-editor list-editor-validated]]))
+            [factor.widgets :refer [deletable-section dropdown input-rate input-text list-editor list-editor-validated]]))
 
 (defn item-picker [value on-change focused?]
   [dropdown @(subscribe [:item-names]) value "Select item..." on-change focused?])
@@ -48,20 +48,20 @@
         [list-editor-validated {:data rates
                                 :unsaved-data @unsaved-rates
                                 :row-fn (fn [item-rate]
-                                          [item-rate-editor item-rate
-                                           (fn [[nk nv] [ok _]]
-                                             (when (or (not-empty nk)
-                                                       (not-empty ok))
-                                               (on-change (-> rates
-                                                              (dissoc ok)
-                                                              (assoc nk nv)))))])
+                                          [deletable-section {:on-delete #(on-change (dissoc rates (% 0)))}
+                                           [item-rate-editor item-rate
+                                            (fn [[nk nv] [ok _]]
+                                              (when (or (not-empty nk)
+                                                        (not-empty ok))
+                                                (on-change (-> rates
+                                                               (dissoc ok)
+                                                               (assoc nk nv)))))]])
                                 :empty-message [:div "No items."]
                                 :add-fn add-unsaved-rate!
-                                :del-fn #(on-change (dissoc rates (% 0)))
                                 :unsaved-row-fn (fn [[ix item-rate]]
-                                                  [item-rate-editor item-rate
-                                                   #(update-or-save-unsaved-rate! [ix %])])
-                                :unsaved-del-fn dissoc-unsaved-rate!}]))))
+                                                  [deletable-section {:on-delete dissoc-unsaved-rate!}
+                                                   [item-rate-editor item-rate
+                                                   #(update-or-save-unsaved-rate! [ix %])]])}]))))
 
 (defn item-editor [id focused?]
   (let [item @(subscribe [:item id])
@@ -70,7 +70,7 @@
 
 (defn item-editor-list [items]
   [list-editor {:data items
-                :row-fn (fn [id] [item-editor id (= id (last items))])
+                :row-fn (fn [id] [deletable-section {:on-delete [:delete-item id]}
+                                  [item-editor id (= id (last items))]])
                 :empty-message [:p "No items."]
-                :add-fn #(dispatch [:create-item])
-                :del-fn #(dispatch [:delete-item %])}])
+                :add-fn #(dispatch [:create-item])}])
