@@ -1,7 +1,9 @@
 (ns factor.machine
   (:require [medley.core :refer [filter-vals map-vals dissoc-in]]))
 
-(defn machine [] {:name ""})
+(defn machine [] {:name ""
+                  :power 0
+                  :speed 1})
 
 (defn factory-references-machine? [factory machine-id]
   (some #(contains? (% factory) machine-id) [:machines]))
@@ -13,6 +15,3 @@
   (map-vals (factories-with-machine factories machine-id)
             #(-> %
                  (dissoc-in [:machines machine-id]))))
-
-
-

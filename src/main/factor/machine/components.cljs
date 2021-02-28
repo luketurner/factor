@@ -1,6 +1,6 @@
 (ns factor.machine.components
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [factor.widgets :refer [dropdown dropdown-submitted button input-text list-editor]]))
+            [factor.widgets :refer [input-rate deletable-section collapsible-section dropdown dropdown-submitted button input-text list-editor]]))
 
 (defn machine-list [machines]
   (if (not-empty machines)
@@ -26,5 +26,15 @@
 
 (defn machine-editor [machine-id focused?]
   (let [machine @(subscribe [:machine machine-id])
-        update-name #(dispatch [:update-machine machine-id (assoc machine :name %)])]
-    [input-text (:name machine) update-name focused?]))
+        set-name #(dispatch [:update-machine machine-id (assoc machine :name %)])
+        set-power #(dispatch [:update-machine machine-id (assoc machine :power %)])
+        set-speed #(dispatch [:update-machine machine-id (assoc machine :speed %)])]
+    [deletable-section {:on-delete [:delete-machine machine-id]}
+     [collapsible-section {:summary (:name machine)}
+     [:dl
+      [:dt "Name"]
+      [:dd [input-text (:name machine) set-name focused?]]
+      [:dt "Energy cost"]
+      [:dd [input-rate (:power machine) set-power]]
+      [:dt "Production speed"]
+      [:dd [input-rate (:speed machine) set-speed]]]]]))
