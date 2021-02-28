@@ -1,7 +1,7 @@
 (ns factor.subs
   (:require [re-frame.core :refer [reg-sub]]))
 
-(defn reg-all-subs []
+(defn reg-all []
   (reg-sub :world-data (fn [db _] (get db :world)))
   (reg-sub :factory (fn [db [_ id]] (get-in db [:world :factories id])))
   (reg-sub :factory-ids (fn [db] (-> db (get-in [:world :factories]) (keys))))
@@ -20,5 +20,6 @@
   (reg-sub :recipe (fn [db [_ id]] (get-in db [:world :recipes id])))
   (reg-sub :recipe-ids (fn [db] (-> db (get-in [:world :recipes]) (keys))))
   (reg-sub :recipe-count (fn [db] (-> db (get-in [:world :recipes]) (count))))
-  (reg-sub :recipe-is-expanded (fn [db [_ id]] (get-in db [:ui :recipes :expanded id] false))))
+  (reg-sub :recipe-is-expanded (fn [db [_ id]] (get-in db [:ui :recipes :expanded id] false)))
+  (reg-sub :selected-page (fn [db _] (get-in db [:ui :selected-page]))))
 

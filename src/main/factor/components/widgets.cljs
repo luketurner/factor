@@ -1,4 +1,4 @@
-(ns factor.widgets
+(ns factor.components.widgets
   (:require [reagent.core :as reagent]
             [re-frame.core :refer [dispatch]]
             ["react-hotkeys" :as rhk :refer [HotKeys]]

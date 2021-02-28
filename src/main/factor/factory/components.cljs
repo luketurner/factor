@@ -1,1 +1,0 @@
-(ns factor.factory.components)

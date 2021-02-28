@@ -1,9 +1,9 @@
-(ns factor.localstorage
+(ns factor.fx
   (:require [re-frame.core :refer [reg-cofx reg-fx]]
             [clojure.edn :as edn]))
 
 ;;
-;; Notes on :localstorage
+;; Notes on :localstorage effect and coeffect
 ;;   To get data /out/ of localstorage, request the key you want with
 ;;   (inject-cofx :localstorage :my-key)
 ;;   Then, your reg-event-fx handlers will get a coeffect like:
@@ -18,14 +18,18 @@
 ;;   before being sent to localstorage. Values are transparently serialized
 ;;   to/from EDN.
 ;; 
-(reg-cofx
- :localstorage
- (fn [cofx key]
-   (assoc-in cofx [:localstorage key]
-             (edn/read-string (js/window.localStorage.getItem (name key))))))
+(defn reg-all []
+  (reg-cofx
+   :localstorage
+   (fn [cofx key]
+     (assoc-in cofx [:localstorage key]
+               (edn/read-string (js/window.localStorage.getItem (name key))))))
 
-(reg-fx
- :localstorage
- (fn [key-values]
-   (doseq [[key value] key-values]
-     (js/window.localStorage.setItem (name key) (pr-str value)))))
+  (reg-fx
+   :localstorage
+   (fn [key-values]
+     (doseq [[key value] key-values]
+       (js/window.localStorage.setItem (name key) (pr-str value)))))
+
+  ; TODO -- for now, toast just sends to console
+  (reg-fx :toast (fn [data] (println data))))

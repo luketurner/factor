@@ -3,7 +3,7 @@
             [garden.units :refer [px percent]]
             [garden.stylesheet :refer [at-media]]))
 
-(def app-styles
+(def app
   (css [:html {:font "20px VT323"}]
        [:body {:margin 0}]
        [:* {:box-sizing "border-box"}]

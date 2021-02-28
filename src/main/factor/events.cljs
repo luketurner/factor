@@ -8,7 +8,14 @@
             [factor.world :refer [empty-world] :as world]
             [medley.core :refer [filter-vals]]))
 
-(defn reg-all-events []
+(defn reg-all []
+
+  (reg-event-db :initialize-db (fn [] {:ui {:selected-page :home}
+                                       :world {:items {}
+                                               :factories {}
+                                               :recipes {}
+                                               :machines {}}}))
+
   (reg-event-db :create-factory #(world/update-world % world/with-factory nil (factory)))
   (reg-event-db :create-item #(world/update-world % world/with-item nil (item)))
   (reg-event-db :create-recipe #(world/update-world % world/with-recipe nil (recipe)))
@@ -74,5 +81,7 @@
   (reg-event-fx
    :save-world
    (fn [_ [_ world]]
-     {:localstorage {:world world}})))
+     {:localstorage {:world world}}))
+
+  (reg-event-db :select-page (fn [db [_ page]] (assoc-in db [:ui :selected-page] page))))
 

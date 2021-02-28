@@ -1,6 +1,7 @@
 (ns factor.world
   (:require [clojure.edn :as edn]
-            [factor.util :refer [new-uuid]]))
+            [factor.util :refer [new-uuid add-fx]]
+            [re-frame.core :refer [->interceptor dispatch-sync]]))
 
 (def empty-world {:items {} :machines {} :recipes {} :factories {}})
 
@@ -29,3 +30,12 @@
 (defn without-machine [world id] (update world :machines dissoc id))
 (defn without-item [world id] (update world :items dissoc id))
 (defn without-recipe [world id] (update world :recipes dissoc id))
+
+(defn ->saver []
+  (->interceptor
+   :id :world-saver
+   :after (fn [{{{old-world :world} :db} :coeffects
+                {{new-world :world} :db} :effects :as context}]
+            (if (and new-world (not= new-world old-world))
+              (add-fx context [:dispatch [:save-world new-world]])
+              context))))
