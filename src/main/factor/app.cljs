@@ -1,7 +1,7 @@
 (ns factor.app
-  (:require [reagent.dom :refer [render]]
+  (:require [reagent.dom :as dom]
             [medley.core :refer [dissoc-in]]
-            [re-frame.core :refer [reg-global-interceptor ->interceptor reg-event-fx reg-event-db reg-sub subscribe dispatch reg-fx]]
+            [re-frame.core :refer [dispatch-sync reg-global-interceptor ->interceptor reg-event-fx reg-event-db reg-sub subscribe dispatch reg-fx]]
             [malli.core :as malli]
             [factor.factory.view :refer [factory-page]]
             [factor.machine.view :refer [machine-page]]
@@ -112,7 +112,7 @@
                [:machines [:set :string]]]]]]]
    [:ui [:map]]])
 
-(defn validate-db [schema]
+(defn ->db-validator [schema]
   (->interceptor
    :id :db-validator
    :after (fn [{{db :db} :effects :as ctx}]
@@ -121,11 +121,40 @@
                 invalid? (dissoc-in [:effects :db])
                 invalid? (add-fx [:toast (str "validate failed: " (pr-str (malli/explain schema db)))]))))))
 
-(defn init []
+(defn ->world-saver []
+  (->interceptor
+   :id :world-saver
+   :after (fn [{{{old-world :world} :db} :coeffects
+                {{new-world :world} :db} :effects :as context}]
+            (if (and new-world (not= new-world old-world))
+              (add-fx context [:dispatch [:save-world new-world]])
+              context))))
+
+(defn reg-all []
   (reg-all-subs)
   (reg-all-events)
-  (reg-global-interceptor (validate-db db-schema))
-  (dispatch [:initialize-db])
-  (dispatch [:load-world])
+  (reg-global-interceptor (->db-validator db-schema))
+  (reg-global-interceptor (->world-saver)))
 
-  (render [app] (js/document.getElementById "app")))
+(defn render []
+  (dom/render [app] (js/document.getElementById "app")))
+
+(defn init-db []
+  (dispatch-sync [:initialize-db])
+  (dispatch-sync [:load-world]))
+
+(defn init
+  "Init function called on page load."
+  []
+  (reg-all)
+  (init-db)
+  (render))
+
+(defn after-load
+  "Triggered for every hot-reload when running development builds."
+  []
+  (println "reloading app...")
+  (reg-all)
+  (render))
+
+

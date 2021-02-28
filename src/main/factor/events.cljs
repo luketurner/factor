@@ -1,7 +1,7 @@
 (ns factor.events
-  (:require [re-frame.core :refer [reg-global-interceptor inject-cofx enrich reg-event-db get-effect reg-event-fx ->interceptor get-coeffect assoc-effect]]
+  (:require [re-frame.core :refer [inject-cofx enrich reg-event-db reg-event-fx]]
             [factor.factory :refer [recalc-factory factory factory-has-reference? update-foreign-keys]]
-            [factor.util :refer [new-uuid dispatch-after add-fx]]
+            [factor.util :refer [dispatch-after]]
             [factor.machine :refer [machine]]
             [factor.item :refer [item]]
             [factor.recipe :refer [recipe-has-reference? recipe]]
@@ -26,7 +26,7 @@
                 [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))
                  (dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))]
                 (fn [db [_ id x]] (world/update-world db world/with-machine id x)))
-  
+
   (reg-event-db :delete-factory (fn [db [_ id]] (world/update-world db world/without-factory id)))
   (reg-event-db :delete-recipe
                 [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :recipe id]))]
@@ -74,14 +74,5 @@
   (reg-event-fx
    :save-world
    (fn [_ [_ world]]
-     {:localstorage {:world world}}))
-
-  (reg-global-interceptor
-   (->interceptor
-    :id :world-saver
-    :after (fn [{{{old-world :world} :db} :coeffects
-                 {{new-world :world} :db} :effects :as context}]
-             (if (and new-world (not= new-world old-world))
-               (add-fx context [:dispatch [:save-world new-world]])
-               context)))))
+     {:localstorage {:world world}})))
 

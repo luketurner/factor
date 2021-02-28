@@ -13,7 +13,8 @@
  :dev-http {8080 "public"}
  :builds
  {:app  {:target :browser
-         :devtools {:preloads [re-frisk.preload]}
+         :devtools {:preloads [re-frisk.preload]
+                    :after-load factor.app/after-load}
          :modules {:main {:init-fn factor.app/init}}}
   :test {:target    :node-test
          :autorun true
