@@ -60,7 +60,7 @@
   [:input.rate-picker {:type "number"
                        :value (or value 0)
                        :min 0
-                       :on-change #(-> % (.-target) (.-value) (on-change))}])
+                       :on-change #(-> % (.-target) (.-value) (js/parseFloat 10) (on-change))}])
 
 (defn dropdown [options value placeholder on-change focused?]
   (into [:select.dropdown {:value (or value "") 
