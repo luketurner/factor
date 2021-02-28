@@ -3,21 +3,13 @@
             [re-frame.core :refer [reg-global-interceptor ->interceptor reg-event-fx reg-event-db reg-sub subscribe dispatch reg-fx]]
             [malli.core :as malli]
             [factor.factory.view :refer [factory-page]]
-            [factor.factory.events]
-            [factor.factory.subs]
             [factor.machine.view :refer [machine-page]]
-            [factor.machine.events]
-            [factor.machine.subs]
             [factor.recipe.view :refer [recipe-page]]
-            [factor.recipe.events]
-            [factor.recipe.subs]
             [factor.item.view :refer [item-page]]
-            [factor.item.events]
-            [factor.item.subs]
             [factor.world.view :refer [world-page]]
-            [factor.world.events]
-            [factor.world.subs]
             [factor.localstorage]
+            [factor.subs :refer [reg-all-subs]]
+            [factor.events :refer [reg-all-events]]
             [factor.styles :refer [app-styles]]))
 
 
@@ -128,7 +120,10 @@
 
 
 (defn init []
+  (reg-all-subs)
+  (reg-all-events)
+  (reg-global-interceptor (validate-db db-schema))
   (dispatch [:initialize-db])
   (dispatch [:load-world])
-  (reg-global-interceptor (validate-db db-schema))
+
   (render [app] (js/document.getElementById "app")))
