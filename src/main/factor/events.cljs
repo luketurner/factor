@@ -18,7 +18,6 @@
   (reg-event-db :create-machine #(w/update-world % w/with-machine nil (w/machine)))
 
   (reg-event-db :update-factory
-                [(enrich w/recalc-factory)]
                 (fn [db [_ id x]] (w/update-world db w/with-factory id x)))
   (reg-event-db :update-item
                 (fn [db [_ id x]] (w/update-world db w/with-item id x)))

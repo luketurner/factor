@@ -99,10 +99,10 @@
                         (satisfy updated-factory))))))]
     (satisfy initial-factory)))
 
-(defn recalc-factory [db [_ factory-id]]
-  (update-in db [:world :factories factory-id]
-             #(satisfy-desired-outputs {:desired-output (:desired-output %)
-                                        :name (:name %)} (:world db))))
+(defn satisfy-factory [world factory]
+  (satisfy-desired-outputs {:desired-output (:desired-output factory)
+                             :name (:name factory)} 
+                           world))
 
 (defn factory-has-reference?
   [factory id-type id]

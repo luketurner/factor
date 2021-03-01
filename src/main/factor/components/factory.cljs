@@ -6,7 +6,8 @@
             [factor.components.machine :as machine]))
 
 (defn editor [factory-id]
-  (let [{:keys [name input output desired-output recipes machines] :as factory} @(subscribe [:factory factory-id])
+  (let [{:keys [name desired-output] :as factory} @(subscribe [:factory factory-id])
+        {:keys [input output recipes machines]} @(subscribe [:factory-calc factory-id])
         upd #(dispatch [:update-factory factory-id %])]
     [:div
      [:h2

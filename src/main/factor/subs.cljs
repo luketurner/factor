@@ -1,9 +1,13 @@
 (ns factor.subs
-  (:require [re-frame.core :refer [reg-sub]]))
+  (:require [re-frame.core :refer [reg-sub]]
+            [factor.world :as world]))
 
 (defn reg-all []
   (reg-sub :world-data (fn [db _] (get db :world)))
   (reg-sub :factory (fn [db [_ id]] (get-in db [:world :factories id])))
+  (reg-sub :factory-calc (fn [db [_ id]] (let [world (get db :world)
+                                               factory (get-in world [:factories id])]
+                                           (world/satisfy-factory world factory))))
   (reg-sub :factory-ids (fn [db] (-> db (get-in [:world :factories]) (keys))))
   (reg-sub :item (fn [db [_ id]] (get-in db [:world :items id])))
   (reg-sub :item-ids (fn [db] (-> db (get-in [:world :items]) (keys))))
