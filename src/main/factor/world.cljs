@@ -6,6 +6,24 @@
 
 (def empty-world {:items {} :machines {} :recipes {} :factories {}})
 
+(defn factory []
+  {:name "Unnamed Factory"
+   :desired-output {}
+   :input {}
+   :output {}
+   :machines {}
+   :recipes {}})
+
+(defn machine [] {:name ""
+                  :power 0
+                  :speed 1})
+
+(defn recipe [] {:input {}
+                 :output {}
+                 :machines #{}})
+
+(defn item [] {:name ""})
+
 (defn world->str [world] (pr-str world))
 (defn str->world [s] (edn/read-string s))
 
@@ -32,6 +50,41 @@
 (defn without-item [world id] (update world :items dissoc id))
 (defn without-recipe [world id] (update world :recipes dissoc id))
 
+(defn factory-has-reference?
+  [factory id-type id]
+  (let [relevant-dicts (case id-type
+                         :item [:input :output :desired-output]
+                         :recipe [:recipes]
+                         :machine [:machines])]
+    (some #(contains? (% factory) id) relevant-dicts)))
+
+(defn update-factory-foreign-keys
+  "Updates all foreign keys of the specified type in the factory object."
+  [factory fk-type {:keys [items recipes machines]}]
+  (cond-> factory
+    (#{:all :item} fk-type)
+    (-> (update :input #(filter-keys items %))
+        (update :output #(filter-keys items %))
+        (update :desired-output #(filter-keys items %)))
+    (#{:all :recipe} fk-type) (update :recipes #(filter-keys recipes %))
+    (#{:all :machine} fk-type) (update :machines #(filter-keys machines %))))
+
+(defn recipe-has-reference?
+  [recipe id-type id]
+  (let [relevant-dicts (case id-type
+                         :item [:input :output]
+                         :machine [:machines])]
+    (some #(contains? (% recipe) id) relevant-dicts)))
+
+(defn update-recipe-foreign-keys
+  "Updates all foreign keys of the specified type in the recipe object."
+  [recipe fk-type {:keys [items machines]}]
+  (cond-> recipe
+    (#{:all :item} fk-type)
+    (-> (update :input #(filter-keys items %))
+        (update :output #(filter-keys items %)))
+    (#{:all :machine} fk-type) (update :recipes #(filter-keys machines %))))
+
 (defn ->saver []
   (->interceptor
    :id :world-saver
@@ -41,31 +94,9 @@
               (add-fx context [:dispatch [:save-world new-world]])
               context))))
 
-(defn factory []
-  {:name "Unnamed Factory"
-   :desired-output {}
-   :input {}
-   :output {}
-   :machines {}
-   :recipes {}})
-
-(defn factory-references-item? [factory item-id]
-  (some #(contains? (% factory) item-id) [:input :output :desired-output]))
-
-(defn factories-with-item [factories item-id]
-  (filter-vals #(factory-references-item? % item-id) factories))
-
-(defn update-factories-for-item [factories item-id]
-  (map-vals #(-> %
-                 (dissoc-in [:input item-id])
-                 (dissoc-in [:output item-id])
-                 (dissoc-in [:desired-output item-id]))
-            (factories-with-item factories item-id)))
-
 (defn recipe-for-item [recipes item-id]
   (some (fn [[k {:keys [output]}]]
           (when (contains? output item-id) k)) recipes))
-
 
 (defn apply-recipe [factory recipe-id recipe times]
   (let [input-change (map-vals #(* % times) (:input recipe))
@@ -103,59 +134,3 @@
   (satisfy-desired-outputs {:desired-output (:desired-output factory)
                              :name (:name factory)} 
                            world))
-
-(defn factory-has-reference?
-  [factory id-type id]
-  (let [relevant-dicts (case id-type
-                         :item [:input :output :desired-output]
-                         :recipe [:recipes]
-                         :machine [:machines])]
-    (some #(contains? (% factory) id) relevant-dicts)))
-
-(defn update-factory-foreign-keys
-  "Updates all foreign keys of the specified type in the factory object."
-  [factory fk-type {:keys [items recipes machines]}]
-  (cond-> factory
-    (#{:all :item} fk-type)
-    (-> (update :input #(filter-keys items %))
-        (update :output #(filter-keys items %))
-        (update :desired-output #(filter-keys items %)))
-    (#{:all :recipe} fk-type) (update :recipes #(filter-keys recipes %))
-    (#{:all :machine} fk-type) (update :machines #(filter-keys machines %))))
-
-(defn machine [] {:name ""
-                  :power 0
-                  :speed 1})
-
-(defn factory-references-machine? [factory machine-id]
-  (some #(contains? (% factory) machine-id) [:machines]))
-
-(defn factories-with-machine [factories machine-id]
-  (filter-vals factories #(factory-references-machine? % machine-id)))
-
-(defn update-factories-for-machine [factories machine-id]
-  (map-vals (factories-with-machine factories machine-id)
-            #(-> %
-                 (dissoc-in [:machines machine-id]))))
-
-(defn recipe [] {:input {}
-                 :output {}
-                 :machines #{}})
-
-(defn recipe-has-reference?
-  [recipe id-type id]
-  (let [relevant-dicts (case id-type
-                         :item [:input :output]
-                         :machine [:machines])]
-    (some #(contains? (% recipe) id) relevant-dicts)))
-
-(defn update-recipe-foreign-keys
-  "Updates all foreign keys of the specified type in the recipe object."
-  [recipe fk-type {:keys [items machines]}]
-  (cond-> recipe
-    (#{:all :item} fk-type)
-    (-> (update :input #(filter-keys items %))
-        (update :output #(filter-keys items %)))
-    (#{:all :machine} fk-type) (update :recipes #(filter-keys machines %))))
-
-(defn item [] {:name ""})
