@@ -110,27 +110,46 @@
       machine-id (update-in [:machines machine-id] + times)
       true (update-in [:recipes recipe-id] + times))))
 
-(defn satisfy-desired-outputs [initial-factory {:keys [recipes]}]
-  (letfn [(get-recipe-for [items] (some #(recipe-for-item recipes (% 0)) items))
-          (satisfy [{:keys [output desired-output] :as factory}]
-            (let [output-gap (->> output
-                                  (merge-with - desired-output)
-                                  (filter-vals pos?))]
-              (if (empty? output-gap) factory
-                  (let [next-recipe-id (get-recipe-for output-gap)
-                        next-recipe (recipes next-recipe-id)
-                        times (apply max (for [[k v] (:output next-recipe)]
-                                           (when (contains? output-gap k)
-                                             (/ (output-gap k) v))))
-                        updated-factory (apply-recipe factory
-                                                      next-recipe-id
-                                                      next-recipe
-                                                      times)]
-                    (if (= updated-factory factory) factory
-                        (satisfy updated-factory))))))]
-    (satisfy initial-factory)))
+(defn unsatisfied-output [{:keys [output desired-output]}]
+  (->> output (merge-with - desired-output) (filter-vals pos?)))
+
+(defn satisfy-desired-machines [world factory]
+  factory)
+
+(defn recipe-satisfies? [recipe id-type id]
+  (-> recipe (get id-type) (contains? id)))
+
+(defn satisfying-recipe [world id-type id]
+  (->> world
+       (recipes)
+       (some #(when (recipe-satisfies? (second %) id-type id) %))))
+
+(defn satisfying-recipe-for-set [world id-type ids]
+  (some #(satisfying-recipe world id-type %) ids))
+
+(defn satisfying-ratio [goal base]
+  (apply max (for [[k v] base]
+               (when (contains? goal k)
+                 (/ (goal k) v)))))
+
+(defn satisfy-desired-output [world factory]
+  (loop [satisfied-factory factory
+         unsatisfied (unsatisfied-output factory)]
+    (if (empty? unsatisfied)
+      satisfied-factory
+      (if-let [[next-recipe-id, next-recipe] (->> unsatisfied (map first) (satisfying-recipe-for-set world :output))]
+        (let [times (->> next-recipe (:output) (satisfying-ratio unsatisfied))
+              updated-factory (apply-recipe factory next-recipe-id next-recipe times)]
+          (recur
+           updated-factory
+           (unsatisfied-output updated-factory)))
+        satisfied-factory))))
+
+(defn satisfy-desired-input [world factory]
+  factory)
 
 (defn satisfy-factory [world factory]
-  (satisfy-desired-outputs {:desired-output (:desired-output factory)
-                             :name (:name factory)} 
-                           world))
+  (->> factory
+       (satisfy-desired-machines world)
+       (satisfy-desired-input world)
+       (satisfy-desired-output world)))
