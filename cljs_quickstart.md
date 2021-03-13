@@ -105,7 +105,7 @@ Update the `shadow-cljs.edn` to look kinda like this.
 
 ### Testing your setup
 
-Now you should be able to run `npm run start`, and once the build is finished, you can browse to `localhost:8080` and see your "Hello World" text.
+Now you should be able to run `npm install`, then `npm run start`, and once the build is finished, you can browse to `localhost:8080` and see your "Hello World" text.
 
 Also, you should see some little drawers on the right side of the page -- those are `re-frisk`, and they'll only appear in development builds. Try clicking them.
 
@@ -120,6 +120,7 @@ There's a lot of options here. Github Actions would totally work, or Circle, &c.
 We'll be using https://sr.ht for some things, so we want our repository to be published to https://git.sr.ht as well as https://github.com. Apparently, this is possible:
 
 ```bash
+git remote add origin $SOURCEHUT_REPO_URL
 git remote set-url --push --add origin $SOURCEHUT_REPO_URL
 git remote set-url --push --add origin $GITHUB_REPO_URL
 ```
