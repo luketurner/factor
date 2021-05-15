@@ -74,3 +74,6 @@
                                   [editor id (= id (last items))]])
                 :empty-message [:p "No items."]
                 :add-fn #(dispatch [:create-item])}])
+
+(defn sub-nav []
+  [:h2 "items"])

@@ -39,3 +39,6 @@
        [:dd [w/input-rate (:power machine) set-power]]
        [:dt "Production speed"]
        [:dd [w/input-rate (:speed machine) set-speed]]]]]))
+
+(defn sub-nav []
+  [:p "Machines!"])

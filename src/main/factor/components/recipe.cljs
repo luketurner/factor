@@ -47,3 +47,5 @@
   (into [:ul] (for [[r t] recipe-map] [editor r t])))
 
 
+(defn sub-nav []
+  [:p "Recipes!"])
