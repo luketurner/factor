@@ -1,6 +1,6 @@
 (ns factor.styles
   (:require [garden.core :refer [css]]
-            [garden.units :refer [px percent]]
+            [garden.units :refer [px percent rem]]
             [garden.stylesheet :refer [at-media]]))
 
 (def app
@@ -9,12 +9,12 @@
        [:* {:box-sizing "border-box"}]
        [:table {:border-spacing "0.5rem"}]
        [:.app-container {:min-height "100vh" :max-width "1024px" :margin "auto" :display "flex" :flex-flow "column nowrap"}]
-       [:.main-container {:flex-grow "1" :display "flex" :flex-flow "row nowrap" :align-items "start"}]
+       [:.main-container {:margin "0 1rem" :flex-grow "1" :display "flex" :flex-flow "row nowrap" :align-items "start"}]
        [:footer {:width "100%" :text-align "center" :margin "1rem 0"}]
        [:h1 {:font-size "1.5rem" :margin "1.5rem 0"}]
        [:h2 {:font-size "1.5rem" :margin "1.5rem 0" :font-weight "normal"}
         [:button {:font-size "1rem"}]]
-       [:nav {:margin "0 2rem" :display "flex" :flex-flow "column"}
+       [:nav :.sub-nav {:margin-right "1rem" :display "flex" :flex-flow "column"}
         [:p {:margin "0.5rem 0" :text-align "right"}]
         [:a {:color "inherit" :text-decoration "inherit"}]
         [:.spacer {:height "1rem"}]]
@@ -30,6 +30,7 @@
        [:.dropdown {:width "11em"}]
        [:input :select {:font "inherit" :border "none"}]
        [:.row {:display "flex" :flex-flow "row nowrap"}]
+       [:.scrollable {:overflow-y :auto}]
        (at-media {:max-width (px 1024)}
                  [:.app-container {:margin "0 1rem"}]
                  [:.main-container {:flex-flow "column nowrap"}]

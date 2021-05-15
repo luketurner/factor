@@ -6,11 +6,18 @@
 
 (defn reg-all []
 
-  (reg-event-db :initialize-db (fn [] {:ui {:selected-page :home}
+  (reg-event-db :initialize-db (fn [] {:ui {}
                                        :world {:items {}
                                                :factories {}
                                                :recipes {}
                                                :machines {}}}))
+
+  (reg-event-db :select-object (fn [db [_ object-type object-id]]
+                                 (assoc-in db [:ui :selected-object]
+                                           {:object-id object-id :object-type object-type})))
+
+  (reg-event-db :toggle-sub-nav (fn [db [_ object-type]]
+                                 (update-in db [:ui :sub-nav] #(if (= % object-type) nil object-type))))
 
   (reg-event-db :create-factory #(w/update-world % w/with-factory nil (w/factory)))
   (reg-event-db :create-item #(w/update-world % w/with-item nil (w/item)))

@@ -35,5 +35,7 @@
                                      (map (fn [[k v]] [(:name v) k]))
                                      (into {}))))
   (reg-sub :recipe-is-expanded (fn [db [_ id]] (get-in db [:ui :recipes :expanded id] false)))
-  (reg-sub :selected-page (fn [db _] (get-in db [:ui :selected-page]))))
+  
+  (reg-sub :selected-object (fn [db _] (get-in db [:ui :selected-object])))
+  (reg-sub :sub-nav (fn [db _] (get-in db [:ui :sub-nav]))))
 

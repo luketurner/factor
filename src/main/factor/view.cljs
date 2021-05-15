@@ -9,10 +9,10 @@
             [factor.components.widgets :as w]
             [lt-ui.core :refer [themed-stylesheet]]))
 
-(defn nav-link [page]
-  (let [selected-page @(subscribe [:selected-page])]
-    [:a {:href (str "#" (name page)) :on-click #(dispatch [:select-page page])}
-     (when (= selected-page page) ":") (name page)]))
+(defn nav-link [object-type]
+  (let [sub-nav @(subscribe [:sub-nav])]
+    [:a {:href "#" :on-click #(dispatch [:toggle-sub-nav object-type])}
+     (when (= object-type sub-nav) ":") (name object-type)]))
 
 (defn factory-page []
   (let [factories @(subscribe [:factory-ids])]
@@ -98,7 +98,8 @@
        [w/button {:on-click [:world-reset]} "DELETE WORLD PERMANENTLY"]]]]))
 
 (defn app []
-  (let [selected-page @(subscribe [:selected-page])]
+  (let [sub-nav @(subscribe [:sub-nav])
+        selected-object @(subscribe [:selected-object])]
     [:div.app-container
      [:style styles/app]
      [themed-stylesheet {:font-size 16
@@ -106,22 +107,26 @@
                          :scale-factor 1.5}]
      [:div.main-container
       [:nav
-       [:h1 [:a {:href "#" :on-click #(dispatch [:select-page :home])} "factor."]]
+       [:h1 [:a {:href "#" :on-click #(dispatch [:select-object nil])} "factor."]]
        [:p [nav-link :factories]]
        [:p [nav-link :items]]
        [:p [nav-link :recipes]]
        [:p [nav-link :machines]]
-       [:p [nav-link :world]]
+      ;;  [:p [nav-link :world]]
        [:p.spacer]
-       [:p [nav-link :help]]
+      ;;  [:p [nav-link :help]]
        [:p [:a {:href "https://git.sr.ht/~luketurner/factor"} "view source"]]]
-      [:main (case selected-page
-               :home [home-page]
-               :factories [factory-page]
-               :items [item-page]
-               :recipes [recipe-page]
-               :machines [machine-page]
-               :world [world-page]
-               :help [help-page]
-               [:p "Loading..."])]]
+      [:div.sub-nav
+       (case sub-nav
+         :factories [factory/sub-nav]
+         :items [item/sub-nav]
+         :recipes [recipe/sub-nav]
+         :machines [machine/sub-nav]
+         nil)]
+      [:main (case (:object-type selected-object)
+               :factory [factory/editor (:object-id selected-object)]
+               :item [item/editor (:object-id selected-object)]
+               :recipe [recipe/editor (:object-id selected-object)]
+               :machine [machine/editor (:object-id selected-object)]
+               [home-page])]]
      [:footer "Copyright 2020 Luke Turner"]]))
