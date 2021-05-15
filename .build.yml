@@ -7,7 +7,7 @@ sources:
   - https://git.sr.ht/~luketurner/factor
 secrets:
   # ~/netlify_config -- expected to have:
-  #   NETLIFY_SITE_ID
+  #   export NETLIFY_SITE_ID
   #   export NETLIFY_AUTH_TOKEN
   - b85342d7-c4f8-4645-82b7-30d84586783e
 tasks:
