@@ -6,8 +6,7 @@
             [factor.components.recipe :as recipe]
             [factor.components.machine :as machine]
             [factor.world :refer [str->world world->str]]
-            [factor.components.widgets :as w]
-            [ulti.core :refer [themed-stylesheet]]))
+            [factor.components.widgets :as w]))
 
 (defn nav-link [object-type]
   (let [sub-nav @(subscribe [:sub-nav])]
@@ -98,12 +97,10 @@
        [w/button {:on-click [:world-reset]} "DELETE WORLD PERMANENTLY"]]]]))
 
 (defn app []
-  (pr ulti.core/theme-schema)
   (let [sub-nav @(subscribe [:sub-nav])
         selected-object @(subscribe [:selected-object])]
     [:div.app-container
      [:style styles/app]
-     [themed-stylesheet]
      [:div.main-container
       [:nav
        [:h1 [:a {:href "#" :on-click #(dispatch [:select-object nil])} "factor."]]
