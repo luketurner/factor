@@ -7,7 +7,7 @@
             [factor.components.machine :as machine]
             [factor.world :refer [str->world world->str]]
             [factor.components.widgets :as w]
-            [lt-ui.core :refer [themed-stylesheet]]))
+            [ulti.core :refer [themed-stylesheet]]))
 
 (defn nav-link [object-type]
   (let [sub-nav @(subscribe [:sub-nav])]
@@ -98,13 +98,12 @@
        [w/button {:on-click [:world-reset]} "DELETE WORLD PERMANENTLY"]]]]))
 
 (defn app []
+  (pr ulti.core/theme-schema)
   (let [sub-nav @(subscribe [:sub-nav])
         selected-object @(subscribe [:selected-object])]
     [:div.app-container
      [:style styles/app]
-     [themed-stylesheet {:font-size 16
-                         :line-height 1.4
-                         :scale-factor 1.5}]
+     [themed-stylesheet]
      [:div.main-container
       [:nav
        [:h1 [:a {:href "#" :on-click #(dispatch [:select-object nil])} "factor."]]

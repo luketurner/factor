@@ -9,7 +9,7 @@
   [garden "1.3.10"]
   [medley "1.3.0"]
   [metosin/malli "0.2.1"]
-  [lt-ui "0.0.1"]]
+  [lt/ulti "1.0.0-SNAPSHOT"]]
 
  :dev-http {8080 "public"}
  :builds
