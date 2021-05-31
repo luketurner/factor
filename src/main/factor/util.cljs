@@ -1,5 +1,6 @@
 (ns factor.util
-  (:require [re-frame.core :refer [get-coeffect get-effect ->interceptor assoc-effect]]))
+  (:require [re-frame.core :refer [get-coeffect get-effect ->interceptor assoc-effect]]
+            [reagent.core :refer [adapt-react-class]]))
 
 (defn new-uuid []
   (str (random-uuid)))
@@ -15,3 +16,5 @@
 
 (defn filtered-update [xs filter-fn update-fn]
   (for [x xs] (if (filter-fn x) (update-fn x) x)))
+
+(defn c [x] (adapt-react-class x))
