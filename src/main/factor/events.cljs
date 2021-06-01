@@ -48,6 +48,9 @@
                 [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))
                  (dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))]
                 (fn [db [_ id]] (w/update-world db w/without-machine id)))
+  (reg-event-fx :delete-items (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-item %]]) ids)}))
+  (reg-event-fx :delete-machines (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-machine %]]) ids)}))
+  (reg-event-fx :delete-recipes (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-recipe %]]) ids)}))
 
   (reg-event-fx
    :update-factories-with-fk
