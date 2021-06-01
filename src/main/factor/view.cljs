@@ -1,17 +1,25 @@
 (ns factor.view
   (:require [re-frame.core :refer [subscribe dispatch]]
+            [reagent.core :refer [adapt-react-class]]
             [factor.styles :as styles]
             [factor.components.factory :as factory]
             [factor.components.item :as item]
             [factor.components.recipe :as recipe]
             [factor.components.machine :as machine]
             [factor.world :refer [str->world world->str]]
-            [factor.components.widgets :as w]))
+            [factor.components.widgets :as w]
+            [factor.util :refer [c]]
+            ["@blueprintjs/core" :as b]
+            ["@blueprintjs/select" :as bs]
+            ["ag-grid-react" :refer [AgGridColumn AgGridReact]]))
 
-(defn nav-link [object-type]
-  (let [sub-nav @(subscribe [:sub-nav])]
-    [:a {:href "#" :on-click #(dispatch [:toggle-sub-nav object-type])}
-     (when (= object-type sub-nav) ":") (name object-type)]))
+(defn nav-link [page icon text]
+  (let [selected-page @(subscribe [:selected-page])]
+    [(c b/Button) {:class :bp3-minimal
+                   :on-click #(dispatch [:select-page page])
+                   :icon icon
+                   :text text
+                   :disabled (= selected-page page)}]))
 
 (defn factory-page []
   (let [factories @(subscribe [:factory-ids])]
@@ -42,25 +50,62 @@
    [:h2 "help"]
    [:p "Get your help here. (Once the page is finished.)"]])
 
-(defn item-page []
-  (let [items @(subscribe [:item-ids])]
-    [:div
-     [:h2 "items"]
-     [w/list-editor {:data items
-                   :row-fn (fn [id] [w/deletable-row {:on-delete [:delete-item id]}
-                                     [item/editor id (= id (last items))]])
-                   :empty-message [:p "You don't have any items."]
-                   :add-fn #(dispatch [:create-item])}]]))
+(defn item-grid [items]
+  (let [update-item #(dispatch [:update-item (get % "id") {:name (get % "name")}])
+        update-selection #(dispatch [:update-selection [:item %]])]
+    [:div.ag-theme-alpine {:style {:width "100%" :height "100%"}}
+     [(c AgGridReact) {:row-data items
+                       :row-selection :multiple
+                       :enter-moves-down true
+                       :enter-moves-down-after-edit true
+                       :edit-type "fullRow"
+                       :on-row-value-changed #(-> % (js->clj) (get "data") (update-item))
+                       :on-selection-changed (fn [x] (-> x
+                                                         (.-api)
+                                                         (.getSelectedRows)
+                                                         (js->clj)
+                                                         (->> (map #(get % "id")))
+                                                         (vec)
+                                                         (update-selection)))}
+      [(c AgGridColumn) {:checkboxSelection true}]
+      [(c AgGridColumn) {:field :id}]
+      [(c AgGridColumn) {:field :name
+                         :editable true
+                         :single-click-edit true}]]]))
+
+(defn item-page-bar []
+  (let [create-item #(dispatch [:create-item])
+        selected-items @(subscribe [:current-selection :item])
+        delete-items #(dispatch [:delete-items selected-items])
+        num-selected (count selected-items)]
+    [(c b/Navbar)
+     [(c b/Navbar.Group) {:align :left}
+      [(c b/Navbar.Heading) "Item List"]
+      [(c b/Button) {:class :bp3-minimal :on-click create-item :icon :plus :title "Add item"}]
+      [(c b/Navbar.Divider)]
+      (when (< 0 num-selected)
+        [:<>
+         [:div (str "(" num-selected " items selected)")]
+         [(c b/Button) {:class :bp3-minimal
+                        :on-click delete-items
+                        :icon :minus :text "Delete"
+                        :disabled (= num-selected 0)}]])]]))
+
+(defn item-page [item]
+  (let [all-items @(subscribe [:item-seq])]
+    [:<>
+     [item-page-bar]
+     [item-grid all-items]]))
 
 (defn machine-page []
   (let [machines @(subscribe [:machine-ids])]
     [:<>
      [:h2 "machines"]
      [w/list-editor {:data machines
-                   :row-fn (fn [id] [machine/editor id (= id (last machines))])
-                   :empty-message [:p "You don't have any machines."]
-                   :add-fn #(dispatch [:create-machine])
-                   :del-fn #(dispatch [:delete-machine %])}]]))
+                     :row-fn (fn [id] [machine/editor id (= id (last machines))])
+                     :empty-message [:p "You don't have any machines."]
+                     :add-fn #(dispatch [:create-machine])
+                     :del-fn #(dispatch [:delete-machine %])}]]))
 
 (defn recipe-page []
   (let [recipes @(subscribe [:recipe-ids])]
@@ -71,7 +116,7 @@
        [:p "You don't have any recipes."])
      [w/button {:on-click [:create-recipe :expanded]} "Add recipe"]]))
 
-(defn world-page []
+(defn settings-page []
   (let [item-count (or @(subscribe [:item-count]) "No")
         machine-count (or @(subscribe [:machine-count]) "No")
         recipe-count (or @(subscribe [:recipe-count]) "No")
@@ -96,33 +141,55 @@
       [:dd
        [w/button {:on-click [:world-reset]} "DELETE WORLD PERMANENTLY"]]]]))
 
+;; (defn megasearch []
+;;   (let [factories @(subscribe [:factory-names])
+;;         items @(subscribe [:item-names])
+;;         machines @(subscribe [:machine-names])
+;;         recipes @(subscribe [:recipe-names])
+;;         navigate #(print "TODO" %)]
+;;     [(c bs/Suggest)
+;;      {:items (concat (keys factories) (keys items) (keys machines) (keys recipes))
+;;       :item-renderer (fn [v] (:name v))
+;;       :on-item-select navigate}]))
+
+(defn selected-page []
+  (let [[x] @(subscribe [:selected-page])]
+    (case x
+      :home [home-page]
+      :help [help-page]
+      :settings [settings-page]
+      :factories [factory-page]
+      :items [item-page]
+      :machines [machine-page]
+      :recipes [recipe-page])))
+
+(defn primary-navbar []
+  [(c b/Navbar)
+   [(c b/Navbar.Group) {:align :left}
+    [(c b/Navbar.Heading) [:strong "factor."]]
+    [nav-link [:home] :home "Home"]
+    [nav-link [:help] :help "Help"]
+    [nav-link [:settings] :settings "Settings"]
+    [(c b/Navbar.Divider)]
+    [nav-link [:factories] :office "Factories"]
+    [nav-link [:items] :cube "Items"]
+    [nav-link [:machines] :oil-field "Machines"]
+    [nav-link [:recipes] :data-lineage "Recipes"]
+    [(c b/Navbar.Divider)]]
+   [(c b/Navbar.Group) {:align :right}
+    [(c b/AnchorButton) {:class :bp3-minimal
+                         :href "https://github.com/luketurner/factor"
+                         :text "Github"}]
+    [(c b/AnchorButton) {:class :bp3-minimal
+                         :href "https://git.sr.ht/~luketurner/factor"
+                         :text "sr.ht"}]]])
+
 (defn app []
-  (let [sub-nav @(subscribe [:sub-nav])
-        selected-object @(subscribe [:selected-object])]
-    [:div.app-container
-     [:style styles/app]
-     [:div.main-container
-      [:nav
-       [:h1 [:a {:href "#" :on-click #(dispatch [:select-object nil])} "factor."]]
-       [:p [nav-link :factories]]
-       [:p [nav-link :items]]
-       [:p [nav-link :recipes]]
-       [:p [nav-link :machines]]
-      ;;  [:p [nav-link :world]]
-       [:p.spacer]
-      ;;  [:p [nav-link :help]]
-       [:p [:a {:href "https://git.sr.ht/~luketurner/factor"} "view source"]]]
-      [:div.sub-nav
-       (case sub-nav
-         :factories [factory/sub-nav]
-         :items [item/sub-nav]
-         :recipes [recipe/sub-nav]
-         :machines [machine/sub-nav]
-         nil)]
-      [:main (case (:object-type selected-object)
-               :factory [factory/editor (:object-id selected-object)]
-               :item [item/editor (:object-id selected-object)]
-               :recipe [recipe/editor (:object-id selected-object)]
-               :machine [machine/editor (:object-id selected-object)]
-               [home-page])]]
-     [:footer "Copyright 2020 Luke Turner"]]))
+  (let []
+    [:div.app-container {:style {:width "100vw"
+                                 :height "100vh"
+                                 :display :flex
+                                 :flex-flow "column nowrap"}}
+     [primary-navbar]
+     [selected-page]
+     [:footer "Copyright 2021 Luke Turner"]]))

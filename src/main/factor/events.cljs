@@ -6,18 +6,18 @@
 
 (defn reg-all []
 
-  (reg-event-db :initialize-db (fn [] {:ui {}
+  (reg-event-db :initialize-db (fn [] {:ui {:selected-page [:home]}
                                        :world {:items {}
                                                :factories {}
                                                :recipes {}
                                                :machines {}}}))
 
-  (reg-event-db :select-object (fn [db [_ object-type object-id]]
-                                 (assoc-in db [:ui :selected-object]
-                                           {:object-id object-id :object-type object-type})))
+  ;; (reg-event-db :select-object (fn [db [_ object-type object-id]]
+  ;;                                (assoc-in db [:ui :selected-object]
+  ;;                                          {:object-id object-id :object-type object-type})))
 
-  (reg-event-db :toggle-sub-nav (fn [db [_ object-type]]
-                                 (update-in db [:ui :sub-nav] #(if (= % object-type) nil object-type))))
+  ;; (reg-event-db :toggle-sub-nav (fn [db [_ object-type]]
+  ;;                                (update-in db [:ui :sub-nav] #(if (= % object-type) nil object-type))))
 
   (reg-event-db :create-factory #(w/update-world % w/with-factory nil (w/factory)))
   (reg-event-db :create-item #(w/update-world % w/with-item nil (w/item)))
@@ -36,18 +36,24 @@
                  (dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))]
                 (fn [db [_ id x]] (w/update-world db w/with-machine id x)))
 
-  (reg-event-db :delete-factory (fn [db [_ id]] (w/update-world db w/without-factory id)))
+  (reg-event-db :delete-factory 
+                [(dispatch-after (fn [[_ id]] [:cleanup-selection :factory id]))]
+                (fn [db [_ id]] (w/update-world db w/without-factory id)))
   (reg-event-db :delete-recipe
-                [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :recipe id]))]
+                [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :recipe id]))
+                 (dispatch-after (fn [[_ id]] [:cleanup-selection :recipe id]))]
                 (fn [db [_ id]] (w/update-world db w/without-recipe id)))
   (reg-event-db :delete-item
                 [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :item id]))
-                 (dispatch-after (fn [[_ id]] [:update-factories-with-fk :item id]))]
+                 (dispatch-after (fn [[_ id]] [:update-factories-with-fk :item id]))
+                 (dispatch-after (fn [[_ id]] [:cleanup-selection :item id]))]
                 (fn [db [_ id]] (w/update-world db w/without-item id)))
   (reg-event-db :delete-machine
                 [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))
-                 (dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))]
+                 (dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))
+                 (dispatch-after (fn [[_ id]] [:cleanup-selection :machine id]))]
                 (fn [db [_ id]] (w/update-world db w/without-machine id)))
+  
   (reg-event-fx :delete-items (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-item %]]) ids)}))
   (reg-event-fx :delete-machines (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-machine %]]) ids)}))
   (reg-event-fx :delete-recipes (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-recipe %]]) ids)}))
@@ -88,5 +94,14 @@
    (fn [_ [_ world]]
      {:localstorage {:world world}}))
 
-  (reg-event-db :select-page (fn [db [_ page]] (assoc-in db [:ui :selected-page] page))))
+  (reg-event-db :select-page (fn [db [_ page]] (assoc-in db [:ui :selected-page] page)))
+  (reg-event-db :update-selection (fn [db [_ s]] (assoc-in db [:ui :selection] s)))
+  (reg-event-db :cleanup-selection (fn [db [_ type id]]
+                                     (update-in db [:ui :selection]
+                                                (fn [[t s]]
+                                                  [t (if (= type t)
+                                                       (remove #(= % id) s)
+                                                       s)]))))
+
+  )
 

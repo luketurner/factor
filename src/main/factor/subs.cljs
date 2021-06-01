@@ -20,7 +20,8 @@
   (reg-sub :item-names (fn [db] (->> (get-in db [:world :items])
                                      (map (fn [[k v]] [(:name v) k]))
                                      (into {}))))
-  
+  (reg-sub :item-seq (fn [db] (map (fn [[id v]] (assoc v :id id)) (get-in db [:world :items]))))
+
   (reg-sub :machine (fn [db [_ id]] (get-in db [:world :machines id])))
   (reg-sub :machine-ids (fn [db] (-> db (get-in [:world :machines]) (keys))))
   (reg-sub :machine-count (fn [db] (-> db (get-in [:world :machines]) (count))))
@@ -36,6 +37,8 @@
                                      (into {}))))
   (reg-sub :recipe-is-expanded (fn [db [_ id]] (get-in db [:ui :recipes :expanded id] false)))
   
-  (reg-sub :selected-object (fn [db _] (get-in db [:ui :selected-object])))
-  (reg-sub :sub-nav (fn [db _] (get-in db [:ui :sub-nav]))))
+  (reg-sub :selected-page (fn [db _] (get-in db [:ui :selected-page])))
+  (reg-sub :current-selection (fn [db [_ type]]
+                                (let [[t s] (get-in db [:ui :selection])]
+                                  (if (= type t) s [])))))
 
