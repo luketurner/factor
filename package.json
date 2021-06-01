@@ -6,15 +6,18 @@
     "start": "shadow-cljs watch app test",
     "build": "shadow-cljs release app",
     "test": "shadow-cljs compile citest && node test-out/node-test.js",
-    "blueprint:updatecss":
-      "cp node_modules/@blueprintjs/core/lib/css/blueprint.css public/styles/ && cp node_modules/@blueprintjs/icons/lib/css/blueprint-icons.css public/styles/blueprint-icons/lib/css/blueprint-icons.css && cp -r node_modules/@blueprintjs/icons/resources public/styles/blueprint-icons/ && cp node_modules/normalize.css/normalize.css public/styles/normalize.css",
-    "postinstall": "npm run blueprint:updatecss"
+    "blueprint:updatecss": "cp node_modules/@blueprintjs/core/lib/css/blueprint.css public/styles/ && cp node_modules/@blueprintjs/icons/lib/css/blueprint-icons.css public/styles/blueprint-icons/lib/css/blueprint-icons.css && cp -r node_modules/@blueprintjs/icons/resources public/styles/blueprint-icons/ && cp node_modules/normalize.css/normalize.css public/styles/normalize.css",
+    "ag-grid:updatecss": "cp node_modules/ag-grid-community/dist/styles/{ag-grid.css,ag-theme-alpine.css} public/styles/",
+    "postinstall": "npm run blueprint:updatecss && npm run ag-grid:updatecss"
   },
   "devDependencies": {
     "shadow-cljs": "^2.11.18"
   },
   "dependencies": {
     "@blueprintjs/core": "^3.44.3",
+    "@blueprintjs/select": "^3.16.4",
+    "ag-grid-community": "^25.3.0",
+    "ag-grid-react": "^25.3.0",
     "create-react-class": "15.6.3",
     "react": "16.13.0",
     "react-dom": "16.13.0",
