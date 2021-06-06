@@ -18,7 +18,8 @@
                   :power 0
                   :speed 1})
 
-(defn recipe [] {:input {}
+(defn recipe [] {:name ""
+                 :input {}
                  :output {}
                  :machines #{}})
 

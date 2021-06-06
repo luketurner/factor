@@ -33,6 +33,7 @@
             [:recipes
              [:map-of :string
               [:map {:closed true}
+               [:name :string]
                [:input [:map-of :string number?]]
                [:output [:map-of :string number?]]
                [:machines [:set :string]]]]]]]
