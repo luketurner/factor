@@ -28,7 +28,7 @@
   (reg-sub :machine-names (fn [db] (->> (get-in db [:world :machines])
                                         (map (fn [[k v]] [(:name v) k]))
                                         (into {}))))
-  (reg-sub :machine-seq (fn [db] (map (fn [[id v]] (assoc v :id id)) (get-in db [:world :machines])))))
+  (reg-sub :machine-seq (fn [db] (map (fn [[id v]] (assoc v :id id)) (get-in db [:world :machines]))))
 
   (reg-sub :recipe (fn [db [_ id]] (get-in db [:world :recipes id])))
   (reg-sub :recipe-ids (fn [db] (-> db (get-in [:world :recipes]) (keys))))
