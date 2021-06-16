@@ -102,6 +102,8 @@
                                                   [t (if (= type t)
                                                        (remove #(= % id) s)
                                                        s)]))))
+  
+  (reg-event-db :ui (fn [db [_ path val]] (assoc-in db (into [:ui] path) val)))
 
   )
 
