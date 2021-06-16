@@ -2,6 +2,9 @@
   (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :refer [as-element]]
             [factor.styles :as styles]
+            [factor.world :as w]
+            [garden.core :refer [css]]
+            [factor.util :refer [new-uuid]]
             [factor.components :as c]))
 
 (defn name-editor [thing on-change]
@@ -22,36 +25,47 @@
      [c/card-lg [input-editor recipe update-recipe]]]))
 
 (defn nav-link [page icon text]
-  (let [selected-page @(subscribe [:selected-page])]
+  (let [selected-page @(subscribe [:ui [:selected-page]])]
     [c/button {:class :bp3-minimal
-               :on-click #(dispatch [:select-page page])
+               :on-click #(dispatch [:ui [:selected-page] page])
                :icon icon
                :text text
                :disabled (= selected-page page)}]))
 
 
+(defn create-and-select-factory []
+  (let [id (new-uuid)]
+    (dispatch [:update-factory id (w/factory)])
+    (dispatch [:open-factory id])))
+
+(defn delete-and-unselect-factory [id]
+  (let [factory-ids     @(subscribe [:factory-ids])
+        other-factory-id (some #(when (not= % id) %) factory-ids)]
+    (dispatch [:delete-factory id])
+    (dispatch [:open-factory other-factory-id])))
+
 (defn factory-page-bar []
-  (let [{:keys [selected]} @(subscribe [:ui [:factory-page]])
-        select-factory     #(dispatch [:ui [:factory-page :selected] %])
-        create-factory     #(dispatch [:create-factory])
-        delete-factory     #(dispatch [:delete-factory selected])]
+  (let [selected       @(subscribe [:open-factory])
+        select-factory #(dispatch [:open-factory %])]
     [c/navbar
      [c/navbar-group-left
       [c/navbar-heading "Factories"]
       [c/navbar-divider]
       [c/suggest :factory selected select-factory]
-      [c/button {:class :bp3-minimal :on-click create-factory :icon :plus :text "Add factory"}]
+      [c/button {:class :bp3-minimal :on-click create-and-select-factory :icon :plus :text "Add factory"}]
       [c/navbar-divider]
-      [c/button {:on-click delete-factory :intent :danger :text "Delete factory"}]]]))
+      [c/button {:on-click #(delete-and-unselect-factory selected) :intent :danger :text "Delete factory"}]]]))
 
 
 (defn factory-page []
-  (if-let [factory-id @(subscribe [:ui [:factory-page :selected]])]
+  (if-let [factory-id @(subscribe [:open-factory])]
     (let [factory @(subscribe [:factory factory-id])]
       [c/card-lg [:p "open factory: " (:name factory) " (" factory-id ")"]])
     [c/non-ideal-state {:title "No factories"
                         :description "Create a factory to get started."
-                        :action (as-element [c/button {:text "Create Factory" :intent :success}])}]))
+                        :action (as-element [c/button {:text "Create Factory"
+                                                       :intent :success
+                                                       :on-click create-and-select-factory}])}]))
 
 (defn home-page []
   [:div
@@ -192,7 +206,7 @@
    [recipe-page-editor]])
 
 (defn main-content []
-  (let [[x] @(subscribe [:selected-page])]
+  (let [[x] @(subscribe [:ui [:selected-page]])]
     [:main
      (case x
       :home [home-page]
@@ -221,7 +235,7 @@
                          :text "sr.ht"}]]])
 
 (defn secondary-navbar []
-  (let [[x] @(subscribe [:selected-page])]
+  (let [[x] @(subscribe [:ui [:selected-page]])]
     (case x
       :home nil
       :factories [factory-page-bar]
@@ -235,7 +249,7 @@
 (defn app []
   (let []
     [:<> 
-     [:style (apply garden.core/css factor.styles/css-rules)]
+     [:style (apply css styles/css-rules)]
      [:div.app-container
       [primary-navbar]
       [secondary-navbar]
