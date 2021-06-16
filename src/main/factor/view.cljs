@@ -95,7 +95,7 @@
 
 (defn item-grid [items]
   (let [update-item #(dispatch [:update-item (get-in % [:data :id]) {:name (get-in % [:data :name])}])
-        update-selection #(dispatch [:update-selection [:item %]])]
+        update-selection #(dispatch [:ui [:item-page :selected] %])]
     [c/grid {:row-data items
            :on-grid-ready #(update-selection [])
            :on-row-value-changed update-item
@@ -105,10 +105,10 @@
                          {:field :name :editable true}]}]))
 
 (defn item-page-bar []
-  (let [create-item #(dispatch [:update-item (new-uuid) (w/item)])
-        selected-items @(subscribe [:current-selection :item])
-        delete-items #(dispatch [:delete-items selected-items])
-        num-selected (count selected-items)]
+  (let [create-item    #(dispatch [:update-item (new-uuid) (w/item)])
+        selected-items @(subscribe [:ui [:item-page :selected]])
+        delete-items   #(dispatch [:delete-items selected-items])
+        num-selected   (count selected-items)]
     [c/navbar
      [c/navbar-group-left
       [c/navbar-heading "Item List"]
@@ -128,7 +128,7 @@
 
 (defn machine-grid [machines]
   (let [update-machine #(dispatch [:update-machine (get-in % [:data :id]) (dissoc (:data %) :id)])
-        update-selection #(dispatch [:ui [:recipe-page :selected] %])]
+        update-selection #(dispatch [:ui [:machine-page :selected] %])]
     [c/grid {:row-data machines
              :on-grid-ready #(update-selection [])
              :on-row-value-changed update-machine
@@ -141,7 +141,7 @@
 
 (defn machine-page-bar []
   (let [create-machine #(dispatch [:update-machine (new-uuid) (w/machine)])
-        selected-machines @(subscribe [:current-selection :machine])
+        selected-machines @(subscribe [:ui [:machine-page :selected]])
         delete-machines #(dispatch [:delete-machines selected-machines])
         num-selected (count selected-machines)]
     [c/navbar
@@ -174,10 +174,10 @@
                            {:field :name}]}]))
 
 (defn recipe-page-bar []
-  (let [{:keys [selected]} @(subscribe [:ui [:recipe-page]])
-        num-selected        (count selected)
+  (let [selected-recipes   @(subscribe [:ui [:recipe-page :selected]])
+        num-selected        (count selected-recipes)
         create-recipe      #(dispatch [:update-recipe (new-uuid) (w/recipe)])
-        delete-recipes     #(dispatch [:delete-recipes selected])]
+        delete-recipes     #(dispatch [:delete-recipes selected-recipes])]
     [c/navbar
      [c/navbar-group-left
       [c/navbar-heading "Recipe List"]
@@ -192,12 +192,11 @@
                         :disabled (= num-selected 0)}]])]]))
 
 (defn recipe-page-editor []
-  (let [{:keys [selected]} @(subscribe [:ui [:recipe-page]])]
-    (println "selected" selected)
+  (let [selected-recipes   @(subscribe [:ui [:recipe-page :selected]])]
     [:div.data-table-editor
-     (case (count selected)
+     (case (count selected-recipes)
        0 [:div "No recipes selected."]
-       1 [recipe-editor (first selected)]
+       1 [recipe-editor (first selected-recipes)]
        [:div "Select a single recipe to edit."])]))
 
 (defn recipe-page []
