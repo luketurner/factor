@@ -13,48 +13,36 @@
                                                :recipes {}
                                                :machines {}}}))
 
-  ;; (reg-event-db :select-object (fn [db [_ object-type object-id]]
-  ;;                                (assoc-in db [:ui :selected-object]
-  ;;                                          {:object-id object-id :object-type object-type})))
-
-  ;; (reg-event-db :toggle-sub-nav (fn [db [_ object-type]]
-  ;;                                (update-in db [:ui :sub-nav] #(if (= % object-type) nil object-type))))
-
-  (reg-event-db :create-factory #(w/update-world % w/with-factory nil (w/factory)))
-  (reg-event-db :create-item #(w/update-world % w/with-item nil (w/item)))
-  (reg-event-db :create-recipe #(w/update-world % w/with-recipe nil (w/recipe)))
-  (reg-event-db :create-machine #(w/update-world % w/with-machine nil (w/machine)))
-
-  (reg-event-db :update-factory
-                (fn [db [_ id x]] (w/update-world db w/with-factory id x)))
-  (reg-event-db :update-item
-                (fn [db [_ id x]] (w/update-world db w/with-item id x)))
+  (reg-event-db :update-factory (fn [db [_ id x]] (assoc-in db [:world :factories id] x)))
+  (reg-event-db :update-item (fn [db [_ id x]] (assoc-in db [:world :items id] x)))
   (reg-event-db :update-recipe
-                [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :item id]))]
-                (fn [db [_ id x]] (w/update-world db w/with-recipe id x)))
+                ;; [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :item id]))]
+                (fn [db [_ id x]] (assoc-in db [:world :recipes id] x)))
   (reg-event-db :update-machine
-                [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))
-                 (dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))]
-                (fn [db [_ id x]] (w/update-world db w/with-machine id x)))
-
-  (reg-event-db :delete-factory 
-                [(dispatch-after (fn [[_ id]] [:cleanup-selection :factory id]))]
-                (fn [db [_ id]] (w/update-world db w/without-factory id)))
-  (reg-event-db :delete-recipe
-                [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :recipe id]))
-                 (dispatch-after (fn [[_ id]] [:cleanup-selection :recipe id]))]
-                (fn [db [_ id]] (w/update-world db w/without-recipe id)))
-  (reg-event-db :delete-item
-                [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :item id]))
-                 (dispatch-after (fn [[_ id]] [:update-factories-with-fk :item id]))
-                 (dispatch-after (fn [[_ id]] [:cleanup-selection :item id]))]
-                (fn [db [_ id]] (w/update-world db w/without-item id)))
-  (reg-event-db :delete-machine
-                [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))
-                 (dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))
-                 (dispatch-after (fn [[_ id]] [:cleanup-selection :machine id]))]
-                (fn [db [_ id]] (w/update-world db w/without-machine id)))
+                ;; [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))
+                ;;  (dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))]
+                (fn [db [_ id x]] (assoc-in db [:world :machines id] x)))
   
+  (reg-event-db :open-factory (fn [db [_ id]] (assoc-in db [:config :open-factory] id)))
+
+  (reg-event-db :delete-factory
+                ;; [(dispatch-after (fn [[_ id]] [:cleanup-selection :factory id]))]
+                (fn [db [_ id]] (update-in db [:world :factories] #(dissoc % id))))
+  (reg-event-db :delete-recipe
+                ;; [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :recipe id]))
+                ;;  (dispatch-after (fn [[_ id]] [:cleanup-selection :recipe id]))]
+                (fn [db [_ id]] (update-in db [:world :recipes] #(dissoc % id))))
+  (reg-event-db :delete-item
+                ;; [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :item id]))
+                ;;  (dispatch-after (fn [[_ id]] [:update-factories-with-fk :item id]))
+                ;;  (dispatch-after (fn [[_ id]] [:cleanup-selection :item id]))]
+                (fn [db [_ id]] (update-in db [:world :items] #(dissoc % id))))
+  (reg-event-db :delete-machine
+                ;; [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))
+                ;;  (dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))
+                ;;  (dispatch-after (fn [[_ id]] [:cleanup-selection :machine id]))]
+                (fn [db [_ id]] (update-in db [:world :machines] #(dissoc % id))))
+
   (reg-event-fx :delete-items (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-item %]]) ids)}))
   (reg-event-fx :delete-machines (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-machine %]]) ids)}))
   (reg-event-fx :delete-recipes (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-recipe %]]) ids)}))
@@ -95,16 +83,5 @@
    (fn [_ [_ world]]
      {:localstorage {:world world}}))
 
-  (reg-event-db :select-page (fn [db [_ page]] (assoc-in db [:ui :selected-page] page)))
-  (reg-event-db :update-selection (fn [db [_ s]] (assoc-in db [:ui :selection] s)))
-  (reg-event-db :cleanup-selection (fn [db [_ type id]]
-                                     (update-in db [:ui :selection]
-                                                (fn [[t s]]
-                                                  [t (if (= type t)
-                                                       (remove #(= % id) s)
-                                                       s)]))))
-  
-  (reg-event-db :ui (fn [db [_ path val]] (assoc-in db (into [:ui] path) val)))
-
-  )
+  (reg-event-db :ui (fn [db [_ path val]] (assoc-in db (into [:ui] path) val))))
 

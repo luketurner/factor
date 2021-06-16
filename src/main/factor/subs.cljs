@@ -36,13 +36,9 @@
   (reg-sub :recipe-names (fn [db] (->> (get-in db [:world :recipes])
                                      (map (fn [[k v]] [(:name v) k]))
                                      (into {}))))
-  (reg-sub :recipe-is-expanded (fn [db [_ id]] (get-in db [:ui :recipes :expanded id] false)))
   (reg-sub :recipe-seq (fn [db] (into [] (map (fn [[id v]] (assoc v :id id)) (get-in db [:world :recipes])))))
 
   (reg-sub :ui (fn [db [_ path]] (get-in db (into [:ui] path))))
 
-  (reg-sub :selected-page (fn [db _] (get-in db [:ui :selected-page])))
-  (reg-sub :current-selection (fn [db [_ type]]
-                                (let [[t s] (get-in db [:ui :selection])]
-                                  (if (= type t) s [])))))
+  (reg-sub :open-factory (fn [db _] (get-in db [:config :open-factory]))))
 
