@@ -105,7 +105,7 @@
                          {:field :name :editable true}]}]))
 
 (defn item-page-bar []
-  (let [create-item #(dispatch [:create-item])
+  (let [create-item #(dispatch [:update-item (new-uuid) (w/item)])
         selected-items @(subscribe [:current-selection :item])
         delete-items #(dispatch [:delete-items selected-items])
         num-selected (count selected-items)]
@@ -140,7 +140,7 @@
                            {:field :speed :editable true}]}]))
 
 (defn machine-page-bar []
-  (let [create-machine #(dispatch [:create-machine])
+  (let [create-machine #(dispatch [:update-machine (new-uuid) (w/machine)])
         selected-machines @(subscribe [:current-selection :machine])
         delete-machines #(dispatch [:delete-machines selected-machines])
         num-selected (count selected-machines)]
@@ -176,7 +176,7 @@
 (defn recipe-page-bar []
   (let [{:keys [selected]} @(subscribe [:ui [:recipe-page]])
         num-selected        (count selected)
-        create-recipe      #(dispatch [:create-recipe])
+        create-recipe      #(dispatch [:update-recipe (new-uuid) (w/recipe)])
         delete-recipes     #(dispatch [:delete-recipes selected])]
     [c/navbar
      [c/navbar-group-left
