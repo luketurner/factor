@@ -1,5 +1,6 @@
 (ns factor.view
   (:require [re-frame.core :refer [subscribe dispatch]]
+            [reagent.core :refer [as-element]]
             [factor.styles :as styles]
             [factor.components :as c]))
 
@@ -48,7 +49,9 @@
   (if-let [factory-id @(subscribe [:ui [:factory-page :selected]])]
     (let [factory @(subscribe [:factory factory-id])]
       [c/card-lg [:p "open factory: " (:name factory) " (" factory-id ")"]])
-    [:p "No factory selected"]))
+    [c/non-ideal-state {:title "No factories"
+                        :description "Create a factory to get started."
+                        :action (as-element [c/button {:text "Create Factory" :intent :success}])}]))
 
 (defn home-page []
   [:div

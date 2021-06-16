@@ -9,6 +9,8 @@
             [clojure.string :as string]
             [medley.core :refer [map-keys]]))
 
+(defn non-ideal-state [p & children]
+  (into [(c b/NonIdealState) p] children))
 
 (defn button [props & children] (into [(c b/Button) props] children))
 (defn anchor-button [props & children] (into [(c b/AnchorButton) props] children))
