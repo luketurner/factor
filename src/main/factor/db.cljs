@@ -37,6 +37,7 @@
                [:input [:map-of :string number?]]
                [:output [:map-of :string number?]]
                [:machines [:set :string]]]]]]]
+   [:config [:map]]
    [:ui [:map]]])
 
 (defn ->validator [schema]

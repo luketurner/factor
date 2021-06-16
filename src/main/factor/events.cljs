@@ -7,6 +7,7 @@
 (defn reg-all []
 
   (reg-event-db :initialize-db (fn [] {:ui {:selected-page [:home]}
+                                       :config {}
                                        :world {:items {}
                                                :factories {}
                                                :recipes {}
