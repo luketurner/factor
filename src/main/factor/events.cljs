@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [inject-cofx enrich reg-event-db reg-event-fx]]
             [factor.world :as w]
             [medley.core :refer [filter-vals]]
-            [factor.util :refer [dispatch-after]]))
+            [factor.util :refer [dispatch-after dissoc-in]]))
 
 (defn reg-all []
 
@@ -26,22 +26,18 @@
   (reg-event-db :open-factory (fn [db [_ id]] (assoc-in db [:config :open-factory] id)))
 
   (reg-event-db :delete-factory
-                ;; [(dispatch-after (fn [[_ id]] [:cleanup-selection :factory id]))]
-                (fn [db [_ id]] (update-in db [:world :factories] #(dissoc % id))))
+                (fn [db [_ id]] (dissoc-in db [:world :factories] id)))
   (reg-event-db :delete-recipe
                 ;; [(dispatch-after (fn [[_ id]] [:update-factories-with-fk :recipe id]))
-                ;;  (dispatch-after (fn [[_ id]] [:cleanup-selection :recipe id]))]
-                (fn [db [_ id]] (update-in db [:world :recipes] #(dissoc % id))))
+                (fn [db [_ id]] (dissoc-in db [:world :recipes] id)))
   (reg-event-db :delete-item
-                ;; [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :item id]))
+                [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :item id]))]
                 ;;  (dispatch-after (fn [[_ id]] [:update-factories-with-fk :item id]))
-                ;;  (dispatch-after (fn [[_ id]] [:cleanup-selection :item id]))]
-                (fn [db [_ id]] (update-in db [:world :items] #(dissoc % id))))
+                (fn [db [_ id]] (dissoc-in db [:world :items] id)))
   (reg-event-db :delete-machine
-                ;; [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))
+                [(dispatch-after (fn [[_ id]] [:update-recipes-with-fk :machine id]))]
                 ;;  (dispatch-after (fn [[_ id]] [:update-factories-with-fk :machine id]))
-                ;;  (dispatch-after (fn [[_ id]] [:cleanup-selection :machine id]))]
-                (fn [db [_ id]] (update-in db [:world :machines] #(dissoc % id))))
+                (fn [db [_ id]] (dissoc-in db [:world :machines] id)))
 
   (reg-event-fx :delete-items (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-item %]]) ids)}))
   (reg-event-fx :delete-machines (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-machine %]]) ids)}))

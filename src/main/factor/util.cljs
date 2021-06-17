@@ -18,3 +18,9 @@
   (for [x xs] (if (filter-fn x) (update-fn x) x)))
 
 (defn c [x] (adapt-react-class x))
+
+(defn dissoc-in [x path k]
+  (update-in x path #(dissoc % k)))
+
+(defn without [x vs]
+  (remove #(= % vs) x))
