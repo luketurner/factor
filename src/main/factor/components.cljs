@@ -72,8 +72,8 @@
 
 (defn quantity-set-input [type quantity-set on-change]
   (reagent/with-let [new-quantity (reagent/atom [])]
-    (let [update-quantity (fn [[id num] oid] (-> quantity-set (dissoc oid) (assoc id num) (on-change)))
-          delete-quantity (fn [id]           (-> quantity-set (dissoc id) (on-change)))
+    (let [update-quantity (fn [[id num] oid] (-> quantity-set (clojure.set/rename {oid id}) (on-change)))
+          delete-quantity (fn [id]           (-> quantity-set (clojure.set/difference #{id}) (on-change)))
           update-new-quantity #(reset! new-quantity %)
           add-new-quantity (fn [x]
                              (update-quantity x nil)
@@ -82,6 +82,23 @@
        (into [:<>] (for [[id num] quantity-set]
                      [suggest-numeric-deletable type [id num] #(update-quantity % id) #(delete-quantity id)]))
        [suggest-numeric-addable type @new-quantity update-new-quantity add-new-quantity]))))
+
+(defn set-input [type value on-change]
+  (reagent/with-let [new-val (reagent/atom nil)]
+    (let [update-value (fn [v ov] (-> value (dissoc ov) (conj v) (on-change)))
+          delete-value (fn [v]           (-> value (dissoc v) (on-change)))
+          update-new-value #(reset! new-val %)
+          add-new-value (fn [x]
+                             (update-value x nil)
+                             (update-new-value nil))]
+      (conj
+       (into [:<>] (for [v value]
+                     [control-group
+                      [suggest type v #(update-value % v)]
+                      [button {:icon :delete :on-click #(delete-value v)}]]))
+       [control-group
+        [suggest type @new-val update-new-value]
+        [button {:icon :plus :on-click #(add-new-value @new-val)}]]))))
 
 (defn input [{:keys [on-change] :as props}]
   (let [override-props {:on-change #(-> % (.-target) (.-value) (on-change))}
