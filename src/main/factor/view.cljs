@@ -242,7 +242,7 @@
 (defn secondary-navbar []
   (let [[x] @(subscribe [:ui [:selected-page]])]
     (case x
-      :home nil
+      :home [c/navbar]
       :factories [factory-page-bar]
       :items [item-page-bar]
       :machines [machine-page-bar]
