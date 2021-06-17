@@ -7,23 +7,6 @@
             [factor.util :refer [new-uuid]]
             [factor.components :as c]))
 
-(defn name-editor [thing on-change]
-  [c/form-group {:label "Name"}
-   [c/input {:value (:name thing)
-             :on-change #(->> % (assoc thing :name) (on-change))}]])
-
-(defn input-editor [thing on-change]
-  [c/form-group {:label "Inputs"}
-   [c/quantity-set-input :item (:input thing) #(-> thing (assoc :input %) (on-change))]])
-
-(defn recipe-editor [id]
-  (let [recipe @(subscribe [:recipe id])
-        update-recipe #(dispatch [:update-recipe id %])]
-    [:form
-     [c/card-lg
-      [name-editor recipe update-recipe]]
-     [c/card-lg [input-editor recipe update-recipe]]]))
-
 (defn nav-link [page icon text]
   (let [selected-page @(subscribe [:ui [:selected-page]])]
     [c/button {:class :bp3-minimal
@@ -196,6 +179,34 @@
                         :on-click delete-recipes
                         :icon :minus :text "Delete"
                         :disabled (= num-selected 0)}]])]]))
+
+
+(defn name-editor [thing on-change]
+  [c/form-group {:label "Name"}
+   [c/input {:value (:name thing)
+             :on-change #(->> % (assoc thing :name) (on-change))}]])
+
+(defn input-editor [thing on-change]
+  [c/form-group {:label "Inputs"}
+   [c/quantity-set-input :item (:input thing) #(-> thing (assoc :input %) (on-change))]])
+
+(defn output-editor [thing on-change]
+  [c/form-group {:label "Outputs"}
+   [c/quantity-set-input :item (:output thing) #(-> thing (assoc :output %) (on-change))]])
+
+(defn machine-list-editor [thing on-change]
+  [c/form-group {:label "Machines"}
+   [c/set-input :machine (:machines thing) #(-> thing (assoc :machines %) (on-change))]])
+
+(defn recipe-editor [id]
+  (let [recipe @(subscribe [:recipe id])
+        update-recipe #(dispatch [:update-recipe id %])]
+    [:div.card-stack
+     [c/card-lg
+      [name-editor recipe update-recipe]]
+     [c/card-lg [input-editor recipe update-recipe]]
+     [c/card-lg [output-editor recipe update-recipe]]
+     [c/card-lg [machine-list-editor recipe update-recipe]]]))
 
 (defn recipe-page-editor []
   (let [selected-recipes   @(subscribe [:ui [:recipe-page :selected]])]

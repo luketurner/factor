@@ -12,6 +12,7 @@
    [:.vertical-split {:height "100%"}]
    [(s/> :.vertical-split :*) {:height "50% !important" :overflow :auto}]
    [:.full-screen {:width "100%" :height "100%"}]
+   [:.card-stack {:display :flex :flex-flow "column wrap" :align-content :start :height "100%" :width "100%"}]
    [:.w-2 {:width "2rem"}]
    [:.w-4 {:width "4rem"}]
    [:.w-6 {:width "6rem"}]
