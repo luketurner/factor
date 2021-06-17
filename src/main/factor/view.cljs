@@ -107,7 +107,9 @@
 (defn item-page-bar []
   (let [create-item    #(dispatch [:update-item (new-uuid) (w/item)])
         selected-items @(subscribe [:ui [:item-page :selected]])
-        delete-items   #(dispatch [:delete-items selected-items])
+        delete-items   #(do 
+                          (dispatch [:delete-items selected-items])
+                          (dispatch [:ui [:item-page :selected] []]))
         num-selected   (count selected-items)]
     [c/navbar
      [c/navbar-group-left
@@ -142,7 +144,9 @@
 (defn machine-page-bar []
   (let [create-machine #(dispatch [:update-machine (new-uuid) (w/machine)])
         selected-machines @(subscribe [:ui [:machine-page :selected]])
-        delete-machines #(dispatch [:delete-machines selected-machines])
+        delete-machines   #(do
+                             (dispatch [:delete-machines selected-machines])
+                             (dispatch [:ui [:machine-page :selected] []]))
         num-selected (count selected-machines)]
     [c/navbar
      [c/navbar-group-left
@@ -177,7 +181,9 @@
   (let [selected-recipes   @(subscribe [:ui [:recipe-page :selected]])
         num-selected        (count selected-recipes)
         create-recipe      #(dispatch [:update-recipe (new-uuid) (w/recipe)])
-        delete-recipes     #(dispatch [:delete-recipes selected-recipes])]
+        delete-recipes   #(do
+                            (dispatch [:delete-recipes selected-recipes])
+                            (dispatch [:ui [:recipe-page :selected] []]))]
     [c/navbar
      [c/navbar-group-left
       [c/navbar-heading "Recipe List"]
