@@ -17,9 +17,9 @@
 
 
 (defn create-and-select-factory []
-  (let [id (new-uuid)]
-    (dispatch [:update-factory id (w/factory)])
-    (dispatch [:open-factory id])))
+  (let [factory (w/new-factory)]
+    (dispatch [:update-factory factory])
+    (dispatch [:open-factory (:id factory)])))
 
 (defn delete-and-unselect-factory [id]
   (let [factory-ids     @(subscribe [:factory-ids])
@@ -52,6 +52,7 @@
 
 (defn home-page []
   [:div
+   [c/button {:on-click #(dispatch [:world-reset w/empty-world]) :text "RESET WORLD"}]
    [:h2 "overview"]
    [:p "Welcome! Factor is a tool that helps with planning factories in video games (e.g. Factorio.)"]
    [:p "Create a new factory using the " [:strong "factories"] " option in the sidebar, and specify what items the factory should output."]
@@ -77,7 +78,7 @@
 (defn selected-text [num] (str "(" num " items selected)"))
 
 (defn item-grid [items]
-  (let [update-item #(dispatch [:update-item (get-in % [:data :id]) {:name (get-in % [:data :name])}])
+  (let [update-item #(dispatch [:update-item (:data %)])
         update-selection #(dispatch [:ui [:item-page :selected] %])]
     [c/grid {:row-data items
            :on-grid-ready #(update-selection [])
@@ -88,7 +89,7 @@
                          {:field :name :editable true}]}]))
 
 (defn item-page-bar []
-  (let [create-item    #(dispatch [:update-item (new-uuid) (w/item)])
+  (let [create-item    #(dispatch [:update-item (w/new-item)])
         selected-items @(subscribe [:ui [:item-page :selected]])
         delete-items   #(do 
                           (dispatch [:delete-items selected-items])
@@ -112,11 +113,11 @@
      [item-grid all-items]))
 
 (defn machine-grid [machines]
-  (let [update-machine #(dispatch [:update-machine (get-in % [:data :id]) (dissoc (:data %) :id)])
+  (let [update-machine #(dispatch [:update-machine (:data %)])
         update-selection #(dispatch [:ui [:machine-page :selected] %])]
     [c/grid {:row-data machines
              :on-grid-ready #(update-selection [])
-             :on-row-value-changed update-machine
+             :on-row-value-changed #(update-machine %)
              :on-selection-changed #(-> % (get-selected-ids) (update-selection))
              :column-defs [{:checkboxSelection true}
                            {:field :id}
@@ -125,7 +126,7 @@
                            {:field :speed :editable true}]}]))
 
 (defn machine-page-bar []
-  (let [create-machine #(dispatch [:update-machine (new-uuid) (w/machine)])
+  (let [create-machine #(dispatch [:update-machine (w/new-machine)])
         selected-machines @(subscribe [:ui [:machine-page :selected]])
         delete-machines   #(do
                              (dispatch [:delete-machines selected-machines])
@@ -150,7 +151,7 @@
 
 (defn recipe-grid []
   (let [all-recipes @(subscribe [:recipe-seq])
-        update-recipe #(dispatch [:update-recipe (get-in % [:data :id]) (dissoc (:data %) :id)])
+        update-recipe #(dispatch [:update-recipe (:data %)])
         update-selection #(dispatch [:ui [:recipe-page :selected] %])]
     [c/grid {:row-data all-recipes
              :on-grid-ready #(update-selection [])
@@ -163,7 +164,7 @@
 (defn recipe-page-bar []
   (let [selected-recipes   @(subscribe [:ui [:recipe-page :selected]])
         num-selected        (count selected-recipes)
-        create-recipe      #(dispatch [:update-recipe (new-uuid) (w/recipe)])
+        create-recipe      #(dispatch [:update-recipe (w/new-recipe)])
         delete-recipes   #(do
                             (dispatch [:delete-recipes selected-recipes])
                             (dispatch [:ui [:recipe-page :selected] []]))]
@@ -196,14 +197,13 @@
 
 (defn machine-list-editor [thing on-change]
   [c/form-group {:label "Machines"}
-   [c/set-input :machine (:machines thing) #(-> thing (assoc :machines %) (on-change))]])
+   [c/list-input :machine (:machines thing) #(-> thing (assoc :machines %) (on-change))]])
 
 (defn recipe-editor [id]
   (let [recipe @(subscribe [:recipe id])
-        update-recipe #(dispatch [:update-recipe id %])]
+        update-recipe #(dispatch [:update-recipe %])]
     [:div.card-stack
-     [c/card-lg
-      [name-editor recipe update-recipe]]
+     [c/card-lg [name-editor recipe update-recipe]]
      [c/card-lg [input-editor recipe update-recipe]]
      [c/card-lg [output-editor recipe update-recipe]]
      [c/card-lg [machine-list-editor recipe update-recipe]]]))

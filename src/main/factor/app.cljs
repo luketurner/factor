@@ -13,7 +13,7 @@
   (events/reg-all)
   (fx/reg-all)
   (reg-global-interceptor (db/->validator db/schema))
-  (reg-global-interceptor (world/->saver)))
+  (reg-global-interceptor (db/->saver)))
 
 (defn render []
   (dom/render [view/app] (js/document.getElementById "app")))

@@ -2,11 +2,12 @@
   (:require [re-frame.core :refer [->interceptor dispatch-sync]]
             [malli.core :refer [validate explain]]
             [medley.core :refer [dissoc-in]]
-            [factor.util :refer [add-fx]]))
+            [factor.util :refer [add-fx]]
+            [factor.world :as w]))
 
 (defn init []
   (dispatch-sync [:initialize-db])
-  (dispatch-sync [:load-world]))
+  (dispatch-sync [:world-load w/empty-world]))
 
 (def schema
   [:map {:closed true}
@@ -14,6 +15,7 @@
             [:factories
              [:map-of :string
               [:map {:closed true}
+               [:id :string]
                [:name :string]
                [:desired-output [:map-of :string number?]]
                [:output [:map-of :string number?]]
@@ -23,16 +25,19 @@
             [:items
              [:map-of :string
               [:map {:closed true}
+               [:id :string]
                [:name :string]]]]
             [:machines
              [:map-of :string
               [:map {:closed true}
+               [:id :string]
                [:name :string]
                [:power number?]
                [:speed number?]]]]
             [:recipes
              [:map-of :string
               [:map {:closed true}
+               [:id :string]
                [:name :string]
                [:input [:map-of :string number?]]
                [:output [:map-of :string number?]]
@@ -49,3 +54,11 @@
                 invalid? (dissoc-in [:effects :db])
                 invalid? (add-fx [:toast (str "validate failed: " (pr-str (explain schema db)))]))))))
 
+(defn ->saver []
+  (->interceptor
+   :id :world-saver
+   :after (fn [{{{old-world :world} :db} :coeffects
+                {{new-world :world} :db} :effects :as context}]
+            (if (and new-world (not= new-world old-world))
+              (add-fx context [:dispatch [:world-save new-world]])
+              context))))

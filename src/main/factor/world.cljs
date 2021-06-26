@@ -1,99 +1,23 @@
 (ns factor.world
   (:require [clojure.edn :as edn]
-            [factor.util :refer [new-uuid add-fx]]
-            [re-frame.core :refer [->interceptor dispatch-sync]]
-            [medley.core :refer [filter-vals map-vals dissoc-in filter-keys]]))
+            [factor.util :refer [new-uuid dissoc-in]]
+            [medley.core :refer [filter-vals map-vals]]))
 
 (def empty-world {:items {} :machines {} :recipes {} :factories {}})
 
-(defn factory []
-  {:name "Unnamed Factory"
-   :desired-output {}
-   :input {}
-   :output {}
-   :machines {}
-   :recipes {}})
+(defn update-item [world item]
+  (-> world
+      (assoc-in [:items (:id item)] item)))
 
-(defn machine [] {:name ""
-                  :power 0
-                  :speed 1})
+(defn update-machine [world machine]
+  (-> world
+      (assoc-in [:machines (:id machine)] machine)))
 
-(defn recipe [] {:name ""
-                 :input {}
-                 :output {}
-                 :machines #{}})
+(defn update-recipe [world recipe]
+  (-> world
+      (assoc-in [:recipes (:id recipe)] recipe)))
 
-(defn item [] {:name ""})
 
-(defn world->str [world] (pr-str world))
-(defn str->world [s] (edn/read-string s))
-
-(defn update-world [db & rest]
-  (apply (partial update db :world) rest))
-
-(defn factories [world] (get world :factories))
-(defn machines [world] (get world :machines))
-(defn recipes [world] (get world :recipes))
-(defn items [world] (get world :items))
-
-(defn factory-ids [world] (-> world (factories) (keys)))
-(defn machine-ids [world] (-> world (machines) (keys)))
-(defn recipe-ids [world] (-> world (recipes) (keys)))
-(defn item-ids [world] (-> world (items) (keys)))
-
-(defn with-factory [world id factory] (update world :factories assoc (or id (new-uuid)) factory))
-(defn with-machine [world id machine] (update world :machines assoc (or id (new-uuid)) machine))
-(defn with-item [world id item] (update world :items assoc (or id (new-uuid)) item))
-(defn with-recipe [world id recipe] (update world :recipes assoc (or id (new-uuid)) recipe))
-
-(defn without-factory [world id] (update world :factories dissoc id))
-(defn without-machine [world id] (update world :machines dissoc id))
-(defn without-item [world id] (update world :items dissoc id))
-(defn without-recipe [world id] (update world :recipes dissoc id))
-
-(defn factory-has-reference?
-  [factory id-type id]
-  (let [relevant-dicts (case id-type
-                         :item [:input :output :desired-output]
-                         :recipe [:recipes]
-                         :machine [:machines])]
-    (some #(contains? (% factory) id) relevant-dicts)))
-
-(defn update-factory-foreign-keys
-  "Updates all foreign keys of the specified type in the factory object."
-  [factory fk-type {:keys [items recipes machines]}]
-  (cond-> factory
-    (#{:all :item} fk-type)
-    (-> (update :input #(filter-keys items %))
-        (update :output #(filter-keys items %))
-        (update :desired-output #(filter-keys items %)))
-    (#{:all :recipe} fk-type) (update :recipes #(filter-keys recipes %))
-    (#{:all :machine} fk-type) (update :machines #(filter-keys machines %))))
-
-(defn recipe-has-reference?
-  [recipe id-type id]
-  (let [relevant-dicts (case id-type
-                         :item [:input :output]
-                         :machine [:machines])]
-    (some #(contains? (% recipe) id) relevant-dicts)))
-
-(defn update-recipe-foreign-keys
-  "Updates all foreign keys of the specified type in the recipe object."
-  [recipe fk-type {:keys [items machines]}]
-  (cond-> recipe
-    (#{:all :item} fk-type)
-    (-> (update :input #(filter-keys items %))
-        (update :output #(filter-keys items %)))
-    (#{:all :machine} fk-type) (update :recipes #(filter-keys machines %))))
-
-(defn ->saver []
-  (->interceptor
-   :id :world-saver
-   :after (fn [{{{old-world :world} :db} :coeffects
-                {{new-world :world} :db} :effects :as context}]
-            (if (and new-world (not= new-world old-world))
-              (add-fx context [:dispatch [:save-world new-world]])
-              context))))
 
 (defn recipe-for-item [recipes item-id]
   (some (fn [[k {:keys [output]}]]
@@ -122,7 +46,7 @@
 
 (defn satisfying-recipe [world id-type id]
   (->> world
-       (recipes)
+       (:recipes)
        (some #(when (recipe-satisfies? (second %) id-type id) %))))
 
 (defn satisfying-recipe-for-set [world id-type ids]
@@ -154,3 +78,94 @@
        (satisfy-desired-machines world)
        (satisfy-desired-input world)
        (satisfy-desired-output world)))
+
+
+(defn update-factory [world factory]
+  (-> world
+      (assoc-in [:factories (:id factory)] (satisfy-factory world factory))))
+
+
+(defn recipe-without-item [recipe item-id]
+  (-> recipe
+      (dissoc-in [:input] item-id)
+      (dissoc-in [:output] item-id)))
+
+(defn recipe-without-machine [recipe machine-id]
+  (-> recipe
+      (dissoc-in [:machines] machine-id)))
+
+(defn factory-without-machine [factory machine-id world]
+  (let [updated-factory (-> factory
+                            (dissoc-in [:machines] machine-id))]
+    (if (= factory updated-factory) factory (satisfy-factory world factory))))
+
+(defn factory-without-recipe [factory recipe-id world]
+  (let [updated-factory (-> factory
+                            (dissoc-in [:recipes] recipe-id))]
+    (if (= factory updated-factory) factory (satisfy-factory world factory))))
+
+(defn factory-without-item [factory item-id world]
+  (let [updated-factory (-> factory
+                            (dissoc-in [:desired-output] item-id))]
+    (if (= factory updated-factory) factory (satisfy-factory world factory))))
+
+
+
+
+(defn remove-factory-by-id [world id]
+  (-> world
+      (dissoc-in [:factories] id)))
+
+(defn remove-item-by-id [world id]
+  (-> world
+      (update :recipes   (partial map-vals #(recipe-without-item  % id)))
+      (update :factories (partial map-vals #(factory-without-item % id world)))
+      (dissoc-in [:items] id)))
+
+(defn remove-machine-by-id [world id]
+  (-> world
+      (update :recipes   (partial map-vals #(recipe-without-machine  % id)))
+      (update :factories (partial map-vals #(factory-without-machine % id world)))
+      (dissoc-in [:machines] id)))
+
+(defn remove-recipe-by-id [world id]
+  (-> world
+      (update :factories (partial map-vals #(factory-without-recipe % id world)))
+      (dissoc-in [:recipes] id)))
+
+
+
+(defn new-factory
+  ([] (new-factory {}))
+  ([opts] (merge {:id (new-uuid)
+                  :name "Unnamed factory"
+                  :desired-output {}
+                  :input {}
+                  :output {}
+                  :machines {}
+                  :recipes {}} opts)))
+
+(defn new-item
+  ([] (new-item {}))
+  ([opts] (merge {:id (new-uuid)
+                  :name "Unnamed item"} opts)))
+
+
+(defn new-machine 
+  ([] (new-machine {}))
+  ([opts] (merge {:id (new-uuid)
+                  :name "Unnamed machine"
+                  :power 0
+                  :speed 1} opts)))
+
+(defn new-recipe
+  ([] (new-recipe {}))
+  ([opts] (merge {:id (new-uuid)
+                  :name "Unnamed recipe"
+                  :input {}
+                  :output {}
+                  :machines #{}} opts)))
+
+
+(defn world->str [world] (pr-str world))
+(defn str->world [s] (edn/read-string s))

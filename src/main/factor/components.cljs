@@ -7,6 +7,7 @@
             ["@blueprintjs/table" :as bt]
             ["ag-grid-react" :refer [AgGridReact]]
             [clojure.string :as string]
+            [factor.util :refer [without]]
             [medley.core :refer [map-keys]]))
 
 (defn non-ideal-state [p & children]
@@ -72,8 +73,8 @@
 
 (defn quantity-set-input [type quantity-set on-change]
   (reagent/with-let [new-quantity (reagent/atom [])]
-    (let [update-quantity (fn [[id num] oid] (-> quantity-set (clojure.set/rename {oid id}) (on-change)))
-          delete-quantity (fn [id]           (-> quantity-set (clojure.set/difference #{id}) (on-change)))
+    (let [update-quantity (fn [[id num] oid] (-> quantity-set (dissoc oid) (assoc id num) (on-change)))
+          delete-quantity (fn [id]           (-> quantity-set (dissoc id) (on-change)))
           update-new-quantity #(reset! new-quantity %)
           add-new-quantity (fn [x]
                              (update-quantity x nil)
@@ -83,10 +84,10 @@
                      [suggest-numeric-deletable type [id num] #(update-quantity % id) #(delete-quantity id)]))
        [suggest-numeric-addable type @new-quantity update-new-quantity add-new-quantity]))))
 
-(defn set-input [type value on-change]
+(defn list-input [type value on-change]
   (reagent/with-let [new-val (reagent/atom nil)]
-    (let [update-value (fn [v ov] (-> value (dissoc ov) (conj v) (on-change)))
-          delete-value (fn [v]           (-> value (dissoc v) (on-change)))
+    (let [update-value (fn [v ov] (-> value (without ov) (conj v) (on-change)))
+          delete-value (fn [v]    (-> value (without v) (on-change)))
           update-new-value #(reset! new-val %)
           add-new-value (fn [x]
                              (update-value x nil)
@@ -134,7 +135,8 @@
 (defn grid [props & children]
   (let [default-props  {:row-selection :multiple
                         :enter-moves-down true
-                        :enter-moves-down-after-edit true}
+                        :enter-moves-down-after-edit true
+                        :edit-type "fullRow"}
         override-props {:on-row-value-changed (grid-cb (:on-row-value-changed props))
                         :on-grid-ready        (grid-cb (:on-grid-ready        props))
                         :on-selection-changed (grid-cb (:on-selection-changed props))}
