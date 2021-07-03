@@ -22,6 +22,9 @@
 (defn form-group [props & children]
   (into [(c b/FormGroup) props] children))
 
+(defn textarea [props]
+  [(c b/TextArea) props])
+
 (defn menu-item [p & children] (into [(c b/MenuItem) p] children))
 
 (defn suggest [type value on-change]
