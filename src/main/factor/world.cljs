@@ -82,7 +82,7 @@
 
 (defn update-factory [world factory]
   (-> world
-      (assoc-in [:factories (:id factory)] (satisfy-factory world factory))))
+      (assoc-in [:factories (:id factory)] factory)))
 
 
 (defn recipe-without-item [recipe item-id]
