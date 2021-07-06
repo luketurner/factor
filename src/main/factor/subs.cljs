@@ -6,9 +6,9 @@
   (reg-sub :world-data (fn [db _] (get db :world)))
 
   (reg-sub :factory (fn [db [_ id]] (get-in db [:world :factories id])))
-  (reg-sub :factory-satisfied (fn [db [_ id]] (let [world (get db :world)
+  (reg-sub :factory-pgraph (fn [db [_ id]] (let [world (get db :world)
                                                     factory (get-in world [:factories id])]
-                                                (world/satisfy-factory world factory))))
+                                                (world/pgraph-for-factory world factory))))
   (reg-sub :factory-ids (fn [db] (-> db (get-in [:world :factories]) (keys) (->> (into [])))))
   (reg-sub :factory-names (fn [db] (->> (get-in db [:world :factories])
                                      (map (fn [[k v]] [(:name v) k]))
