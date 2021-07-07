@@ -8,7 +8,7 @@
   [[:* {:box-sizing "border-box"}]
    [:.app-container {:width "100vw" :height "100vh" :display :flex :flex-flow "column nowrap"}]
   ;;  [:.data-table :.data-table-editor {:margin "1rem"}]
-   [:main {:height "calc(100% - 150px)" :display :flex :flex-flow "column nowrap"}]
+   [:main {:height "calc(100% - 150px)" :display :flex :flex-flow "column nowrap" :overflow :auto}]
    [:.vertical-split {:height "100%"}]
    [(s/> :.vertical-split :*) {:height "50% !important" :overflow :auto}]
    [:.full-screen {:width "100%" :height "100%"}]
@@ -23,4 +23,5 @@
    [:.w-16 {:width "16rem"}]
    [:.w-18 {:width "18rem"}]
    [:.w-20 {:width "20rem"}]
-   [:.m-1 {:margin "1rem"}]])
+   [:.m-1 {:margin "1rem"}]
+   [:.bp3-non-ideal-state {:height "max-content"}]])

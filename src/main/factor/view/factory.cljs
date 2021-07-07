@@ -59,7 +59,8 @@
                    [c/textarea {:value (pr-str factory) :read-only true :style {:width "100%" :height "150px"}}]]]
        [c/card-lg [c/form-group {:label "Production Graph"}
                    [c/textarea {:value (pr-str (dissoc pg :world)) :read-only true :style {:width "100%" :height "150px"}}]]]])
-    [c/non-ideal-state {:title "No factories"
+    [c/non-ideal-state {:icon :office
+                        :title "No factories!"
                         :description "Create a factory to get started."
                         :action (as-element [c/button {:text "Create Factory"
                                                        :intent :success
