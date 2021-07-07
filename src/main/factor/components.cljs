@@ -1,5 +1,5 @@
 (ns factor.components
-  (:require [re-frame.core :refer [subscribe]]
+  (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as reagent]
             [factor.util :refer [c]]
             ["@blueprintjs/core" :as b]
@@ -157,3 +157,11 @@
 (defn navbar-divider [] [(c b/Navbar.Divider)])
 (defn navbar-group-left [& children] (into [(c b/Navbar.Group) {:align :left}] children))
 (defn navbar-group-right [& children] (into [(c b/Navbar.Group) {:align :right}] children))
+
+(defn nav-link [page icon text]
+  (let [selected-page @(subscribe [:ui [:selected-page]])]
+    [button {:class :bp3-minimal
+             :on-click #(dispatch [:ui [:selected-page] page])
+             :icon icon
+             :text text
+             :disabled (= selected-page page)}]))
