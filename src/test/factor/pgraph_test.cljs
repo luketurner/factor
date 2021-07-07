@@ -1,7 +1,7 @@
-(ns factor.world-test
+(ns factor.pgraph-test
   (:require [factor.world :as world]
             [cljs.test :refer [deftest is]]
-            [factor.world :as w]))
+            [factor.pgraph :as pgraph]))
 
 (def test-world {:factories {"testfactory" (world/new-factory {:id "testfactory"})}
                  :items {"iron-ore" (world/new-item {:id "iron-ore" :name "iron-ore"})
@@ -50,8 +50,8 @@
   (let [w           test-world
         factory     (get-in w [:factories "testfactory"])
         factory     (assoc factory :desired-output {"iron-plate" 123})
-        pg          (world/empty-pgraph-for-factory w factory)
-        [actual-pg _] (world/pgraph-try-satisfy-node pg :root)]
+        pg          (pgraph/empty-pgraph-for-factory w factory)
+        [actual-pg _] (pgraph/try-satisfy-node pg :root)]
     (is (= (:edges actual-pg) {:root {1 {"iron-ingot" 246}}
                                1 {:root {"iron-plate" 123}}})
         "should have an edge from root to the node, and from the node to root")
@@ -68,9 +68,9 @@
   (let [w           test-world
         factory     (get-in w [:factories "testfactory"])
         factory     (assoc factory :desired-output {"iron-plate" 123})
-        pg          (world/empty-pgraph-for-factory w factory)
-        [actual-pg _] (world/pgraph-try-satisfy-node pg :root)
-        [actual-pg _] (world/pgraph-try-satisfy-node actual-pg 1)]
+        pg          (pgraph/empty-pgraph-for-factory w factory)
+        [actual-pg _] (pgraph/try-satisfy-node pg :root)
+        [actual-pg _] (pgraph/try-satisfy-node actual-pg 1)]
     (is (= (:edges actual-pg) {:root {2 {"iron-ore" 246}}
                                2     {1 {"iron-ingot" 246}}
                                1     {:root {"iron-plate" 123}}})
@@ -93,9 +93,9 @@
   (let [w           test-world
         factory     (get-in w [:factories "testfactory"])
         factory     (assoc factory :desired-output {"cable" 1})
-        pg          (world/empty-pgraph-for-factory w factory)
-        [actual-pg _] (world/pgraph-try-satisfy-node pg :root)
-        [actual-pg _] (world/pgraph-try-satisfy-node actual-pg 1)]
+        pg          (pgraph/empty-pgraph-for-factory w factory)
+        [actual-pg _] (pgraph/try-satisfy-node pg :root)
+        [actual-pg _] (pgraph/try-satisfy-node actual-pg 1)]
     (is (= (:edges actual-pg) {:root {2 {"copper-ore" 1}}
                                2 {1 {"copper-wire" 2}
                                   :root {"copper-wire" 2}}
@@ -120,8 +120,8 @@
   (let [w           test-world
         factory     (get-in w [:factories "testfactory"])
         factory     (assoc factory :desired-output {"iron-plate" 123})
-        pg          (world/empty-pgraph-for-factory w factory)
-        actual-pg   (world/pgraph-try-satisfy pg)]
+        pg          (pgraph/empty-pgraph-for-factory w factory)
+        actual-pg   (pgraph/try-satisfy pg)]
     (is (= (:edges actual-pg) {:root {2 {"iron-ore" 246}}
                                2     {1 {"iron-ingot" 246}}
                                1     {:root {"iron-plate" 123}}})
