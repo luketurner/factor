@@ -6,23 +6,24 @@
 
 (defn page []
   [c/non-ideal-state
-   {:icon :home
-    :title "Welcome"
+   {:icon :join-table
+    :title "Factor: A ticket out of Spreadsheet Hell"
     :description (as-element [:<>
-                              [:p "Ever made a spreadsheet to calculate optimal rates and ratios for your builds
-                                   in games like Factorio? "]
-                              [:p [:strong "factor."] " is a Web app designed to replace that workflow."]
+                              [:p "Ever made a " [:strong "spreadsheet"] " to calculate optimal rates and ratios for your builds
+                                   in games like Factorio or Satisfactory? Did it get annoyingly complicated?"]
+                              [:p [:strong "Factor"] " is a Web app designed to replace that workflow!"]
                               [:p
-                               "Because Factor is game-agnostic, first you need to configure the "
-                               [:strong [c/icon {:icon :cube}] " Items"] ", "
-                               [:strong [c/icon {:icon :oil-field}] " Machines"] ", and "
-                               [:strong [c/icon {:icon :data-lineage}] " Recipes"]
-                               " available in your particular game/modpack/etc."]
+                               "Because Factor is game-agnostic, first you need to configure the items, machines, and recipes available in your particular game/modpack/etc.:"]
                               [:p
-                               "Then, create a " [:strong [c/icon {:icon :office}] " Factory"] " and specify its desired output. Factor will calculate a "
-                               "\"production graph\" for the factory, and tell you all the recipes, inputs and outputs, machines, etc. that it requires."]
+                               [c/nav-link [:items] :cube "Items"]
+                               [c/nav-link [:machines] :oil-field "Machines"]
+                               [c/nav-link [:recipes] :data-lineage "Recipes"]]
                               [:p
-                               "Everything's stored in your browser's local storage. Use the "
-                               [:strong [c/icon {:icon :settings}] " Settings"]
-                               " page to import, export, or reset your Factor data, or to change Factor-wide settings."]])
-    :action (as-element [c/button {:intent :success :text "Use Demo Data"}])}])
+                               "Then, just create a factory and specify what items it should produce. Factor will calculate a "
+                               "\"production graph\" for the factory, telling you all the recipes, inputs and outputs, machines, etc. that it requires:"]
+                              [:p [c/nav-link [:factories] :office "Factories"]]
+                              [:p
+                               "Everything's stored in your browser's local storage. Use the Settings page to import, export, or reset your Factor data, or to change Factor-wide settings."]
+                              [:p [c/nav-link [:settings] :settings "Settings"]]])
+    ;; :action (as-element [c/button {:intent :success :text "Use Demo Data"}])
+    }])
