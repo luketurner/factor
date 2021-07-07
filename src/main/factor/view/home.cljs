@@ -1,20 +1,28 @@
 (ns factor.view.home
-  (:require [factor.components :as c]))
+  (:require [factor.components :as c]
+            [reagent.core :refer [as-element]]))
 
 (defn navbar [] [c/navbar])
 
 (defn page []
-  [:div
-   [:h2 "overview"]
-   [:p "Welcome! Factor is a tool that helps with planning factories in video games (e.g. Factorio.)"]
-   [:p "Create a new factory using the " [:strong "factories"] " option in the sidebar, and specify what items the factory should output."]
-   [:p "Assuming you've also entered all your "
-    [:strong "items"] ", "
-    [:strong "recipes"] ", and "
-    [:strong "machines"] ", Factor will calculate what inputs and what number of machines your factory will require."]
-   [:p "If you have a lot of items/machines/recipes/etc. to input, these keyboard shortcuts might come in handy:"]
-   [:table
-    [:tbody
-     [:tr [:td "ENTER"] [:td "Add new entry"]]
-     [:tr [:td "ALT+BKSP"] [:td "Delete current entry"]]]]
-   [:p "This project is a work-in-progress and not all features work yet. Be warned!"]])
+  [c/non-ideal-state
+   {:icon :home
+    :title "Welcome"
+    :description (as-element [:<>
+                              [:p "Ever made a spreadsheet to calculate optimal rates and ratios for your builds
+                                   in games like Factorio? "]
+                              [:p [:strong "factor."] " is a Web app designed to replace that workflow."]
+                              [:p
+                               "Because Factor is game-agnostic, first you need to configure the "
+                               [:strong [c/icon {:icon :cube}] " Items"] ", "
+                               [:strong [c/icon {:icon :oil-field}] " Machines"] ", and "
+                               [:strong [c/icon {:icon :data-lineage}] " Recipes"]
+                               " available in your particular game/modpack/etc."]
+                              [:p
+                               "Then, create a " [:strong [c/icon {:icon :office}] " Factory"] " and specify its desired output. Factor will calculate a "
+                               "\"production graph\" for the factory, and tell you all the recipes, inputs and outputs, machines, etc. that it requires."]
+                              [:p
+                               "Everything's stored in your browser's local storage. Use the "
+                               [:strong [c/icon {:icon :settings}] " Settings"]
+                               " page to import, export, or reset your Factor data, or to change Factor-wide settings."]])
+    :action (as-element [c/button {:intent :success :text "Use Demo Data"}])}])

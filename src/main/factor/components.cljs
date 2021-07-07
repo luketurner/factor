@@ -9,6 +9,9 @@
             [factor.util :refer [without]]
             [medley.core :refer [map-keys]]))
 
+(defn icon [p]
+  [(c b/Icon) p])
+
 (defn non-ideal-state [p & children]
   (into [(c b/NonIdealState) p] children))
 
