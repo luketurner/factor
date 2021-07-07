@@ -1,6 +1,7 @@
 (ns factor.world
   (:require [clojure.edn :as edn]
             [factor.util :refer [new-uuid dissoc-in]]
+            [factor.qmap :as qmap]
             [medley.core :refer [filter-vals map-vals]]
             [com.rpl.specter :as s]))
 
@@ -22,37 +23,19 @@
   (some (fn [[k {:keys [output]}]]
           (when (contains? output item-id) k)) recipes))
 
-(defn quantity-set+
-  "Returns a QuantityMap representing the sum of the quantities in the provided QuantityMaps."
-  [& ms]
-  (apply merge-with + ms))
-
-(defn quantity-set-
-  "Returns a QuantityMap representing the difference of the QuantityMap `m` and one or more QuantityMaps `ms`.
-   If a quantity goes negative, the quantity is removed from the map."
-  [m & ms]
-  (-> m
-      (quantity-set+ (map-vals - (apply quantity-set+ ms)))
-      (->> (filter-vals pos?))))
-
-(defn quantity-set*
-  "Multiplies all the values in the quantity set by a scalar ratio"
-  [m n]
-  (map-vals (partial * n) m))
-
 (defn apply-recipe [factory recipe-id recipe times]
   (let [input-change (map-vals #(* % times) (:input recipe))
         output-change (map-vals #(* % times) (:output recipe))
         machine-id (first (:machines recipe))]
     (cond-> factory
-      input-change (update :input quantity-set+ input-change)
-      output-change (update :input quantity-set- output-change)
-      output-change (update :output quantity-set+ output-change)
+      input-change (update :input qmap/+ input-change)
+      output-change (update :input qmap/- output-change)
+      output-change (update :output qmap/+ output-change)
       machine-id (update-in [:machines machine-id] + times)
       true (update-in [:recipes recipe-id] + times))))
 
 (defn unsatisfied-output [{:keys [output desired-output input]}]
-  (->> output (quantity-set- desired-output) (filter-vals pos?) (quantity-set+ input)))
+  (->> output (qmap/- desired-output) (filter-vals pos?) (qmap/+ input)))
 
 (defn satisfy-desired-machines [world factory]
   factory)
@@ -138,14 +121,14 @@
   [pg lid rid]
   (let [{left-out :output left-in :input} (pgraph-get-node pg lid)
         root=>right             (pgraph-get-edge pg :root rid)
-        root=>right-unsatisfied (quantity-set- root=>right left-out)
-        root=>right-satisfied   (quantity-set- root=>right root=>right-unsatisfied)
-        left-out-unused         (quantity-set- left-out root=>right-satisfied)]
+        root=>right-unsatisfied (qmap/- root=>right left-out)
+        root=>right-satisfied   (qmap/- root=>right root=>right-unsatisfied)
+        left-out-unused         (qmap/- left-out root=>right-satisfied)]
     (-> pg
         (pgraph-update-node :root       #(-> % 
-                                             (update :input quantity-set- root=>right-satisfied)
-                                             (update :input quantity-set+ left-in)
-                                             (update :output quantity-set+ left-out-unused)))
+                                             (update :input qmap/- root=>right-satisfied)
+                                             (update :input qmap/+ left-in)
+                                             (update :output qmap/+ left-out-unused)))
         (pgraph-update-edge :root rid   root=>right-unsatisfied)
         (pgraph-update-edge lid   :root left-out-unused)
         (pgraph-update-edge :root lid   left-in)
@@ -154,8 +137,8 @@
 (defn pgraph-add-node-for-recipe
   [pg recipe ratio]
   (pgraph-add-node pg {:recipe recipe
-                       :input  (quantity-set* (:input recipe)  (js/Math.ceil ratio))
-                       :output (quantity-set* (:output recipe) (js/Math.ceil ratio))}))
+                       :input  (qmap/* (:input recipe)  (js/Math.ceil ratio))
+                       :output (qmap/* (:output recipe) (js/Math.ceil ratio))}))
 
 (defn pgraph-matching-recipe-for-node
   [pg node-id]
@@ -209,8 +192,8 @@
         ;; no recipes left to satisfy the output
         ;; remaining unsatisfied output needs to be provided as input to the factory
         (-> satisfied-factory
-            (update :input #(quantity-set+ % unsatisfied))
-            (update :output #(quantity-set+ % unsatisfied)))))))
+            (update :input #(qmap/+ % unsatisfied))
+            (update :output #(qmap/+ % unsatisfied)))))))
 
 (defn satisfy-desired-input [world factory]
   factory)
