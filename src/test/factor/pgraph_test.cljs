@@ -12,9 +12,12 @@
                          "iron-plate" (world/new-item {:id "iron-plate" :name "iron-plate"})
                          "steel-ingot" (world/new-item {:id "steel-ingot" :name "steel-ingot"})
                          "steel-beam" (world/new-item {:id "steel-beam" :name "steel-beam"})
-                         "cable" (world/new-item {:id "cable" :name "cable"})}
+                         "cable" (world/new-item {:id "cable" :name "cable"})
+                         "slag" (world/new-item {:id "slag" :name "slag"})
+                         "water" (world/new-item {:id "water" :name "water"})}
                  :machines {"smelter" (world/new-machine {:id "smelter" :name "smelter"})
-                            "assembler" (world/new-machine {:id "assembler" :name "assembler"})}
+                            "assembler" (world/new-machine {:id "assembler" :name "assembler"})
+                            "pump" (world/new-machine {:id "pump" :name "pump"})}
                  :recipes {"iron-ingot" (world/new-recipe {:id "iron-ingot"
                                                            :name "iron-ingot"
                                                            :input {"iron-ore" 1}
@@ -23,7 +26,7 @@
                            "steel-ingot" (world/new-recipe {:id "steel-ingot"
                                                             :name "steel-ingot"
                                                             :input {"iron-ore" 1 "coal" 2}
-                                                            :output {"steel-ingot" 1}
+                                                            :output {"steel-ingot" 1 "slag" 1}
                                                             :machines #{"smelter"}})
                            "iron-plate" (world/new-recipe {:id "iron-plate"
                                                            :name "iron-plate"
@@ -40,6 +43,16 @@
                                                             :input {"copper-ore" 1}
                                                             :output {"copper-wire" 4}
                                                             :machines #{"assembler"}})
+                           "concrete" (world/new-recipe {:id "concrete"
+                                                         :name "concrete"
+                                                         :input {"slag" 1 "water" 10}
+                                                         :output {"concrete" 1}
+                                                         :machines #{"assembler"}})
+                           "water" (world/new-recipe {:id "water"
+                                                      :name "water"
+                                                      :input {}
+                                                      :output {"water" 10}
+                                                      :machines #{"pump"}})
                            "cable" (world/new-recipe {:id "cable"
                                                       :name "cable"
                                                       :input {"copper-wire" 2}
@@ -139,3 +152,16 @@
                                           :input  {"iron-ore" 246}
                                           :output {"iron-ingot" 246}})
         "should have added a node that crafts iron ingots")))
+
+(deftest pgraph-try-satisfy-should-reuse-existing-output-where-possible
+  (let [w           test-world
+        factory     (get-in w [:factories "testfactory"])
+        factory     (assoc factory :desired-output {"concrete" 123 "steel-ingot" 123})
+        pg          (pgraph/empty-pgraph-for-factory w factory)
+        actual-pg   (pgraph/try-satisfy pg)]
+    (is (= (:edges actual-pg) {:root {1     {"iron-ore" 123 "coal" 246}}
+                               1     {:root {"steel-ingot" 123}
+                                      2     {"slag" 123}}
+                               2     {:root {"concrete" 123}}
+                               3     {2     {"water" 1230}}})
+        "should feed slag directly from one node to the next")))

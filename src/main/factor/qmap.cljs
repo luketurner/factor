@@ -5,7 +5,8 @@
    Qmaps are used throughout the Factor codebase to represent quantified sets of items,
    e.g. the required inputs and outputs for recipes."
   (:refer-clojure :exclude [+ - *])
-  (:require [medley.core :refer [map-vals filter-vals]]))
+  (:require [medley.core :refer [map-vals filter-vals]]
+            [clojure.set :as set]))
 
 (defn trim
   "Trims any zero or null quantities from the qmap."
@@ -29,3 +30,8 @@
   "Multiplies all the values in the qmap by number N. (If ratio is zero or negative, all values will be removed from the qmap.)"
   [qm n]
   (trim (map-vals (partial clojure.core/* n) qm)))
+
+(defn intersects?
+  "Returns true if any of the keys in A are also present in B."
+  [a b]
+  (not-empty (set/intersection (set (keys a)) (set (keys b)))))

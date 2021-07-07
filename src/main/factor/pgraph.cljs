@@ -89,7 +89,7 @@
         (update-edge :root rid   root=>right-unsatisfied)
         (update-edge lid   :root left-out-unused)
         (update-edge :root lid   left-in)
-        (update-edge lid   rid   root=>right-satisfied))))
+        (update-edge lid   rid   (partial qmap/+ root=>right-satisfied)))))
 
 (defn add-node-for-recipe
   [pg recipe ratio]
@@ -104,15 +104,31 @@
     (if-let [matching-recipe (s/select-first [(s/must :recipes) s/MAP-VALS #(recipe-matches-qm % needed-input)] world)]
       [matching-recipe (satisfying-ratio needed-input (:output matching-recipe))])))
 
+(defn edges
+  [pg]
+  (for [[lid xs] (:edges pg) [rid edge] xs]
+    [lid rid edge]))
+
+(defn matching-node-for-node
+  [pg node-id]
+  (let [needed-input    (get-edge pg :root node-id)]
+    (if-let [matching-node-id (->> (edges pg)
+                                  (some (fn [[lid rid edge]]
+                                          (when (and (= rid :root)
+                                                     (not= lid :root)
+                                                     (qmap/intersects? edge needed-input))
+                                            lid))))]
+      (get-node pg matching-node-id))))
+
 (defn try-satisfy-node [pg node-id]
-  ;; TODO -- should see if there are any EXISTING nodes with unused output that could be used to satisfy the node's inputs
-  ;; instead of always creating a new node.
-  (if-let [matching-recipe (matching-recipe-for-node pg node-id)]
-    (let [[recipe ratio] matching-recipe
-          [pg new-node] (add-node-for-recipe pg recipe ratio)
-          pg            (connect-nodes pg (:id new-node) node-id)]
-      [pg new-node])
-    [pg nil]))
+  (if-let [existing-node (matching-node-for-node pg node-id)]
+    [(connect-nodes pg (:id existing-node) node-id) existing-node]
+    (if-let [matching-recipe (matching-recipe-for-node pg node-id)]
+      (let [[recipe ratio] matching-recipe
+            [pg new-node] (add-node-for-recipe pg recipe ratio)
+            pg            (connect-nodes pg (:id new-node) node-id)]
+        [pg new-node])
+      [pg nil])))
 
 (defn try-satisfy-any-node [pg]
   (let [[new-pg new-node] (->> pg
