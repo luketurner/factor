@@ -267,13 +267,7 @@
     [nav-link [:machines] :oil-field "Machines"]
     [nav-link [:recipes] :data-lineage "Recipes"]
     [c/navbar-divider]]
-   [c/navbar-group-right
-    [c/anchor-button {:class :bp3-minimal
-                         :href "https://github.com/luketurner/factor"
-                         :text "Github"}]
-    [c/anchor-button {:class :bp3-minimal
-                         :href "https://git.sr.ht/~luketurner/factor"
-                         :text "sr.ht"}]]])
+   ])
 
 (defn secondary-navbar []
   (let [[x] @(subscribe [:ui [:selected-page]])]
@@ -285,7 +279,15 @@
       :recipes [recipe-page-bar])))
 
 (defn footer []
-  [c/navbar [c/navbar-group-left "Copyright 2021 Luke Turner"]])
+  [c/navbar 
+   [c/navbar-group-left "Copyright 2021 Luke Turner"]
+   [c/navbar-group-right
+    [c/anchor-button {:class :bp3-minimal
+                      :href "https://git.sr.ht/~luketurner/factor"
+                      :text "sourcehut"}]
+    [c/anchor-button {:class :bp3-minimal
+                      :href "https://github.com/luketurner/factor"
+                      :text "github"}]]])
 
 (defn app []
   (let []
