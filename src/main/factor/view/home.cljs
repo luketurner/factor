@@ -7,7 +7,7 @@
 (defn page []
   [c/non-ideal-state
    {:icon :join-table
-    :title "Factor: A ticket out of Spreadsheet Hell"
+    :title "Factor: A ticket out of Spreadsheet Hell?"
     :description (as-element [:<>
                               [:p "Ever made a " [:strong "spreadsheet"] " to calculate optimal rates and ratios for your builds
                                    in games like Factorio or Satisfactory? Did it get annoyingly complicated?"]
