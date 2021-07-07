@@ -42,6 +42,16 @@
 
   (reg-event-db :open-factory (fn [db [_ id]] (assoc-in db [:config :open-factory] id)))
 
+  ;; Config persistence events
+
+  (reg-event-fx
+   :config-load
+   [(inject-cofx :localstorage :config)]
+   (fn [{{config :config} :localstorage db :db} [_ default-config]]
+     {:db (assoc db :config (if (not-empty config) config default-config))}))
+
+  (reg-event-fx :config-save (fn [_ [_ config]] {:localstorage {:config config}}))
+
   ;; Helper events (triggers other events)
 
   (reg-event-fx :delete-items    (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-item %]])    ids)}))

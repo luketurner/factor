@@ -7,7 +7,8 @@
 
 (defn init []
   (dispatch-sync [:initialize-db])
-  (dispatch-sync [:world-load w/empty-world]))
+  (dispatch-sync [:world-load w/empty-world])
+  (dispatch-sync [:config-load {}]))
 
 (def schema
   [:map {:closed true}
@@ -45,7 +46,7 @@
    [:config [:map]]
    [:ui [:map]]])
 
-(defn ->validator [schema]
+(defn ->world-validator [schema]
   (->interceptor
    :id :db-validator
    :after (fn [{{db :db} :effects :as ctx}]
@@ -54,11 +55,20 @@
                 invalid? (dissoc-in [:effects :db])
                 invalid? (add-fx [:toast (str "validate failed: " (pr-str (explain schema db)))]))))))
 
-(defn ->saver []
+(defn ->world-saver []
   (->interceptor
    :id :world-saver
    :after (fn [{{{old-world :world} :db} :coeffects
                 {{new-world :world} :db} :effects :as context}]
             (if (and new-world (not= new-world old-world))
               (add-fx context [:dispatch [:world-save new-world]])
+              context))))
+
+(defn ->config-saver []
+  (->interceptor
+   :id :config-saver
+   :after (fn [{{{old-config :config} :db} :coeffects
+                {{new-config :config} :db} :effects :as context}]
+            (if (and new-config (not= new-config old-config))
+              (add-fx context [:dispatch [:config-save new-config]])
               context))))
