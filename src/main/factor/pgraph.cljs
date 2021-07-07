@@ -105,6 +105,8 @@
       [matching-recipe (satisfying-ratio needed-input (:output matching-recipe))])))
 
 (defn try-satisfy-node [pg node-id]
+  ;; TODO -- should see if there are any EXISTING nodes with unused output that could be used to satisfy the node's inputs
+  ;; instead of always creating a new node.
   (if-let [matching-recipe (matching-recipe-for-node pg node-id)]
     (let [[recipe ratio] matching-recipe
           [pg new-node] (add-node-for-recipe pg recipe ratio)
