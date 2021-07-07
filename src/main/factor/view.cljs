@@ -77,7 +77,6 @@
 
 (defn home-page []
   [:div
-   [c/button {:on-click #(dispatch [:world-reset w/empty-world]) :text "RESET WORLD"}]
    [:h2 "overview"]
    [:p "Welcome! Factor is a tool that helps with planning factories in video games (e.g. Factorio.)"]
    [:p "Create a new factory using the " [:strong "factories"] " option in the sidebar, and specify what items the factory should output."]
@@ -246,6 +245,13 @@
    [recipe-grid]
    [recipe-page-editor]])
 
+(defn settings-page-bar [] [c/navbar])
+
+(defn settings-page []
+  [:div
+   [:p "WIP"]
+   [c/button {:on-click #(dispatch [:world-reset w/empty-world]) :text "RESET WORLD"}]])
+
 (defn main-content []
   (let [[x] @(subscribe [:ui [:selected-page]])]
     [:main
@@ -254,7 +260,8 @@
       :factories [factory-page]
       :items [item-page]
       :machines [machine-page]
-      :recipes [recipe-page])]))
+      :recipes [recipe-page]
+      :settings [settings-page])]))
 
 (defn primary-navbar []
   [c/navbar
@@ -266,7 +273,9 @@
     [nav-link [:items] :cube "Items"]
     [nav-link [:machines] :oil-field "Machines"]
     [nav-link [:recipes] :data-lineage "Recipes"]
-    [c/navbar-divider]]
+    [c/navbar-divider]
+    [nav-link [:settings] :settings "Settings"]
+]
    ])
 
 (defn secondary-navbar []
@@ -276,7 +285,8 @@
       :factories [factory-page-bar]
       :items [item-page-bar]
       :machines [machine-page-bar]
-      :recipes [recipe-page-bar])))
+      :recipes [recipe-page-bar]
+      :settings [settings-page-bar])))
 
 (defn footer []
   [c/navbar 
