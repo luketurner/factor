@@ -9,9 +9,9 @@
             [com.rpl.specter :as s]))
 
 (defn satisfying-ratio [goal base]
-  (apply max (for [[k v] base]
-               (when (contains? goal k)
-                 (/ (goal k) v)))))
+  (js/Math.ceil (apply max (for [[k v] base]
+                             (when (contains? goal k)
+                               (/ (goal k) v))))))
 
 (defn recipe-matches-qm [recipe qm]
   (some true? (for [[k v] qm] (contains? (:output recipe) k))))
@@ -94,8 +94,9 @@
 (defn add-node-for-recipe
   [pg recipe ratio]
   (add-node pg {:recipe recipe
-                       :input  (qmap/* (:input recipe)  (js/Math.ceil ratio))
-                       :output (qmap/* (:output recipe) (js/Math.ceil ratio))}))
+                :recipe-ratio ratio
+                :input  (qmap/* (:input recipe)  ratio)
+                :output (qmap/* (:output recipe) ratio)}))
 
 (defn matching-recipe-for-node
   [pg node-id]
@@ -113,11 +114,11 @@
   [pg node-id]
   (let [needed-input    (get-edge pg :root node-id)]
     (if-let [matching-node-id (->> (edges pg)
-                                  (some (fn [[lid rid edge]]
-                                          (when (and (= rid :root)
-                                                     (not= lid :root)
-                                                     (qmap/intersects? edge needed-input))
-                                            lid))))]
+                                   (some (fn [[lid rid edge]]
+                                           (when (and (= rid :root)
+                                                      (not= lid :root)
+                                                      (qmap/intersects? edge needed-input))
+                                             lid))))]
       (get-node pg matching-node-id))))
 
 (defn try-satisfy-node [pg node-id]

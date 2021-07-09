@@ -73,6 +73,7 @@
         "should have updated the :root node's input")
     (is (= (get-in actual-pg [:nodes 1]) {:id 1
                                           :recipe (get-in w [:recipes "iron-plate"])
+                                          :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
                                           :output {"iron-plate" 123}})
         "should have added a node that crafts iron plates")))
@@ -93,11 +94,13 @@
         "should have updated the :root node's input")
     (is (= (get-in actual-pg [:nodes 1]) {:id 1
                                           :recipe (get-in w [:recipes "iron-plate"])
+                                          :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
                                           :output {"iron-plate" 123}})
         "should have added a node that crafts iron plates")
     (is (= (get-in actual-pg [:nodes 2]) {:id 2
                                           :recipe (get-in w [:recipes "iron-ingot"])
+                                          :recipe-ratio 246
                                           :input  {"iron-ore" 246}
                                           :output {"iron-ingot" 246}})
         "should have added a node that crafts iron ingots")))
@@ -120,11 +123,13 @@
         "should have updated the :root node")
     (is (= (get-in actual-pg [:nodes 1]) {:id 1
                                           :recipe (get-in w [:recipes "cable"])
+                                          :recipe-ratio 1
                                           :input  {"copper-wire" 2}
                                           :output {"cable" 1}})
         "should have added a node that crafts iron plates")
     (is (= (get-in actual-pg [:nodes 2]) {:id 2
                                           :recipe (get-in w [:recipes "copper-wire"])
+                                          :recipe-ratio 1
                                           :input  {"copper-ore" 1}
                                           :output {"copper-wire" 4}})
         "should have added a node that crafts iron ingots")))
@@ -144,11 +149,13 @@
         "should have updated the :root node's input")
     (is (= (get-in actual-pg [:nodes 1]) {:id 1
                                           :recipe (get-in w [:recipes "iron-plate"])
+                                          :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
                                           :output {"iron-plate" 123}})
         "should have added a node that crafts iron plates")
     (is (= (get-in actual-pg [:nodes 2]) {:id 2
                                           :recipe (get-in w [:recipes "iron-ingot"])
+                                          :recipe-ratio 246
                                           :input  {"iron-ore" 246}
                                           :output {"iron-ingot" 246}})
         "should have added a node that crafts iron ingots")))
