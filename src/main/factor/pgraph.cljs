@@ -20,6 +20,7 @@
   [world {:keys [desired-output]}]
   {:world world
    :edges {:root {:root desired-output}}
+   :edges-rev {:root {:root desired-output}}
    :next-node-id 1
    :nodes {:root {:input  desired-output
                   :output desired-output}}})
@@ -37,8 +38,12 @@
   (let [current (get-in pg [:edges lid rid])
         updated (if (fn? updater) (updater current) updater)]
     (if (= 0 (apply + (vals updated)))
-      (update pg :edges medley.core/dissoc-in [lid rid])
-      (assoc-in pg [:edges lid rid] updated))))
+      (-> pg
+          (update :edges medley.core/dissoc-in [lid rid])
+          (update :edges-rev medley.core/dissoc-in [rid lid]))
+      (-> pg
+          (assoc-in [:edges lid rid] updated)
+          (assoc-in [:edges-rev rid lid] updated)))))
 
 (defn add-node
   [pg node]
@@ -83,9 +88,9 @@
         left-out-unused         (qmap/- left-out root=>right-satisfied)]
     (-> pg
         (update-node :root       #(-> %
-                                             (update :input qmap/- root=>right-satisfied)
-                                             (update :input qmap/+ left-in)
-                                             (update :output qmap/+ left-out-unused)))
+                                      (update :input qmap/- root=>right-satisfied)
+                                      (update :input qmap/+ left-in)
+                                      (update :output qmap/+ left-out-unused)))
         (update-edge :root rid   root=>right-unsatisfied)
         (update-edge lid   :root left-out-unused)
         (update-edge :root lid   left-in)
