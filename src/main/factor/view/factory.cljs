@@ -34,11 +34,40 @@
 (defn get-machine-name [id] (:name @(subscribe [:machine id])))
 (defn get-recipe-name [id] (:name @(subscribe [:recipe id])))
 
+(defn pgraph-tree-node
+  [pg node-states seen-nodes parent-id node-id]
+  (let [seen? (seen-nodes node-id)
+        tree-node-id (str node-id "-" parent-id)
+        {:keys [expanded selected disabled]} (get node-states tree-node-id)
+        seen-nodes (conj seen-nodes node-id)
+        child-node-for-edge (fn [[l _ _]]
+                              (pgraph-tree-node pg node-states seen-nodes node-id l))
+        child-nodes (when-not seen? (map child-node-for-edge (pgraph/input-edges pg node-id)))]
+    {:id tree-node-id
+     :label node-id
+     :isExpanded expanded
+     :isSelected selected
+     :disabled disabled
+     :hasCaret (not-empty child-nodes)
+     :icon (case node-id
+             :start :cube
+             :end :office
+             :data-lineage)
+     :childNodes child-nodes}))
+
+(defn pgraph-tree
+  [pg]
+  (reagent.core/with-let [node-states (reagent.core/atom {})]
+    [c/tree {:contents (clj->js [(pgraph-tree-node pg @node-states #{} nil :end)])
+             :on-node-expand #(swap! node-states assoc-in [(.-id %) :expanded] true)
+             :on-node-collapse #(swap! node-states assoc-in [(.-id %) :expanded] false)}]))
+
 (defn page []
   (if-let [factory-id @(subscribe [:open-factory])]
     (let [factory @(subscribe [:factory factory-id])
           pg @(subscribe [:factory-pgraph factory-id])
           update-factory #(dispatch [:update-factory %])]
+      ;; (println "nodes" (tree-node-for-pgraph-node pg :root))
       [:div.card-stack
        [c/card-lg
         [c/form-group {:label "ID"}
@@ -48,17 +77,24 @@
        [c/card-lg [c/form-group {:label "Desired Outputs"}
                    [c/quantity-set-input :item (:desired-output factory) #(update-factory (assoc factory :desired-output %))]]]
        [c/card-lg [c/form-group {:label "Outputs"}
-                   (into [:ul] (for [[x n] (:output (pgraph/get-node pg :root))] [:li n "x " (get-item-name x)]))]]
+                   (into [:ul] (for [[x n] (:input (pgraph/get-node pg :end))] [:li n "x " (get-item-name x)]))]]
        [c/card-lg [c/form-group {:label "Inputs"}
-                   (into [:ul] (for [[x n] (:input (pgraph/get-node pg :root))] [:li n "x " (get-item-name x)]))]]
+                   (into [:ul] (for [[x n] (:output (pgraph/get-node pg :start))] [:li n "x " (get-item-name x)]))]]
       ;;  [c/card-lg [c/form-group {:label "Machines"}
       ;;              (into [:ul] (for [[x n] (:machines pgraph)] [:li n "x " (get-machine-name x)]))]]
       ;;  [c/card-lg [c/form-group {:label "Recipes"}
       ;;              (into [:ul] (for [[x n] (:recipes pgraph)] [:li n "x " (get-recipe-name x)]))]]
-       [c/card-lg [c/form-group {:label "Content"}
-                   [c/textarea {:value (pr-str factory) :read-only true :style {:width "100%" :height "150px"}}]]]
        [c/card-lg [c/form-group {:label "Production Graph"}
-                   [c/textarea {:value (pr-str (dissoc pg :world)) :read-only true :style {:width "100%" :height "150px"}}]]]])
+                   [pgraph-tree pg]]]
+       [c/card-lg
+        [c/form-group {:label "Production Graph (raw)"}
+         [c/textarea {:value (pr-str (dissoc pg :world))
+                      :read-only true
+                      :style {:width "100%" :height "150px"}}]]
+        [c/form-group {:label "Factory Data (raw)"}
+         [c/textarea {:value (pr-str factory)
+                      :read-only true
+                      :style {:width "100%" :height "150px"}}]]]])
     [c/non-ideal-state {:icon :office
                         :title "No factories!"
                         :description "Create a factory to get started."

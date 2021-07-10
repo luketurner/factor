@@ -148,12 +148,6 @@
         grid-props     (merge default-props props override-props)]
     [:div.ag-theme-alpine.full-screen
      (into [(c AgGridReact) grid-props] children)]))
-
-;; (defn data-table [props & cols]
-;;   (into [(c bt/Table) props] (for [col cols] [(c bt/Column) col])))
-
-;; ;; (defn data-cell [& children] (into [(c bt/Cell) {}] children))
-;; (defn cell-renderer [child] (fn [ix] (reagent/create-element bt/Cell #js{} (child ix))))
  
 (defn navbar [& children] (into [(c b/Navbar)] children))
 (defn navbar-heading [& children] (into [(c b/Navbar.Heading)] children))

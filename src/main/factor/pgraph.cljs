@@ -178,9 +178,15 @@
   (let [[recipe ratio] (node-recipe node)]
     [(first (:machines recipe)) ratio]))
 
-(defn successors
-  "Iterates over all the successors of the given node ID, including the node itself."
-  [pg node-id]
-  ; TODO -- handle cyclical thingies
-  (let [node (get-node pg node-id)]
-    (concat [node] (map (partial successors pg) (output-edges pg node-id)))))
+;; (defn successors
+;;   "Iterates over all the successors of the given node ID, including the node itself. 
+;;    Since pgraphs can be cyclic, this function short-circuits to avoid producing an infinite
+;;    sequence when it encounters a cycle: Whenever a node is encountered for the second time,
+;;    "
+;;   ([pg node-id] (successors pg node-id #()))
+;;   ([pg node-id seen-nodes]
+;;   (let [node (get-node pg node-id)
+;;         seen? (seen-nodes node)]
+;;     (concat (when-not seen? [node])
+;;             (when-not seen? (map #(successors pg % (conj seen-nodes node-id))
+;;                                  (output-edges pg node-id)))))))
