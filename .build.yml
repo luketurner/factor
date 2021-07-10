@@ -23,12 +23,15 @@ tasks:
       cd factor
       npm run test
   - deploy: |
+      cd factor
+      set -e
       if [ "$(git rev-parse origin/master)" == "$(git rev-parse HEAD)" ]; then
         echo "deploying..."
         set +x
         source ~/netlify_config
-        cd factor
         node_modules/.bin/netlify deploy --site="$NETLIFY_SITE_ID" --dir=public --prod >/dev/null 2>&1
         set -x
+      else
+        echo "skipping deployment for branch"
       fi
 
