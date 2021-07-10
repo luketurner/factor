@@ -7,9 +7,9 @@ sources:
   - https://git.sr.ht/~luketurner/factor
 secrets:
   # ~/netlify_config -- expected to have:
-  #   export NETLIFY_SITE_ID
+  #   NETLIFY_SITE_ID
   #   export NETLIFY_AUTH_TOKEN
-  - b85342d7-c4f8-4645-82b7-30d84586783e
+  - 0b000959-802e-444a-8f76-07b005113647
 tasks:
   - install-node-modules: |
       cd factor
