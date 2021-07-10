@@ -158,3 +158,22 @@
 (defn pgraph-for-factory
   [world factory]
   (try-satisfy (empty-pgraph-for-factory world factory)))
+
+(defn input-edges
+  [pg node-id]
+  (get-in pg [:edges-rev node-id]))
+
+(defn output-edges
+  [pg node-id]
+  (get-in pg [:edges node-id]))
+
+(defn node-recipe
+  [node]
+  [(:recipe node) (:recipe-ratio node)])
+
+(defn node-machine
+  [node]
+  (let [[recipe ratio] (node-recipe node)]
+    [(first (:machines recipe)) ratio]))
+
+(defn successors
