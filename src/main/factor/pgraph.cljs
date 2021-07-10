@@ -19,11 +19,11 @@
 (defn empty-pgraph-for-factory
   [world {:keys [desired-output]}]
   {:world world
-   :edges {:root {:root desired-output}}
-   :edges-rev {:root {:root desired-output}}
+   :edges     {:start {:end   desired-output}}
+   :edges-rev {:end   {:start desired-output}}
    :next-node-id 1
-   :nodes {:root {:input  desired-output
-                  :output desired-output}}})
+   :nodes {:start {:output desired-output}
+           :end   {:input  desired-output}}})
 
 (defn update-node
   [pg id updater]
@@ -69,32 +69,33 @@
    than needed by RIGHT's input, additional connections to ROOT will be maintained. See the following diagram:
    
    before:    
-           ROOT (input) -------> (input) RIGHT (output) -------> (output) ROOT
+           START (input) -------> (input) RIGHT (output) -------> (output) END
    
    after:
-                                                             (any excess output from LEFT)
-                                                  +-------------------------------------------------+
-                                                  |                                                 V
-           ROOT (input) -------> (input) LEFT (output) -------> (input) RIGHT (output) -------> (output) ROOT
-                   |                                               ^
-                   +-----------------------------------------------+
-                    (any of RIGHT's input that LEFT doesn't supply)
+                                                              (any excess output from LEFT)
+                                                   +-------------------------------------------------+
+                                                   |                                                 V
+           START (output) -------> (input) LEFT (output) -------> (input) RIGHT (output) -------> (input) END
+                    |                                               ^
+                    +-----------------------------------------------+
+                     (any of RIGHT's input that LEFT doesn't supply)
    "
   [pg lid rid]
+  (when (= lid :end) (throw "Cannot connect ending node to another node."))
   (let [{left-out :output left-in :input} (get-node pg lid)
-        root=>right             (get-edge pg :root rid)
-        root=>right-unsatisfied (qmap/- root=>right left-out)
-        root=>right-satisfied   (qmap/- root=>right root=>right-unsatisfied)
-        left-out-unused         (qmap/- left-out root=>right-satisfied)]
+        start=>right             (get-edge pg :start rid)
+        start=>right-unsatisfied (qmap/- start=>right left-out)
+        start=>right-satisfied   (qmap/- start=>right start=>right-unsatisfied)
+        left-out-unused          (qmap/- left-out start=>right-satisfied)]
     (-> pg
-        (update-node :root       #(-> %
-                                      (update :input qmap/- root=>right-satisfied)
-                                      (update :input qmap/+ left-in)
-                                      (update :output qmap/+ left-out-unused)))
-        (update-edge :root rid   root=>right-unsatisfied)
-        (update-edge lid   :root left-out-unused)
-        (update-edge :root lid   left-in)
-        (update-edge lid   rid   (partial qmap/+ root=>right-satisfied)))))
+        (update-node :start #(-> %
+                                 (update :output qmap/- start=>right-satisfied)
+                                 (update :output qmap/+ left-in)))
+        (update-node :end   #(update % :input qmap/+ left-out-unused))
+        (update-edge :start rid   start=>right-unsatisfied)
+        (update-edge lid    :end  left-out-unused)
+        (update-edge :start lid   left-in)
+        (update-edge lid    rid   (partial qmap/+ start=>right-satisfied)))))
 
 (defn add-node-for-recipe
   [pg recipe ratio]
@@ -106,7 +107,7 @@
 (defn matching-recipe-for-node
   [pg node-id]
   (let [{:keys [world]} pg
-        needed-input    (get-edge pg :root node-id)]
+        needed-input    (get-edge pg :start node-id)]
     (if-let [matching-recipe (s/select-first [(s/must :recipes) s/MAP-VALS #(recipe-matches-qm % needed-input)] world)]
       [matching-recipe (satisfying-ratio needed-input (:output matching-recipe))])))
 
@@ -117,11 +118,11 @@
 
 (defn matching-node-for-node
   [pg node-id]
-  (let [needed-input    (get-edge pg :root node-id)]
+  (let [needed-input    (get-edge pg :start node-id)]
     (if-let [matching-node-id (->> (edges pg)
                                    (some (fn [[lid rid edge]]
-                                           (when (and (= rid :root)
-                                                      (not= lid :root)
+                                           (when (and (= rid :end)
+                                                      (not= lid :start)
                                                       (qmap/intersects? edge needed-input))
                                              lid))))]
       (get-node pg matching-node-id))))
@@ -140,6 +141,7 @@
   (let [[new-pg new-node] (->> pg
                                (:nodes)
                                (keys)
+                               (filter #(not= % :start))
                                (map (partial try-satisfy-node pg))
                                (filter (fn [[_ new-node]] (some? new-node)))
                                (first))]
@@ -177,3 +179,8 @@
     [(first (:machines recipe)) ratio]))
 
 (defn successors
+  "Iterates over all the successors of the given node ID, including the node itself."
+  [pg node-id]
+  ; TODO -- handle cyclical thingies
+  (let [node (get-node pg node-id)]
+    (concat [node] (map (partial successors pg) (output-edges pg node-id)))))
