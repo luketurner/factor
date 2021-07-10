@@ -168,3 +168,9 @@
              :icon icon
              :text text
              :disabled (= selected-page page)}]))
+
+(defn tree [p]
+  [(c b/Tree) p])
+
+(defn tree-node [p & children]
+  (into [(c b/TreeNode) p] children))
