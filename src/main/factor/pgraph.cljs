@@ -178,10 +178,15 @@
   (let [[recipe ratio] (node-recipe node)]
     [(first (:machines recipe)) ratio]))
 
+(defn all-nodes
+  [pg]
+  (-> pg (get :nodes) (vals)))
+
 (defn is-empty?
   [pg]
-  (and (= 2 (count (get pg :nodes)))
+  (and (= 2 (count (all-nodes pg)))
        (empty? (:input (get-node pg :end)))))
+
 
 ;; (defn successors
 ;;   "Iterates over all the successors of the given node ID, including the node itself. 

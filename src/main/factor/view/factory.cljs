@@ -71,10 +71,18 @@
 (defn pgraph-tree
   [pg]
   (reagent.core/with-let [node-states (reagent.core/atom {})]
-    (if (pgraph/is-empty? pg) [:p "Add a desired output to view production graph."]
+    (if (pgraph/is-empty? pg) [:p "Add desired output(s) to view production graph."]
      [c/tree {:contents (clj->js [(pgraph-tree-node pg @node-states #{} nil :end)])
              :on-node-expand #(swap! node-states assoc-in [(.-id %) :expanded] true)
              :on-node-collapse #(swap! node-states assoc-in [(.-id %) :expanded] false)}])))
+
+(defn node-list
+  [pg]
+  (if (pgraph/is-empty? pg)
+    [:p "Add desired output(s) to view production nodes."]
+    (into [:ul] (for [node (pgraph/all-nodes pg) :when (and (not= (:id node) :start)
+                                                            (not= (:id node) :end))]
+                  [:li (str (get node :recipe-ratio) "x " (get-in node [:recipe :name]))]))))
 
 (defn page []
   (if-let [factory-id @(subscribe [:open-factory])]
@@ -100,6 +108,8 @@
       ;;              (into [:ul] (for [[x n] (:recipes pgraph)] [:li n "x " (get-recipe-name x)]))]]
        [c/card-lg [c/form-group {:label "Production Graph"}
                    [pgraph-tree pg]]]
+       [c/card-lg [c/form-group {:label "Production Stages"}
+                   [node-list pg]]]       
        [c/card-lg
         [c/form-group {:label "Production Graph (raw)"}
          [c/textarea {:value (pr-str (dissoc pg :world))
