@@ -178,6 +178,11 @@
   (let [[recipe ratio] (node-recipe node)]
     [(first (:machines recipe)) ratio]))
 
+(defn is-empty?
+  [pg]
+  (and (= 2 (count (get pg :nodes)))
+       (empty? (:input (get-node pg :end)))))
+
 ;; (defn successors
 ;;   "Iterates over all the successors of the given node ID, including the node itself. 
 ;;    Since pgraphs can be cyclic, this function short-circuits to avoid producing an infinite

@@ -3,6 +3,7 @@
             [factor.pgraph :as pgraph]
             [re-frame.core :refer [dispatch subscribe]]
             [reagent.core :refer [as-element]]
+            [clojure.string :as string]
             [factor.world :as w]))
 
 
@@ -34,9 +35,14 @@
 (defn get-machine-name [id] (:name @(subscribe [:machine id])))
 (defn get-recipe-name [id] (:name @(subscribe [:recipe id])))
 
+(defn qmap->str
+  [qm]
+  (string/join ", " (map (fn [[x n]] (str n "x " (get-item-name x))) qm)))
+
 (defn pgraph-tree-node
   [pg node-states seen-nodes parent-id node-id]
   (let [seen? (seen-nodes node-id)
+        {:keys [recipe] :as node} (pgraph/get-node pg node-id)
         tree-node-id (str node-id "-" parent-id)
         {:keys [expanded selected disabled]} (get node-states tree-node-id)
         seen-nodes (conj seen-nodes node-id)
@@ -44,7 +50,14 @@
                               (pgraph-tree-node pg node-states seen-nodes node-id l))
         child-nodes (when-not seen? (map child-node-for-edge (pgraph/input-edges pg node-id)))]
     {:id tree-node-id
-     :label node-id
+     :label (qmap->str (case node-id
+              :start (:output node)
+              :end (:input node)
+              (:output node)))
+    ;;  :secondaryLabel (case node-id
+    ;;           :start "Required Input"
+    ;;           :end "Factory Output"
+    ;;           (:name recipe))
      :isExpanded expanded
      :isSelected selected
      :disabled disabled
@@ -58,9 +71,10 @@
 (defn pgraph-tree
   [pg]
   (reagent.core/with-let [node-states (reagent.core/atom {})]
-    [c/tree {:contents (clj->js [(pgraph-tree-node pg @node-states #{} nil :end)])
+    (if (pgraph/is-empty? pg) [:p "Add a desired output to view production graph."]
+     [c/tree {:contents (clj->js [(pgraph-tree-node pg @node-states #{} nil :end)])
              :on-node-expand #(swap! node-states assoc-in [(.-id %) :expanded] true)
-             :on-node-collapse #(swap! node-states assoc-in [(.-id %) :expanded] false)}]))
+             :on-node-collapse #(swap! node-states assoc-in [(.-id %) :expanded] false)}])))
 
 (defn page []
   (if-let [factory-id @(subscribe [:open-factory])]
