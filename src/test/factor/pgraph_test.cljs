@@ -68,9 +68,9 @@
     (is (= (:edges actual-pg) {:start {1 {"iron-ingot" 246}}
                                1 {:end {"iron-plate" 123}}})
         "should have an edge from root to the node, and from the node to root")
-    (is (= (get-in actual-pg [:nodes :start]) {:output {"iron-ingot" 246}})
+    (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ingot" 246}})
         "should have updated the :start node's output")
-    (is (= (get-in actual-pg [:nodes :end]) {:input {"iron-plate" 123}})
+    (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
         "should have updated the :end node's input")
     (is (= (get-in actual-pg [:nodes 1]) {:id 1
                                           :recipe (get-in w [:recipes "iron-plate"])
@@ -90,9 +90,9 @@
                                2      {1 {"iron-ingot" 246}}
                                1      {:end {"iron-plate" 123}}})
         "should have three edges")
-    (is (= (get-in actual-pg [:nodes :start]) {:output {"iron-ore" 246}})
+    (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ore" 246}})
         "should have updated the :start node's output")
-    (is (= (get-in actual-pg [:nodes :end]) {:input {"iron-plate" 123}})
+    (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
         "should have updated the :end node's input")
     (is (= (get-in actual-pg [:nodes 1]) {:id 1
                                           :recipe (get-in w [:recipes "iron-plate"])
@@ -119,9 +119,9 @@
                                   :end {"copper-wire" 2}}
                                1 {:end {"cable" 1}}})
         "should have three edges")
-    (is (= (get-in actual-pg [:nodes :start]) {:output {"copper-ore" 1}})
+    (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"copper-ore" 1}})
         "should have updated the :start node")
-    (is (= (get-in actual-pg [:nodes :end]) {:input {"copper-wire" 2
+    (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"copper-wire" 2
                                                      "cable" 1}})
         "should have updated the :end node")
     (is (= (get-in actual-pg [:nodes 1]) {:id 1
@@ -147,9 +147,9 @@
                                2     {1 {"iron-ingot" 246}}
                                1     {:end {"iron-plate" 123}}})
         "should have three edges")
-    (is (= (get-in actual-pg [:nodes :start]) {:output {"iron-ore" 246}})
+    (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ore" 246}})
         "should have updated the :start node's output")
-    (is (= (get-in actual-pg [:nodes :end]) {:input {"iron-plate" 123}})
+    (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
         "should have updated the :end node's input")
     (is (= (get-in actual-pg [:nodes 1]) {:id 1
                                           :recipe (get-in w [:recipes "iron-plate"])

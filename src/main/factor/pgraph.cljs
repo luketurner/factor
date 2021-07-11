@@ -22,8 +22,8 @@
    :edges     {:start {:end   desired-output}}
    :edges-rev {:end   {:start desired-output}}
    :next-node-id 1
-   :nodes {:start {:output desired-output}
-           :end   {:input  desired-output}}})
+   :nodes {:start {:id :start :output desired-output}
+           :end   {:id :end   :input  desired-output}}})
 
 (defn update-node
   [pg id updater]
