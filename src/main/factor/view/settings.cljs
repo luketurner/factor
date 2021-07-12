@@ -9,16 +9,21 @@
 (defn world-loader
   []
   (reagent/with-let [v (reagent/atom "")]
-    [:<> 
+    [:<>
      ;; TODO -- update textarea to extract value from on-change within component
      ;; instead of having to do the .-target .-value jazz everywhere
      [c/textarea {:on-change #(->> %
-                                  (.-target)
-                                  (.-value)
-                                  (reset! v))}]
-     [c/button {:text "Import"
-                :intent :warning
-                :on-click #(dispatch [:world-reset (w/str->world @v)])}]]))
+                                   (.-target)
+                                   (.-value)
+                                   (reset! v))}]
+     [c/alerting-button
+      {:text "Import"
+       :intent :danger}
+      {:on-confirm #(dispatch [:world-reset (w/str->world @v)])
+       :confirm-button-text "Confirm Import"
+       :intent :danger}
+      [:p "This will completely replace your existing world, including all items, recipes, machines, and factories! You cannot undo this action!"]
+      [:p "(If you haven't done so already, I recommend exporting your existing world as a backup before importing another one.)"]]]))
 
 (defn page []
   [:div.card-stack
@@ -30,6 +35,11 @@
      [world-loader]]]
    [c/card-lg
     [c/form-group {:label "Delete All Data"}
-     [c/button {:on-click #(dispatch [:world-reset w/empty-world])
-                :text "RESET WORLD"
-                :intent :danger}]]]])
+     [c/alerting-button
+      {:text "RESET WORLD"
+       :intent :danger}
+      {:on-confirm #(dispatch [:world-reset w/empty-world])
+       :intent :danger
+       :confirm-button-text "DELETE MY 🤬 WORLD!!"}
+      [:p "This will delete your ENTIRE world, including all items, recipes, machines, and factories! You cannot undo this action!"]
+      [:p "(If you haven't done so already, I recommend exporting your existing world as a backup before resetting it.)"]]]]])

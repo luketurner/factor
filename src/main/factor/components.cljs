@@ -7,7 +7,7 @@
             ["ag-grid-react" :refer [AgGridReact]]
             [clojure.string :as string]
             [factor.util :refer [without]]
-            [medley.core :refer [map-keys]]))
+            [medley.core :refer [map-keys filter-keys]]))
 
 (defn icon [p]
   [(c b/Icon) p])
@@ -170,3 +170,18 @@
 
 (defn tree-node [p & children]
   (into [(c b/TreeNode) p] children))
+
+(defn alert [p & children]
+  (into [(c b/Alert) p] children))
+
+(defn alerting-button [button-props alert-props & children]
+  (reagent/with-let [open? (reagent/atom false)]
+    [:<>
+     [button (assoc button-props :on-click #(reset! open? true))]
+     (into [alert (merge {:is-open @open?
+                          :can-escape-key-cancel true
+                          :can-outside-click-cancel true
+                          :confirm-button-text "Confirm"
+                          :cancel-button-text "Cancel"
+                          :on-close #(reset! open? false)} alert-props)]
+           children)]))
