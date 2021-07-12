@@ -78,9 +78,13 @@
   (let [selected-recipes   @(subscribe [:ui [:recipe-page :selected]])]
     [:div.data-table-editor
      (case (count selected-recipes)
-       0 [:div "No recipes selected."]
+       0 [c/non-ideal-state {:icon :data-lineage
+                             :title "No recipe selected!"
+                             :description "Select a single recipe to edit it."}]
        1 [recipe-editor (first selected-recipes)]
-       [:div "Select a single recipe to edit."])]))
+       [c/non-ideal-state {:icon :data-lineage
+                           :title "Multiple recipes selected!"
+                           :description "Select a single recipe to edit it."}])]))
 
 (defn page []
   [:div.vertical-split
