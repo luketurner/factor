@@ -141,7 +141,8 @@
   (let [default-props  {:row-selection :multiple
                         :enter-moves-down true
                         :enter-moves-down-after-edit true
-                        :edit-type "fullRow"}
+                        :edit-type "fullRow"
+                        :default-col-def {:sortable true}}
         override-props {:on-row-value-changed (grid-cb (:on-row-value-changed props))
                         :on-grid-ready        (grid-cb (:on-grid-ready        props))
                         :on-selection-changed (grid-cb (:on-selection-changed props))}

@@ -27,14 +27,16 @@
              [:map-of :string
               [:map {:closed true}
                [:id :string]
-               [:name :string]]]]
+               [:name :string]
+               [:created-at number?]]]]
             [:machines
              [:map-of :string
               [:map {:closed true}
                [:id :string]
                [:name :string]
                [:power number?]
-               [:speed number?]]]]
+               [:speed number?]
+               [:created-at number?]]]]
             [:recipes
              [:map-of :string
               [:map {:closed true}
@@ -42,7 +44,8 @@
                [:name :string]
                [:input [:map-of :string number?]]
                [:output [:map-of :string number?]]
-               [:machines [:set :string]]]]]]]
+               [:machines [:set :string]]
+               [:created-at number?]]]]]]
    [:config [:map]]
    [:ui [:map]]])
 

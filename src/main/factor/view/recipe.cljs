@@ -21,9 +21,11 @@
              :on-grid-ready #(update-selection [])
              :on-row-value-changed update-recipe
              :on-selection-changed #(-> % (get-selected-ids) (update-selection))
-             :column-defs [{:checkboxSelection true}
+             :column-defs [{:checkboxSelection true :sortable false}
                            {:field :id}
-                           {:field :name}]}]))
+                           {:field :name}
+                           {:field :created-at
+                            :headerName "Created"}]}]))
 
 (defn navbar []
   (let [selected-recipes   @(subscribe [:ui [:recipe-page :selected]])

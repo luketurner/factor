@@ -20,9 +20,11 @@
              :on-grid-ready #(update-selection [])
              :on-row-value-changed update-item
              :on-selection-changed #(-> % (get-selected-ids) (update-selection))
-             :column-defs [{:checkboxSelection true}
+             :column-defs [{:checkboxSelection true :sortable false}
                            {:field :id}
-                           {:field :name :editable true}]}]))
+                           {:field :name :editable true}
+                           {:field :created-at
+                            :headerName "Created"}]}]))
 
 (defn navbar []
   (let [create-item    #(dispatch [:update-item (w/new-item)])

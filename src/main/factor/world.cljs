@@ -76,14 +76,16 @@
 (defn new-item
   ([] (new-item {}))
   ([opts] (merge {:id (new-uuid)
-                  :name "Unnamed item"} opts)))
+                  :name "Unnamed item"
+                  :created-at (.now js/Date)} opts)))
 
 (defn new-machine 
   ([] (new-machine {}))
   ([opts] (merge {:id (new-uuid)
                   :name "Unnamed machine"
                   :power 0
-                  :speed 1} opts)))
+                  :speed 1
+                  :created-at (.now js/Date)} opts)))
 
 (defn new-recipe
   ([] (new-recipe {}))
@@ -91,7 +93,8 @@
                   :name "Unnamed recipe"
                   :input {}
                   :output {}
-                  :machines #{}} opts)))
+                  :machines #{}
+                  :created-at (.now js/Date)} opts)))
 
 (defn world->str [world] (pr-str world))
 (defn str->world [s] (edn/read-string s))
