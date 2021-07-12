@@ -52,8 +52,9 @@
                                                        :label (subs id 0 3)
                                                        :disabled disabled?
                                                        :intent (when active? "primary")}]))))
-                     :item-predicate (fn [qs id] (let [recipe @(subscribe [(keyword type-name) id])]
-                                                   (string/includes? (:name recipe) qs)))}]))
+                     :item-predicate (fn [qs id] (let [x @(subscribe [(keyword type-name) id])]
+                                                   (string/includes? (string/lower-case (:name x)) 
+                                                                     (string/lower-case qs))))}]))
 
 (defn numeric-input [value on-change opts]
   [(c b/NumericInput) (merge {:value value
