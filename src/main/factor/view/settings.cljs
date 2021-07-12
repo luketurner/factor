@@ -2,7 +2,8 @@
   (:require [factor.components :as c]
             [re-frame.core :refer [dispatch subscribe]]
             [factor.world :as w]
-            [reagent.core :as reagent]))
+            [reagent.core :as reagent]
+            [factor.presets.factorio :as factorio]))
 
 (defn navbar [] [c/navbar])
 
@@ -17,13 +18,22 @@
                                    (.-value)
                                    (reset! v))}]
      [c/alerting-button
-      {:text "Import"
-       :intent :danger}
+      {:text "Import"}
       {:on-confirm #(dispatch [:world-reset (w/str->world @v)])
        :confirm-button-text "Confirm Import"
        :intent :danger}
-      [:p "This will completely replace your existing world, including all items, recipes, machines, and factories! You cannot undo this action!"]
+      [:p "Importing another world will completely replace your existing world, including all items, recipes, machines, and factories! You cannot undo this action!"]
       [:p "(If you haven't done so already, I recommend exporting your existing world as a backup before importing another one.)"]]]))
+
+(defn preset-load-button
+  [label preset-world]
+  [c/alerting-button
+   {:text label}
+   {:on-confirm #(dispatch [:world-reset preset-world])
+    :confirm-button-text "Confirm Load Preset"
+    :intent :danger}
+   [:p "Loading a preset will completely replace your existing world, including all items, recipes, machines, and factories! You cannot undo this action!"]
+   [:p "(If you haven't done so already, I recommend exporting your existing world as a backup before loading a preset.)"]])
 
 (defn page []
   [:div.card-stack
@@ -42,4 +52,7 @@
        :intent :danger
        :confirm-button-text "DELETE MY 🤬 WORLD!!"}
       [:p "This will delete your ENTIRE world, including all items, recipes, machines, and factories! You cannot undo this action!"]
-      [:p "(If you haven't done so already, I recommend exporting your existing world as a backup before resetting it.)"]]]]])
+      [:p "(If you haven't done so already, I recommend exporting your existing world as a backup before resetting it.)"]]]]
+   [c/card-lg
+    [c/form-group {:label "Import Preset"}
+     [preset-load-button "Factorio (WIP)" factorio/world]]]])
