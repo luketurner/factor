@@ -8,11 +8,15 @@
             [factor.db :as db]
             [factor.view :as view]))
 
+(goog-define DEV false)
+
+(when DEV (println "factor development mode enabled!"))
+
 (defn reg-all []
   (subs/reg-all)
   (events/reg-all)
   (fx/reg-all)
-  (reg-global-interceptor (db/->world-validator db/schema))
+  (when DEV (reg-global-interceptor (db/->world-validator db/schema)))
   (reg-global-interceptor (db/->world-saver))
   (reg-global-interceptor (db/->config-saver)))
 

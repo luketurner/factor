@@ -14,6 +14,7 @@
  :dev-http {8080 "public"}
  :builds
  {:app  {:target :browser
+         :dev {:closure-defines {factor.app/DEV true}}
          :devtools {:preloads [re-frisk.preload]
                     :after-load factor.app/after-load}
          :modules {:main {:init-fn factor.app/init}}}

@@ -1,6 +1,7 @@
 (ns factor.events
   (:require [re-frame.core :refer [inject-cofx reg-event-db reg-event-fx path]]
-            [factor.world :as w]))
+            [factor.world :as w]
+            [factor.db :as db]))
 
 
 (defn reg-all []
@@ -23,13 +24,16 @@
   (reg-event-db :delete-machine (path :world) (fn [world [_ machine]] (w/remove-machine-by-id world machine)))
   (reg-event-db :delete-item    (path :world) (fn [world [_ item]]    (w/remove-item-by-id    world item)))
 
-  (reg-event-db :world-reset (fn [db [_ w]] (assoc db :world w)))
+  (reg-event-db :world-reset
+                (db/->world-validator db/schema)
+                (fn [db [_ w]] (assoc db :world w)))
 
   ;; World persistence events
 
   (reg-event-fx
    :world-load
-   [(inject-cofx :localstorage :world)]
+   [(inject-cofx :localstorage :world)
+    (db/->world-validator db/schema)] 
    (fn [{{world :world} :localstorage db :db} [_ default-world]]
      {:db (assoc db :world (if (not-empty world) world default-world))}))
 
