@@ -1,7 +1,5 @@
 # factor
 
-> **Warning:** This project isn't finished -- it probably doesn't work yet!
-
 A companion Web app for factory-builder games like Factorio or Satisfactory.
 
 Factor is game-agnostic, so it needs to be "told" about what items, recipes, etc. are available in the game you're playing.
