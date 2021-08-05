@@ -23,7 +23,7 @@
              :on-selection-changed #(-> % (get-selected-ids) (update-selection))
              :column-defs [{:checkboxSelection true :sortable false}
                            {:field :id}
-                           {:field :name}
+                           {:field :name :editable true}
                            {:field :created-at
                             :headerName "Created"}]}]))
 
@@ -47,12 +47,6 @@
                     :icon :minus :text "Delete"
                     :disabled (= num-selected 0)}]])]]))
 
-
-(defn name-editor [thing on-change]
-  [c/form-group {:label "Name"}
-   [c/input {:value (:name thing)
-             :on-change #(->> % (assoc thing :name) (on-change))}]])
-
 (defn input-editor [thing on-change]
   [c/form-group {:label "Inputs"}
    [c/quantity-set-input-item (:input thing) #(-> thing (assoc :input %) (on-change))]])
@@ -69,7 +63,6 @@
   (let [recipe @(subscribe [:recipe id])
         update-recipe #(dispatch [:update-recipe %])]
     [:div.card-stack
-     [c/card-lg [name-editor recipe update-recipe]]
      [c/card-lg [input-editor recipe update-recipe]]
      [c/card-lg [output-editor recipe update-recipe]]
      [c/card-lg [machine-list-editor recipe update-recipe]]]))
