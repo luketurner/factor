@@ -14,6 +14,43 @@ These things are usually pretty consistent, and don't need to be changed unless 
 
 The next step, when we'll actually start doing useful calculations, is creating a **Factory**. Your world can have many Factories. Each Factory can specify desired outputs (in the form of items), and will calculate various rates of processing required to achieve the desired output.
 
+## Features
+
+The following is a list of high-level features/capabilities that I want to build into Factor.
+
+- [x] Checked-off features like this are **supported**.
+- [ ] Unchecked features are **unsupported**, but may be supported in the future.
+
+Here's the list:
+
+- [x] Create/edit *Items* (e.g. `Iron ore`).
+- [x] Create/edit *Machines* (e.g. `Smelter`).
+  - [x] Machines can have a *power*.
+  - [x] Machines can have a *speed*.
+- [x] Create/edit *Recipes* (e.g. `Smelt iron ore`).
+  - [x] Recipes can have any number of inputs and outputs.
+  - [x] Recipes can specify a list of compatible machines.
+  - [ ] The list of compatible machines can be prioritized.
+  - [ ] Recipes can specify a power modifier.
+  - [ ] Recipes can include *catalysts*.
+- [x] Create/edit *Factories* (e.g. `Starter base`)
+  - [x] Factories have configurable *desired outputs* (e.g. 1 blue research per second).
+  - [x] Factories can generate a *Production Graph* that shows what recipes can be used to produce the desired output.
+    - [x] The production graph is rendered as a Production Tree for users to visualize.
+    - [ ] Circular dependencies are supported. (when Recipe A's output is required for Recipe B, and Recipe B's output is required for a predecessor of Recipe A)
+      - [ ] The "seed items" required for the circular dependency are calculated and included in the factory's catalysts.
+    - [ ] Production graph calculation takes machine speed into account.
+  - [ ] Factories can specify machines/recipes/items to exclude (e.g. don't use Recipe A for given factory.)
+  - [ ] Factories can report the overall power usage required for all machines.
+- [ ] All quantities/rates have *units* (e.g. MJ, kW, items/sec, etc.)
+  - [ ] Units are configurable in settings.
+- [ ] URL-based routing (including pushing history and supporting deep links to sub-pages.)
+  - [ ] Ability to generate "share URLs" that contain your whole world in the URL.
+- [x] Import/Export
+  - [x] World data can be exported as EDN
+  - [x] EDN world data can be imported.
+  - [x] You can load presets from popular games
+    - [ ] Factorio
 
 ## Development
 
