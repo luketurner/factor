@@ -1,16 +1,22 @@
 # factor
 
-A companion Web app for factory-builder games like Factorio or Satisfactory.
+Factor is a Web app that aims to be an alternative to spreadsheets for calculating production rates and ratios in factory games (like Factorio or Satisfactory).
 
-Factor is game-agnostic, so it needs to be "told" about what items, recipes, etc. are available in the game you're playing.
+Try it online at: https://factor.luketurner.org. (Or you can run it yourself! See the [Development](#Development) section.)
 
-- **Items** are that which flows through the factory and get used up or produced by Recipes. (Note that, for example, "fluids" are treated as items in this system.)
-- **Recipes** are all the available ways items can be created or destroyed or transformed within the system. Recipes are performed at Processors.
-- **Machines** are the things that create, destroy, or transform items in accordance with the available Recipes.
+Factor is...
 
-These things are usually pretty consistent, and don't need to be changed unless you wish to use the tool for a different game (or a different selection of mods, or you unlocked new research, etc.)
+- Entirely client-side (everything is stored in your browser's local storage.)
+- Game-agnostic (The available items/recipes/etc. are fully editable.)
+- Written with [Clojurescript](https://clojurescript.org/) and [re-frame](https://github.com/day8/re-frame) (among other dependencies!)
 
-The next step, when we'll actually start doing useful calculations, is creating a **Factory**. Your world can have many Factories. Each Factory can specify desired outputs (in the form of items), and will calculate various rates of processing required to achieve the desired output.
+Basic usage:
+
+1. Input all the **Items**, **Machines**, and **Crafting Recipes** available in the game you're playing.
+    - Note that in Factor, different types of items -- fluid, gas, etc. -- are all treated the same way.
+2. Create a **Factory** and set the Desired Output of the factory to the items you want to produce (e.g. "1 blue science per second").
+3. Factor will calculate a **Production Graph** for the factory that indicates exactly what machines and recipes you need to meet your desired output.
+
 
 ## Features
 
@@ -40,6 +46,7 @@ Here's the list:
     - [ ] Production graph calculation takes machine speed into account.
   - [ ] Factories can specify machines/recipes/items to exclude (e.g. don't use Recipe A for given factory.)
   - [ ] Factories can report the overall power usage required for all machines.
+  - [ ] Factories include a "checklist" of all the machines needed to build the factory.
 - [ ] All quantities/rates have *units* (e.g. MJ, kW, items/sec, etc.)
   - [ ] Units are configurable in settings.
 - [ ] URL-based routing (including pushing history and supporting deep links to sub-pages.)
@@ -51,6 +58,7 @@ Here's the list:
     - [ ] Factorio
 - [ ] Bulk-Editing
   - [ ] Ability to bulk-edit recipes (e.g. remove a certain machine from a bunch of recipes at once)
+- [ ] Conveyor/Inserter Calculator
 ## Development
 
 This section of the README describes how to compile and run Factor on your own computer. Note that this isn't necessary for normal usage (you can visit https://factor.luketurner.org instead), but is necessary if you want to hack on Factor yourself.
