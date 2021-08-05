@@ -55,11 +55,11 @@
 
 (defn input-editor [thing on-change]
   [c/form-group {:label "Inputs"}
-   [c/quantity-set-input :item (:input thing) #(-> thing (assoc :input %) (on-change))]])
+   [c/quantity-set-input-item (:input thing) #(-> thing (assoc :input %) (on-change))]])
 
 (defn output-editor [thing on-change]
   [c/form-group {:label "Outputs"}
-   [c/quantity-set-input :item (:output thing) #(-> thing (assoc :output %) (on-change))]])
+   [c/quantity-set-input-item (:output thing) #(-> thing (assoc :output %) (on-change))]])
 
 (defn machine-list-editor [thing on-change]
   [c/form-group {:label "Machines"}

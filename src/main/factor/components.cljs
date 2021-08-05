@@ -31,16 +31,15 @@
 
 (defn suggest [type value on-change]
   (let [type-name (name type)
-        value-ids @(subscribe [(keyword (str type-name "-ids"))])]
-    [(c bs/Suggest) {:items value-ids
+        ids->names @(subscribe [(keyword (str type-name "-names"))])]
+    [(c bs/Suggest) {:items (keys ids->names)
                      :selected-item value
                      :on-item-select on-change
                      :no-results (reagent/as-element [menu-item {:disabled true :text "No matching results."}])
-                     :input-value-renderer (fn [id] (let [v @(subscribe [(keyword type-name) id])]
-                                                      (if v (:name v) "")))
+                     :input-value-renderer (fn [id]
+                                             (or (ids->names id) ""))
                      :item-renderer (fn [id opts]
-                                      (let [v @(subscribe [(keyword type-name) id])
-                                            on-click (.-handleClick opts)
+                                      (let [on-click (.-handleClick opts)
                                             active? (.-active (.-modifiers opts))
                                             disabled? (.-disabled (.-modifiers opts))
                                             matches-predicate? (.-matchesPredicate (.-modifiers opts))]
@@ -48,13 +47,38 @@
                                           (reagent/as-element
                                            [menu-item {:key id
                                                        :on-click on-click
-                                                       :text (:name v)
+                                                       :text (ids->names id)
                                                        :label (subs id 0 3)
                                                        :disabled disabled?
                                                        :intent (when active? "primary")}]))))
-                     :item-predicate (fn [qs id] (let [x @(subscribe [(keyword type-name) id])]
-                                                   (string/includes? (string/lower-case (:name x)) 
-                                                                     (string/lower-case qs))))}]))
+                     :item-predicate (fn [qs id]
+                                       (string/includes? (string/lower-case (ids->names id))
+                                                         (string/lower-case qs)))}]))
+
+(defn suggest-item [value on-change]
+  (let [ids->names @(subscribe [:item-names])]
+    [(c bs/Suggest) {:items (keys ids->names)
+                     :selected-item value
+                     :on-item-select on-change
+                     :no-results (reagent/as-element [menu-item {:disabled true :text "No matching results."}])
+                     :input-value-renderer (fn [id]
+                                             (or (ids->names id) ""))
+                     :item-renderer (fn [id opts]
+                                      (let [on-click (.-handleClick opts)
+                                            active? (.-active (.-modifiers opts))
+                                            disabled? (.-disabled (.-modifiers opts))
+                                            matches-predicate? (.-matchesPredicate (.-modifiers opts))]
+                                        (when matches-predicate?
+                                          (reagent/as-element
+                                           [menu-item {:key id
+                                                       :on-click on-click
+                                                       :text (ids->names id)
+                                                       :label (subs id 0 3)
+                                                       :disabled disabled?
+                                                       :intent (when active? "primary")}]))))
+                     :item-predicate (fn [qs id]
+                                       (string/includes? (string/lower-case (ids->names id))
+                                                         (string/lower-case qs)))}]))
 
 (defn numeric-input [value on-change opts]
   [(c b/NumericInput) (merge {:value value
@@ -89,6 +113,34 @@
        (into [:<>] (for [[id num] quantity-set]
                      [suggest-numeric-deletable type [id num] #(update-quantity % id) #(delete-quantity id)]))
        [suggest-numeric-addable type @new-quantity update-new-quantity add-new-quantity]))))
+
+(defn suggest-item-numeric [[x n] on-change]
+  [control-group
+   [numeric-input n #(on-change [x %]) {:min 0}]
+   [suggest-item  x #(on-change [% n])]])
+
+(defn suggest-item-numeric-deletable [kvp on-change on-delete]
+  [control-group
+   [suggest-item-numeric kvp on-change]
+   [button {:icon :delete :intent :danger :on-click on-delete}]])
+
+(defn suggest-item-numeric-addable [kvp on-change on-add]
+  [control-group
+   [suggest-item-numeric kvp on-change]
+   [button {:icon :plus :intent :success :on-click #(on-add kvp)}]])
+
+(defn quantity-set-input-item [quantity-set on-change]
+  (reagent/with-let [new-quantity (reagent/atom [])]
+    (let [update-quantity (fn [[id num] oid] (-> quantity-set (dissoc oid) (assoc id num) (on-change)))
+          delete-quantity (fn [id]           (-> quantity-set (dissoc id) (on-change)))
+          update-new-quantity #(reset! new-quantity %)
+          add-new-quantity (fn [x]
+                             (update-quantity x nil)
+                             (update-new-quantity []))]
+      (conj
+       (into [:<>] (for [[id num] quantity-set]
+                     [suggest-item-numeric-deletable [id num] #(update-quantity % id) #(delete-quantity id)]))
+       [suggest-item-numeric-addable @new-quantity update-new-quantity add-new-quantity]))))
 
 (defn list-input [type value on-change]
   (reagent/with-let [new-val (reagent/atom nil)]
