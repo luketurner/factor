@@ -51,7 +51,8 @@ Here's the list:
   - [x] EDN world data can be imported.
   - [x] You can load presets from popular games
     - [ ] Factorio
-
+- [ ] Bulk-Editing
+  - [ ] Ability to bulk-edit recipes (e.g. remove a certain machine from a bunch of recipes at once)
 ## Development
 
 This section of the README describes how to compile and run Factor on your own computer. Note that this isn't necessary for normal usage (you can visit https://factor.luketurner.org instead), but is necessary if you want to hack on Factor yourself.
