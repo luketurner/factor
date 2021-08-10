@@ -32,7 +32,7 @@
 (defn suggest [type value on-change]
   (let [type-name (name type)
         ids->names @(subscribe [(keyword (str type-name "-names"))])]
-    [(c bs/Suggest) {:items (keys ids->names)
+    [(c bs/Suggest) {:items (if (not-empty ids->names) (keys ids->names) [])
                      :selected-item value
                      :on-item-select on-change
                      :no-results (reagent/as-element [menu-item {:disabled true :text "No matching results."}])
@@ -57,7 +57,7 @@
 
 (defn suggest-item [value on-change]
   (let [ids->names @(subscribe [:item-names])]
-    [(c bs/Suggest) {:items (keys ids->names)
+    [(c bs/Suggest) {:items (if (not-empty ids->names) (keys ids->names) [])
                      :selected-item value
                      :on-item-select on-change
                      :no-results (reagent/as-element [menu-item {:disabled true :text "No matching results."}])
