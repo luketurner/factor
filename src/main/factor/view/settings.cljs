@@ -38,6 +38,13 @@
 (defn page []
   [:div.card-stack
    [c/card-lg
+    [c/form-group {:label "Item rate unit (default: items/sec)"}
+     [c/select-enum #{"items/sec" "items/min"} (or @(subscribe [:unit :item-rate]) "items/sec") #(dispatch [:set-unit :item-rate %])]]
+    [c/form-group {:label "Power unit (default: W)"}
+     [c/select-enum #{"W"} (or @(subscribe [:unit :power]) "W") #(dispatch [:set-unit :power %])]]
+    [c/form-group {:label "Energy unit (default: J)"}]
+     [c/select-enum #{"J"} (or @(subscribe [:unit :energy]) "J") #(dispatch [:set-unit :energy %])]]
+   [c/card-lg
     [c/form-group {:label "Export (Copy World Data)"}
      [c/textarea {:value (w/world->str @(subscribe [:world-data])) :read-only true}]]]
    [c/card-lg

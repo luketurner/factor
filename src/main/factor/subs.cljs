@@ -41,5 +41,6 @@
 
   (reg-sub :ui (fn [db [_ path]] (get-in db (into [:ui] path))))
 
-  (reg-sub :open-factory (fn [db _] (get-in db [:config :open-factory]))))
+  (reg-sub :open-factory (fn [db _] (get-in db [:config :open-factory])))
+  (reg-sub :unit (fn [db [_ k]] (get-in db [:config :unit k]))))
 

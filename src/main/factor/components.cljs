@@ -24,10 +24,30 @@
 (defn form-group [props & children]
   (into [(c b/FormGroup) props] children))
 
+(defn input-group [props & children]
+  (into [(c b/InputGroup) props] children))
+
+
 (defn textarea [props]
   [(c b/TextArea) props])
 
 (defn menu-item [p & children] (into [(c b/MenuItem) p] children))
+
+(defn select-enum [possible-values initial-value on-change]
+  (reagent/with-let [query (reagent/atom "")]
+    [(c bs/Select) {:items possible-values
+                    :query @query
+                    :active-item initial-value
+                    :on-query-change #(reset! query %)
+                    :on-item-select on-change
+                    :item-renderer (fn [item opts] 
+                                     (let [on-click (.-handleClick opts)
+                                           active? (.-active (.-modifiers opts))]
+                                       (reagent/as-element [menu-item {:key item
+                                                                       :on-click on-click
+                                                                       :text item
+                                                                       :intent (when active? "primary")}])))}
+     [button {:text initial-value :right-icon :double-caret-vertical}]]))
 
 (defn suggest [type value on-change]
   (let [type-name (name type)

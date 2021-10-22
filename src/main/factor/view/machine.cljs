@@ -16,7 +16,8 @@
 
 (defn machine-grid [machines]
   (let [update-machine #(dispatch [:update-machine (:data %)])
-        update-selection #(dispatch [:ui [:machine-page :selected] %])]
+        update-selection #(dispatch [:ui [:machine-page :selected] %])
+        power-unit @(subscribe [:unit :power])]
     [c/grid {:row-data machines
              :on-grid-ready #(update-selection [])
              :on-row-value-changed #(update-machine %)
@@ -24,7 +25,7 @@
              :column-defs [{:checkboxSelection true :sortable false}
                            {:field :id}
                            {:field :name :editable true}
-                           {:field :power :editable true}
+                           {:field :power :editable true :headerName (str "Power (" power-unit ")")}
                            {:field :speed :editable true}
                            {:field :created-at
                             :headerName "Created"}]}]))

@@ -88,7 +88,8 @@
   (if-let [factory-id @(subscribe [:open-factory])]
     (let [factory @(subscribe [:factory factory-id])
           pg @(subscribe [:factory-pgraph factory-id])
-          update-factory #(dispatch [:update-factory %])]
+          update-factory #(dispatch [:update-factory %])
+          item-rate-unit @(subscribe [:unit :item-rate])]
       ;; (println "nodes" (tree-node-for-pgraph-node pg :root))
       [:div.card-stack
        [c/card-lg
@@ -96,26 +97,26 @@
          [c/input {:value (:id factory) :disabled true}]]
         [c/form-group {:label "Name"}
          [c/input {:value (:name factory) :on-change #(update-factory (assoc factory :name %))}]]]
-       [c/card-lg [c/form-group {:label "Desired Outputs"}
+       [c/card-lg [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")" )}
                    [c/quantity-set-input-item (:desired-output factory) #(update-factory (assoc factory :desired-output %))]]]
-       [c/card-lg [c/form-group {:label "Outputs"}
+       [c/card-lg [c/form-group {:label (str "Outputs (" item-rate-unit ")")}
                    (into [:ul] (for [[x n] (:input (pgraph/get-node pg :end))] [:li n "x " (get-item-name x)]))]]
-       [c/card-lg [c/form-group {:label "Inputs"}
+       [c/card-lg [c/form-group {:label (str "Inputs (" item-rate-unit ")")}
                    (into [:ul] (for [[x n] (:output (pgraph/get-node pg :start))] [:li n "x " (get-item-name x)]))]]
       ;;  [c/card-lg [c/form-group {:label "Machines"}
       ;;              (into [:ul] (for [[x n] (:machines pgraph)] [:li n "x " (get-machine-name x)]))]]
       ;;  [c/card-lg [c/form-group {:label "Recipes"}
       ;;              (into [:ul] (for [[x n] (:recipes pgraph)] [:li n "x " (get-recipe-name x)]))]]
-       [c/card-lg [c/form-group {:label "Production Graph"}
+       [c/card-lg [c/form-group {:label (str "Production Graph (" item-rate-unit ")")}
                    [pgraph-tree pg]]]
-       [c/card-lg [c/form-group {:label "Production Stages"}
+       [c/card-lg [c/form-group {:label (str "Production Stages (" item-rate-unit ")")}
                    [node-list pg]]]       
        [c/card-lg
-        [c/form-group {:label "Production Graph (raw)"}
+        [c/form-group {:label "Raw Data - Production Graph"}
          [c/textarea {:value (pr-str (dissoc pg :world))
                       :read-only true
                       :style {:width "100%" :height "150px"}}]]
-        [c/form-group {:label "Factory Data (raw)"}
+        [c/form-group {:label "Raw Data - Factory Object"}
          [c/textarea {:value (pr-str factory)
                       :read-only true
                       :style {:width "100%" :height "150px"}}]]]])

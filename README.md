@@ -47,8 +47,10 @@ Here's the list:
   - [ ] Factories can specify machines/recipes/items to exclude (e.g. don't use Recipe A for given factory.)
   - [ ] Factories can report the overall power usage required for all machines.
   - [ ] Factories include a "checklist" of all the machines needed to build the factory.
-- [ ] All quantities/rates have *units* (e.g. MJ, kW, items/sec, etc.)
-  - [ ] Units are configurable in settings.
+- [x] All quantities/rates have *units* (e.g. J, W, items/sec, etc.)
+  - [x] Units are configurable in settings.
+  - [ ] Units are presented in human-readable form (e.g. 2.3 MW instead of 2300 W)
+  - [ ] Units support conversions between them (e.g. changing unit from items/sec to items/min converts values by multiplying by 60)
 - [ ] URL-based routing (including pushing history and supporting deep links to sub-pages.)
   - [ ] Ability to generate "share URLs" that contain your whole world in the URL.
 - [x] Import/Export

@@ -9,7 +9,9 @@
   ;; General events
 
   (reg-event-db :initialize-db (fn [] {:ui {:selected-page [:home]}
-                                       :config {}
+                                       :config {:unit {:item-rate "items/sec"
+                                                       :power "W"
+                                                       :energy "J"}}
                                        :world w/empty-world}))
 
   ;; World-mutating events
@@ -45,6 +47,7 @@
   ;; Config-mutating events
 
   (reg-event-db :open-factory (fn [db [_ id]] (assoc-in db [:config :open-factory] id)))
+  (reg-event-db :set-unit (fn [db [_ k v]] (assoc-in db [:config :unit k] v)))
 
   ;; Config persistence events
 
