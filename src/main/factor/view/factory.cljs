@@ -103,7 +103,7 @@
         [c/form-group {:label "Name"}
          [c/input {:value (:name factory) :on-change #(update-factory (assoc factory :name %))}]]]
        [c/card-lg [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")" )}
-                   [c/quantity-set-input-item (:desired-output factory) #(update-factory (assoc factory :desired-output %))]]]
+                   [c/quantity-set-input :item (:desired-output factory) #(update-factory (assoc factory :desired-output %))]]]
        [c/card-lg [c/form-group {:label (str "Outputs (" item-rate-unit ")")}
                    (into [:ul] (for [[x n] (:input (pgraph/get-node pg :end))] [:li n "x " (get-item-name x)]))]]
        [c/card-lg [c/form-group {:label (str "Inputs (" item-rate-unit ")")}

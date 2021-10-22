@@ -24,3 +24,7 @@
 
 (defn without [x vs]
   (remove #(= % vs) x))
+
+(defn try-fn
+  "Returns `(apply f args)` if `f` is a function, otherwise returns `nil`."
+  [f & args] (when (fn? f) (apply f args)))

@@ -50,17 +50,17 @@
 (defn input-editor [thing on-change]
   (let [item-rate-unit @(subscribe [:unit :item-rate])]
     [c/form-group {:label (str "Inputs (" item-rate-unit ")")}
-     [c/quantity-set-input-item (:input thing) #(-> thing (assoc :input %) (on-change))]]))
+     [c/quantity-set-input :item (:input thing) #(-> thing (assoc :input %) (on-change))]]))
 
 (defn output-editor [thing on-change]
   (let [item-rate-unit @(subscribe [:unit :item-rate])]
     [c/form-group {:label (str "Outputs (" item-rate-unit ")")}
-     [c/quantity-set-input-item (:output thing) #(-> thing (assoc :output %) (on-change))]]))
+     [c/quantity-set-input :item (:output thing) #(-> thing (assoc :output %) (on-change))]]))
 
 (defn catalysts-editor [thing on-change]
   (let [item-rate-unit @(subscribe [:unit :item-rate])]
     [c/form-group {:label (str "One-time catalysts (" item-rate-unit ")")}
-     [c/quantity-set-input-item (:catalysts thing) #(-> thing (assoc :catalysts %) (on-change))]]))
+     [c/quantity-set-input :item (:catalysts thing) #(-> thing (assoc :catalysts %) (on-change))]]))
 
 (defn machine-list-editor [thing on-change]
   [c/form-group {:label "Machines"}
