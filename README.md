@@ -36,7 +36,7 @@ Here's the list:
   - [x] Recipes can specify a list of compatible machines.
   - [ ] The list of compatible machines can be prioritized.
   - [ ] Recipes can specify a power modifier.
-  - [ ] Recipes can include *catalysts*.
+  - [x] Recipes can include *catalysts*.
 - [x] Create/edit *Factories* (e.g. `Starter base`)
   - [x] Factories have configurable *desired outputs* (e.g. 1 blue research per second).
   - [x] Factories can generate a *Production Graph* that shows what recipes can be used to produce the desired output.
