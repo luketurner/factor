@@ -173,6 +173,15 @@
   [node]
   [(:recipe node) (:recipe-ratio node)])
 
+(defn node-recipe-prescaled
+  "Returns a copy of the node's :recipe, but with the :input, :output, and :catalysts fields already scaled by the node's :recipe-ratio"
+  [node]
+  (let [[recipe ratio] (node-recipe node)]
+    (s/select-one [(s/transformed [(s/keypath :input)]     #(qmap/* % ratio))
+                   (s/transformed [(s/keypath :output)]    #(qmap/* % ratio))
+                   (s/transformed [(s/keypath :catalysts)] #(qmap/* % ratio))]
+                  recipe)))
+
 (defn node-machine
   [node]
   (let [[recipe ratio] (node-recipe node)]
@@ -186,6 +195,13 @@
   [pg]
   (and (= 2 (count (all-nodes pg)))
        (empty? (:input (get-node pg :end)))))
+
+(defn all-catalysts
+  "Returns a qmap representing the sum of all catalysts required for all nodes in the graph.
+   Note -- in the future catalysts may be bubbled up node-by-node similar to inputs instead of
+   being summed this way."
+  [pg]
+  (->> pg (all-nodes) (s/select [s/ALL (s/view node-recipe-prescaled) (s/keypath :catalysts)]) (apply qmap/+)))
 
 
 ;; (defn successors

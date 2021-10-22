@@ -84,6 +84,11 @@
                                                             (not= (:id node) :end))]
                   [:li (str (get node :recipe-ratio) "x " (get-in node [:recipe :name]))]))))
 
+(defn catalyst-list
+  [pg]
+  (if-let [catalysts (pgraph/all-catalysts pg)]
+    (into [:ul] (for [[k v] catalysts] [:li (str v "x " (get-item-name k))]))))
+
 (defn page []
   (if-let [factory-id @(subscribe [:open-factory])]
     (let [factory @(subscribe [:factory factory-id])
@@ -103,6 +108,8 @@
                    (into [:ul] (for [[x n] (:input (pgraph/get-node pg :end))] [:li n "x " (get-item-name x)]))]]
        [c/card-lg [c/form-group {:label (str "Inputs (" item-rate-unit ")")}
                    (into [:ul] (for [[x n] (:output (pgraph/get-node pg :start))] [:li n "x " (get-item-name x)]))]]
+       [c/card-lg [c/form-group {:label (str "Catalysts (" item-rate-unit ")")}
+                   [catalyst-list pg]]]
       ;;  [c/card-lg [c/form-group {:label "Machines"}
       ;;              (into [:ul] (for [[x n] (:machines pgraph)] [:li n "x " (get-machine-name x)]))]]
       ;;  [c/card-lg [c/form-group {:label "Recipes"}

@@ -93,6 +93,7 @@
                   :name "Unnamed recipe"
                   :input {}
                   :output {}
+                  :catalysts {}
                   :machines #{}
                   :created-at (.now js/Date)} opts)))
 
