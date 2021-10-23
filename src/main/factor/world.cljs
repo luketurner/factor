@@ -15,7 +15,8 @@
 
 (defn update-recipe [world recipe]
   (-> world
-      (assoc-in [:recipes (:id recipe)] recipe)))
+      ; Note -- since ag-grid updates (among others? possibly set :machines to an array, I just cast it to a set here until I have a better approach)
+      (assoc-in [:recipes (:id recipe)] (update recipe :machines set))))
 
 (defn update-factory [world factory]
   (-> world
@@ -95,6 +96,7 @@
                   :output {}
                   :catalysts {}
                   :machines #{}
+                  :duration 1
                   :created-at (.now js/Date)} opts)))
 
 (defn world->str [world] (pr-str world))
