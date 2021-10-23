@@ -108,7 +108,8 @@
 (defn ->migrate-database
   "An interceptor that runs the `migrate-database` function on the :db effect after the event executes.
    
-   Note, if the event also has a validation interceptor, this should run before that."
+   Note, if the event also has a validation interceptor, this should run before that
+   (meaning it should be AFTER that in the interceptor list)."
   []
   (->interceptor
    :id :migrate-database
