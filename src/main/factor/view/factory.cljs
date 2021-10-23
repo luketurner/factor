@@ -48,7 +48,12 @@
         seen-nodes (conj seen-nodes node-id)
         child-node-for-edge (fn [[l _ _]]
                               (pgraph-tree-node pg node-states seen-nodes node-id l))
-        child-nodes (when-not seen? (map child-node-for-edge (pgraph/input-edges pg node-id)))]
+        child-nodes (when-not seen? (map child-node-for-edge (pgraph/input-edges pg node-id)))
+        child-nodes (if (not-empty (:catalysts node))
+                      (conj child-nodes {:id (str tree-node-id "-catalysts")
+                                         :label (str "Catalysts: " (qmap->str (:catalysts node)))
+                                         :icon :lab-test})
+                      child-nodes)]
     {:id tree-node-id
      :label (qmap->str (case node-id
               :start (:output node)
