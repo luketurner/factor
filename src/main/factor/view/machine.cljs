@@ -1,7 +1,8 @@
 (ns factor.view.machine
   (:require [factor.components :as c]
             [re-frame.core :refer [dispatch subscribe]]
-            [factor.world :as w]))
+            [factor.world :as w]
+            [clojure.string :as string]))
 
 (defn get-selected-ids [ev]
   (-> ev
@@ -17,7 +18,9 @@
 (defn machine-grid [machines]
   (let [update-machine #(dispatch [:update-machine (:data %)])
         update-selection #(dispatch [:ui [:machine-page :selected] %])
-        power-unit @(subscribe [:unit :power])]
+        power-unit @(subscribe [:unit :power])
+        item-rate-unit @(subscribe [:unit :item-rate])
+        [_ rate-denominator] (string/split item-rate-unit #"/" 2)]
     [c/grid {:row-data machines
              :on-grid-ready #(update-selection [])
              :on-row-value-changed #(update-machine %)
@@ -25,8 +28,12 @@
              :column-defs [{:checkboxSelection true :sortable false}
                            {:field :id}
                            {:field :name :editable true}
-                           {:field :power :editable true :headerName (str "Power (" power-unit ")")}
-                           {:field :speed :editable true}
+                           {:field :power :editable true :type :numericColumn
+                            :headerName (str "Power (" power-unit ")")
+                            :valueParser c/grid-value-parser-for-floats}
+                           {:field :speed :editable true :type :numericColumn
+                            :headerName (str "Speed (" rate-denominator ")")
+                            :valueParser c/grid-value-parser-for-floats}
                            {:field :created-at
                             :headerName "Created"}]}]))
 

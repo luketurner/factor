@@ -184,6 +184,10 @@
   (fn [ev]
     (->> ev (grid-cb->clj) (try-fn cb))))
 
+(defn grid-value-parser-for-floats
+  [ev]
+  (js/parseFloat (.-newValue ev)))
+
 (defn grid
   "Wrapper around ag-grid's Grid component. Sets a variety of default props for DRY-ness. All defaults can be
    overriden with `props`. Note that usually you want to specify at least the :on-row-value-changed prop. The
