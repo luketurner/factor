@@ -47,6 +47,7 @@
                [:output [:map-of :string number?]]
                [:catalysts [:map-of :string number?]]
                [:machines [:set :string]]
+               [:duration number?]
                [:created-at number?]]]]]]
    [:config [:map]]
    [:ui [:map]]])
@@ -85,6 +86,11 @@
   [db]
   (s/setval [(s/keypath :world :recipes) s/MAP-VALS (s/keypath :catalysts) (s/pred nil?)] {} db))
 
+(defn add-duration-to-recipes
+  "All recipes without a :duration key will have the key initialized to 1."
+  [db]
+  (s/setval [(s/keypath :world :recipes) s/MAP-VALS (s/keypath :duration) (s/pred nil?)] 1 db))
+
 (defn migrate-database
   "A function that accepts user-provided database contents, which might have been generated
    from an earlier version of Factor (e.g. when importing a world or loading from local storage),
@@ -96,7 +102,8 @@
    For convenience, consider using the `->migrate-database` interceptor to easily add migrations to an existing event."
   [db]
   (->> db
-       (add-catalysts-map-to-recipes)))
+       (add-catalysts-map-to-recipes)
+       (add-duration-to-recipes)))
 
 (defn ->migrate-database
   "An interceptor that runs the `migrate-database` function on the :db effect after the event executes.

@@ -101,15 +101,15 @@
   [pg recipe ratio]
   (add-node pg {:recipe recipe
                 :recipe-ratio ratio
-                :input  (qmap/* (:input recipe)  ratio)
-                :output (qmap/* (:output recipe) ratio)}))
+                :input  (qmap/* (:input recipe)  (/ ratio (:duration recipe)))
+                :output (qmap/* (:output recipe) (/ ratio (:duration recipe)))}))
 
 (defn matching-recipe-for-node
   [pg node-id]
   (let [{:keys [world]} pg
         needed-input    (get-edge pg :start node-id)]
     (if-let [matching-recipe (s/select-first [(s/must :recipes) s/MAP-VALS #(recipe-matches-qm % needed-input)] world)]
-      [matching-recipe (satisfying-ratio needed-input (:output matching-recipe))])))
+      [matching-recipe (satisfying-ratio needed-input (qmap/* (:output matching-recipe) (/ 1 (:duration matching-recipe))))])))
 
 (defn edges
   [pg]
@@ -177,9 +177,9 @@
   "Returns a copy of the node's :recipe, but with the :input, :output, and :catalysts fields already scaled by the node's :recipe-ratio"
   [node]
   (let [[recipe ratio] (node-recipe node)]
-    (s/select-one [(s/transformed [(s/keypath :input)]     #(qmap/* % ratio))
-                   (s/transformed [(s/keypath :output)]    #(qmap/* % ratio))
-                   (s/transformed [(s/keypath :catalysts)] #(qmap/* % ratio))]
+    (s/select-one [(s/transformed [(s/keypath :input)]     #(qmap/* % (/ ratio (:duration recipe))))
+                   (s/transformed [(s/keypath :output)]    #(qmap/* % (/ ratio (:duration recipe))))
+                   (s/transformed [(s/keypath :catalysts)] #(qmap/* % (/ ratio (:duration recipe))))]
                   recipe)))
 
 (defn node-machine

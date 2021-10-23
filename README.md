@@ -34,9 +34,10 @@ Here's the list:
 - [x] Create/edit *Recipes* (e.g. `Smelt iron ore`).
   - [x] Recipes can have any number of inputs and outputs.
   - [x] Recipes can specify a list of compatible machines.
+  - [x] Recipes have a configurable :duration
   - [ ] The list of compatible machines can be prioritized.
   - [ ] Recipes can specify a power modifier.
-  - [x] Recipes can include *catalysts*.
+  - [x] Recipes can include *catalysts* (items only required at startup, not per craft).
 - [x] Create/edit *Factories* (e.g. `Starter base`)
   - [x] Factories have configurable *desired outputs* (e.g. 1 blue research per second).
   - [x] Factories can generate a *Production Graph* that shows what recipes can be used to produce the desired output.
