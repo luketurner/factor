@@ -95,6 +95,7 @@
    Any provided `opts` will be passed through to the underlying NumericInput component."
   [value on-change opts]
   [(c b/NumericInput) (merge {:value value
+                              :async-control true
                               :on-value-change on-change
                               :style {:width "2.5rem"}}
                              opts)])
