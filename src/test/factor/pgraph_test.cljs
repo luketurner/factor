@@ -76,7 +76,8 @@
                                           :recipe (get-in w [:recipes "iron-plate"])
                                           :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
-                                          :output {"iron-plate" 123}})
+                                          :output {"iron-plate" 123}
+                                          :catalysts {}})
         "should have added a node that crafts iron plates")))
 
 (deftest pgraph-try-satisfy-node-should-satisfy-second-node
@@ -98,13 +99,15 @@
                                           :recipe (get-in w [:recipes "iron-plate"])
                                           :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
-                                          :output {"iron-plate" 123}})
+                                          :output {"iron-plate" 123}
+                                          :catalysts {}})
         "should have added a node that crafts iron plates")
     (is (= (get-in actual-pg [:nodes 2]) {:id 2
                                           :recipe (get-in w [:recipes "iron-ingot"])
                                           :recipe-ratio 246
                                           :input  {"iron-ore" 246}
-                                          :output {"iron-ingot" 246}})
+                                          :output {"iron-ingot" 246}
+                                          :catalysts {}})
         "should have added a node that crafts iron ingots")))
 
 (deftest pgraph-try-satisfy-node-should-handle-partial-satisfaction
@@ -128,13 +131,15 @@
                                           :recipe (get-in w [:recipes "cable"])
                                           :recipe-ratio 1
                                           :input  {"copper-wire" 2}
-                                          :output {"cable" 1}})
+                                          :output {"cable" 1}
+                                          :catalysts {}})
         "should have added a node that crafts iron plates")
     (is (= (get-in actual-pg [:nodes 2]) {:id 2
                                           :recipe (get-in w [:recipes "copper-wire"])
                                           :recipe-ratio 1
                                           :input  {"copper-ore" 1}
-                                          :output {"copper-wire" 4}})
+                                          :output {"copper-wire" 4}
+                                          :catalysts {}})
         "should have added a node that crafts iron ingots")))
 
 (deftest pgraph-try-satisfy-should-satisfy-multiple-nodes
@@ -155,13 +160,15 @@
                                           :recipe (get-in w [:recipes "iron-plate"])
                                           :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
-                                          :output {"iron-plate" 123}})
+                                          :output {"iron-plate" 123}
+                                          :catalysts {}})
         "should have added a node that crafts iron plates")
     (is (= (get-in actual-pg [:nodes 2]) {:id 2
                                           :recipe (get-in w [:recipes "iron-ingot"])
                                           :recipe-ratio 246
                                           :input  {"iron-ore" 246}
-                                          :output {"iron-ingot" 246}})
+                                          :output {"iron-ingot" 246}
+                                          :catalysts {}})
         "should have added a node that crafts iron ingots")))
 
 (deftest pgraph-try-satisfy-should-reuse-existing-output-where-possible
