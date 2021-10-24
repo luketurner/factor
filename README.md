@@ -62,6 +62,25 @@ Here's the list:
 - [ ] Bulk-Editing
   - [ ] Ability to bulk-edit recipes (e.g. remove a certain machine from a bunch of recipes at once)
 - [ ] Conveyor/Inserter Calculator
+
+## Glossary
+
+- **Catalyst**: A catalyst is a one-time requirement for crafting recipes. Catalysts can either be items that aren't consumed in crafting (e.g. a "Gear casting mold" used to make gears) or that are consumed to kickstart a self-sustaining reaction (e.g. a hohlraum).
+- **Factory**: Represents a player-built, self-contained production system that produces some *desired outputs*. For example, perhaps your factory's desired output is "One supercomputer per second." The factory contains all the various machines required to produce the output, which could include multiple stages of complex crafting.
+- **Item**: Represents an in-game item that is produced/consumed/conveyed/stored. e.g. "Iron ore" would be an item, and so would "Water" and "Research cube."
+- **Preset**: A preset is a built-in *world* that ships with Factor and can be imported from the Settings page. (Note: I haven't built out any presets yet, but the framework is in place.)
+- **Production Graph (pgraph)**: A directed, cyclic graph that represents the flow of *items* within a *factory*. The nodes of the graph represent a bank of machines in the factory, all processing the same recipe (e.g. three Smelters using the "Smelting iron ore" recipe would be grouped in a single node.) The edges of the graph represent the flow of items between the banks of machines. Factor can automatically calculate a Production Graph for your factories.
+- **Production Tree**: A simplified view of a Production Graph, used for display purposes. Some types of pgraphs can be directly represented as a tree, but many pgraphs don't have a tree-like structure, in which case the calculated production tree will have to list some nodes more than once (as children of different parents).
+- **Recipe**: Represents an in-game crafting recipe. The recipe describes a crafting operation that consumes certain *inputs* to produce some *outputs*. (e.g. consuming iron ore to produce iron plates.) Recipes can also specify *catalysts* required to bootstrap crafting, what *machines* can be used to craft, and a *duration* of the crafting operation. (Note that even resource collection is modeled as a recipe: the ability to mine coal would be represented as a recipe that outputs coal and has no inputs.)
+- **World**: The "world" is a piece of data that encapsulates everything that models in-game entities -- namely, all *items*, *machines*, *recipes*, and *factories*. It *doesn't* contain personal configuration (e.g. units) or UI state (e.g. which factory is open by default). Factor can import/export worlds; it's recommended to export your world occasionally for backup purposes. You can also share it with your friends!
+
+## Developer-facing terms
+
+Used in Factor's codebase and developer documentation.
+
+- **Database**: Factor's "database" is just an *in-memory map* accessed using the conventions of [re-frame](https://github.com/day8/re-frame). There is NO server-side database in Factor (or indeed, any network access at all!)
+- **Migration**: In the context of Factor, a "migration" is a function that performs some modifications on application data when it's loaded from local storage or imported by the user. Whenever a breaking change is made in the schema, a corresponding migration function is defined to update old versions of the database. All migrations are idempotent and are always applied; there is no state tracking of which migrations have/haven't been run.
+- **Quantity map (qmap)**: Widely used in the codebase, a `qmap` is a hash-map where keys are opaque strings (usually the IDs of items/machines) and values are a numeric quantity. Quantities can be floating-point, but zero or negative values are not allowed in a `qmap`.
 ## Development
 
 This section of the README describes how to compile and run Factor on your own computer. Note that this isn't necessary for normal usage (you can visit https://factor.luketurner.org instead), but is necessary if you want to hack on Factor yourself.
