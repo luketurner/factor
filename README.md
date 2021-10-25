@@ -35,7 +35,7 @@ Here's the list:
   - [x] Recipes can have any number of inputs and outputs.
   - [x] Recipes can specify a list of compatible machines.
   - [x] Recipes have a configurable :duration
-  - [ ] The list of compatible machines can be prioritized.
+  - [x] The list of compatible machines can be prioritized.
   - [ ] Recipes can specify a power modifier.
   - [x] Recipes can include *catalysts* (items only required at startup, not per craft).
 - [x] Create/edit *Factories* (e.g. `Starter base`)
