@@ -67,7 +67,7 @@
 
 (defn machine-list-editor [thing on-change]
   [c/form-group {:label "Machines"}
-   [c/list-input :machine (:machines thing) #(-> thing (assoc :machines (set %)) (on-change))]])
+   [c/list-input :machine (:machines thing) #(-> thing (assoc :machines %) (on-change))]])
 
 (defn duration-editor [thing on-change]
   (let [item-rate-unit @(subscribe [:unit :item-rate])

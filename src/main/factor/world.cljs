@@ -15,8 +15,7 @@
 
 (defn update-recipe [world recipe]
   (-> world
-      ; Note -- since ag-grid updates (among others? possibly set :machines to an array, I just cast it to a set here until I have a better approach)
-      (assoc-in [:recipes (:id recipe)] (update recipe :machines set))))
+      (assoc-in [:recipes (:id recipe)] recipe)))
 
 (defn update-factory [world factory]
   (-> world

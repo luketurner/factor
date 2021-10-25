@@ -6,7 +6,8 @@
             ["@blueprintjs/select" :as bs]
             ["ag-grid-react" :refer [AgGridReact]]
             [clojure.string :as string]
-            [factor.util :refer [without try-fn]]
+            [factor.util :refer [ipairs try-fn delete-index move-index-ahead move-index-behind]]
+            [com.rpl.specter :as s]
             [medley.core :refer [map-keys]]))
 
 ;; WRAPPER COMPONENTS
@@ -143,21 +144,25 @@
 
 (defn list-input
   "A complex control for editing a list of objects (items, machines, etc.) Each entry in the list is rendered as a line that's editable
-   and deletable. There's also a line for adding new entries to the list The `on-change` function is called with the full updated
-   list whenever any updates are performed."
+   and deletable. There's also a line for adding new entries to the list. Lines can be moved up and down. Duplicates are allowed.
+   The `on-change` function is called with the full updated list whenever any updates are performed."
   [type value on-change]
   (reagent/with-let [new-val (reagent/atom nil)]
-    (let [update-value (fn [v ov] (-> value (without ov) (conj v) (on-change)))
-          delete-value (fn [v]    (-> value (without v) (on-change)))
+    (let [update-value-at-index (fn [ix v] (on-change (assoc value ix v)))
+          delete-value-at-index (fn [ix] (on-change (delete-index value ix)))
+          move-value-at-index-up (fn [ix] (on-change (move-index-behind value ix)))
+          move-value-at-index-down (fn [ix] (on-change (move-index-ahead value ix)))
           update-new-value #(reset! new-val %)
           add-new-value (fn [x]
-                             (update-value x nil)
-                             (update-new-value nil))]
+                          (on-change (conj value x))
+                          (update-new-value nil))]
       (conj
-       (into [:<>] (for [v value]
+       (into [:<>] (for [[v i] (ipairs value)]
                      [control-group
-                      [suggest type v #(update-value % v)]
-                      [button {:icon :delete :on-click #(delete-value v)}]]))
+                      [button {:icon :chevron-up :on-click #(move-value-at-index-up i) :disabled (= i 0)}]
+                      [button {:icon :chevron-down :on-click #(move-value-at-index-down i) :disabled (= i (dec (count value)))}]
+                      [suggest type v #(update-value-at-index i %)]
+                      [button {:icon :delete :on-click #(delete-value-at-index i)}]]))
        [control-group
         [suggest type @new-val update-new-value]
         [button {:icon :plus :on-click #(add-new-value @new-val)}]]))))

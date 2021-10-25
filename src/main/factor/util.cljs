@@ -25,6 +25,24 @@
 (defn without [x vs]
   (remove #(= % vs) x))
 
+(defn delete-index [v ix]
+  (into [] (concat (subvec v 0 ix)
+                   (subvec v (inc ix)))))
+
+(defn move-index-behind [v ix]
+  (let [ix2 (max (dec ix) 0)]
+    (-> v
+        (assoc ix2 (nth v ix))
+        (assoc ix (nth v ix2)))))
+
+(defn move-index-ahead [v ix]
+  (let [ix2 (min (inc ix) (dec (count v)))]
+    (-> v
+        (assoc ix2 (nth v ix))
+        (assoc ix (nth v ix2)))))
+
+(defn ipairs [coll] (map list coll (range)))
+
 (defn try-fn
   "Returns `(apply f args)` if `f` is a function, otherwise returns `nil`."
   [f & args] (when (fn? f) (apply f args)))

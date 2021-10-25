@@ -46,7 +46,7 @@
                [:input [:map-of :string number?]]
                [:output [:map-of :string number?]]
                [:catalysts [:map-of :string number?]]
-               [:machines [:set :string]]
+               [:machines [:vector :string]]
                [:duration number?]
                [:created-at number?]]]]]]
    [:config [:map]]
@@ -91,6 +91,11 @@
   [db]
   (s/setval [(s/keypath :world :recipes) s/MAP-VALS (s/keypath :duration) (s/pred nil?)] 1 db))
 
+(defn switch-recipe-machines-to-vector
+  "All recipes with a :machines that is a set will have the value converted to a vector."
+  [db]
+  (s/transform [(s/keypath :world :recipes) s/MAP-VALS (s/keypath :machines) (s/pred set?)] vec db))
+
 (defn migrate-database
   "A function that accepts user-provided database contents, which might have been generated
    from an earlier version of Factor (e.g. when importing a world or loading from local storage),
@@ -103,7 +108,8 @@
   [db]
   (->> db
        (add-catalysts-map-to-recipes)
-       (add-duration-to-recipes)))
+       (add-duration-to-recipes)
+       (switch-recipe-machines-to-vector)))
 
 (defn ->migrate-database
   "An interceptor that runs the `migrate-database` function on the :db effect after the event executes.
