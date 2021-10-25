@@ -1,7 +1,8 @@
 (ns factor.world
   (:require [clojure.edn :as edn]
             [factor.util :refer [new-uuid dissoc-in]]
-            [medley.core :refer [map-vals]]))
+            [medley.core :refer [map-vals]]
+            [com.rpl.specter :as s]))
 
 (def empty-world {:items {} :machines {} :recipes {} :factories {}})
 
@@ -100,3 +101,11 @@
 
 (defn world->str [world] (pr-str world))
 (defn str->world [s] (edn/read-string s))
+
+(defn machine-for-factory-recipe 
+  "Picks which machine should be used to craft given `recipe`. Respects the machine
+   constraints assigned by `factory`, if any. Returns nil if there are no matching machines."
+  [factory recipe]
+  (s/select-first
+   [(s/keypath :machines)] ; Add filtering logic here when implemented in factory
+   recipe))

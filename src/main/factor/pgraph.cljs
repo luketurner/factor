@@ -6,7 +6,8 @@
    The edges of the pgraph represent the flow of items from one processing unit's output to the next unit's input."
   (:require [factor.qmap :as qmap]
             [medley.core]
-            [com.rpl.specter :as s]))
+            [com.rpl.specter :as s]
+            [factor.world :as w]))
 
 (defn satisfying-ratio [goal base]
   (js/Math.ceil (apply max (for [[k v] base]
@@ -20,8 +21,9 @@
   (some true? (for [[k v] qm] (contains? (:output recipe) k))))
 
 (defn empty-pgraph-for-factory
-  [world {:keys [desired-output]}]
+  [world {:keys [desired-output] :as factory}]
   {:world world
+   :factory factory
    :edges     {:start {:end   desired-output}}
    :edges-rev {:end   {:start desired-output}}
    :next-node-id 1
@@ -178,9 +180,9 @@
   [(:recipe node) (:recipe-ratio node)])
 
 (defn node-machine
-  [node]
+  [{:keys [factory] :as pg} node]
   (let [[recipe ratio] (node-recipe node)]
-    [(first (:machines recipe)) ratio]))
+    [(w/machine-for-factory-recipe factory recipe) ratio]))
 
 (defn all-nodes
   [pg]
