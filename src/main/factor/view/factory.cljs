@@ -4,8 +4,8 @@
             [re-frame.core :refer [dispatch subscribe]]
             [reagent.core :refer [as-element]]
             [clojure.string :as string]
+            [factor.qmap :as qmap]
             [factor.world :as w]))
-
 
 (defn create-and-select-factory []
   (let [factory (w/new-factory)]
@@ -35,10 +35,6 @@
 (defn get-machine-name [id] (:name @(subscribe [:machine id])))
 (defn get-recipe-name [id] (:name @(subscribe [:recipe id])))
 
-(defn qmap->str
-  [qm]
-  (string/join ", " (map (fn [[x n]] (str n "x " (get-item-name x))) qm)))
-
 (defn pgraph-tree-node
   [pg node-states seen-nodes parent-id node-id]
   (let [seen? (seen-nodes node-id)
@@ -51,14 +47,16 @@
         child-nodes (when-not seen? (map child-node-for-edge (pgraph/input-edges pg node-id)))
         child-nodes (if (not-empty (:catalysts node))
                       (conj child-nodes {:id (str tree-node-id "-catalysts")
-                                         :label (str "Catalysts: " (qmap->str (:catalysts node)))
+                                         :label (str "Catalysts: " (qmap/qmap->str (:catalysts node) get-item-name ", "))
                                          :icon :lab-test})
                       child-nodes)]
     {:id tree-node-id
-     :label (qmap->str (case node-id
-              :start (:output node)
-              :end (:input node)
-              (:output node)))
+     :label (qmap/qmap->str (case node-id
+                              :start (:output node)
+                              :end (:input node)
+                              (:output node))
+                            get-item-name
+                            ", ")
     ;;  :secondaryLabel (case node-id
     ;;           :start "Required Input"
     ;;           :end "Factory Output"

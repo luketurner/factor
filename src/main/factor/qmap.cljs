@@ -6,7 +6,8 @@
    e.g. the required inputs and outputs for recipes."
   (:refer-clojure :exclude [+ - *])
   (:require [medley.core :refer [map-vals filter-vals]]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [clojure.string :as string]))
 
 (defn trim
   "Trims any zero or null quantities from the qmap."
@@ -35,3 +36,7 @@
   "Returns true if any of the keys in A are also present in B."
   [a b]
   (not-empty (set/intersection (set (keys a)) (set (keys b)))))
+
+(defn qmap->str
+  [qm name-fn delimiter]
+  (string/join delimiter (map (fn [[x n]] (str n "x " (name-fn x))) qm)))
