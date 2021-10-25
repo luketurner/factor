@@ -122,6 +122,10 @@
        [c/card-lg [c/form-group {:label (str "Production Stages (" item-rate-unit ")")}
                    [node-list pg]]]       
        [c/card-lg
+        [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"}
+         [c/textarea {:value (pgraph/pg->dot pg)
+                      :read-only true
+                      :style {:width "100%" :height "150px"}}]]
         [c/form-group {:label "Raw Data - Production Graph"}
          [c/textarea {:value (pr-str (dissoc pg :world))
                       :read-only true

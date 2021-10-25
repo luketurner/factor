@@ -7,7 +7,9 @@
   (:require [factor.qmap :as qmap]
             [medley.core]
             [com.rpl.specter :as s]
-            [factor.world :as w]))
+            [factor.world :as w]
+            [clojure.string :as string]
+            [re-frame.core :refer [subscribe]]))
 
 (defn satisfying-ratio [goal base]
   (js/Math.ceil (apply max (for [[k v] base]
@@ -199,3 +201,37 @@
    being summed this way."
   [pg]
   (->> pg (all-nodes) (s/select [s/ALL (s/view :catalysts)]) (apply qmap/+)))
+
+; TODO -- this should not be needed in this file! Abstract better
+(defn get-item-name [id] (:name @(subscribe [:item id])))
+
+(defn node->dot-label
+  [node]
+  (case (:id node)
+    :start (str "FACTORY INPUT\n" (qmap/qmap->str (:output node) get-item-name "\n"))
+    :end (str "FACTORY OUTPUT\n" (qmap/qmap->str (:input node) get-item-name "\n"))
+    (qmap/qmap->str (:output node) get-item-name "\n")))
+
+(defn node->dot
+  [{:keys [id] :as node}]
+  (println node)
+  (str (name id) "[label=\"" (node->dot-label node) "\"]" ";\n"))
+
+(defn edge->dot-label
+  [edge]
+  (qmap/qmap->str edge get-item-name "\n"))
+
+(defn edge->dot
+  [[lid rid edge]]
+  (str (name lid) " -> " (name rid) "[label=\"" (edge->dot-label edge) "\"]" ";\n"))
+
+(defn pg->dot
+  "Accepts a pgraph and returns a dot document representing it.
+   
+   WARNING: Data is not sanitized/escaped!"
+  [pg]
+  (str
+   "digraph PG {\n"
+   (apply str (map node->dot (all-nodes pg)))
+   (apply str (map edge->dot (edges pg)))
+   "}"))
