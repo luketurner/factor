@@ -54,7 +54,7 @@
                     :disabled (= num-selected 0)}]])]]))
 
 (defn input-editor [thing on-change]
-  [c/form-group {:label "Outputs (per crafting operation)"}
+  [c/form-group {:label "Inputs (per crafting operation)"}
    [c/quantity-set-input :item (:input thing) #(-> thing (assoc :input %) (on-change))]])
 
 (defn output-editor [thing on-change]
