@@ -52,7 +52,7 @@
 
 (defn add-node
   [pg node]
-  (let [id (:next-node-id pg)
+  (let [id (keyword (str (:next-node-id pg)))
         node (assoc node :id id)]
     [(-> pg
          (update-node id node)

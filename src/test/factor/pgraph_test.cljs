@@ -65,14 +65,14 @@
         factory     (assoc factory :desired-output {"iron-plate" 123})
         pg          (pgraph/empty-pgraph-for-factory w factory)
         [actual-pg _] (pgraph/try-satisfy-node pg :end)]
-    (is (= (:edges actual-pg) {:start {1 {"iron-ingot" 246}}
-                               1 {:end {"iron-plate" 123}}})
+    (is (= (:edges actual-pg) {:start {:1 {"iron-ingot" 246}}
+                               :1 {:end {"iron-plate" 123}}})
         "should have an edge from root to the node, and from the node to root")
     (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ingot" 246}})
         "should have updated the :start node's output")
     (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
         "should have updated the :end node's input")
-    (is (= (get-in actual-pg [:nodes 1]) {:id 1
+    (is (= (get-in actual-pg [:nodes :1]) {:id :1
                                           :recipe (get-in w [:recipes "iron-plate"])
                                           :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
@@ -86,23 +86,23 @@
         factory     (assoc factory :desired-output {"iron-plate" 123})
         pg          (pgraph/empty-pgraph-for-factory w factory)
         [actual-pg _] (pgraph/try-satisfy-node pg :end)
-        [actual-pg _] (pgraph/try-satisfy-node actual-pg 1)]
-    (is (= (:edges actual-pg) {:start {2 {"iron-ore" 246}}
-                               2      {1 {"iron-ingot" 246}}
-                               1      {:end {"iron-plate" 123}}})
+        [actual-pg _] (pgraph/try-satisfy-node actual-pg :1)]
+    (is (= (:edges actual-pg) {:start {:2 {"iron-ore" 246}}
+                               :2      {:1 {"iron-ingot" 246}}
+                               :1      {:end {"iron-plate" 123}}})
         "should have three edges")
     (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ore" 246}})
         "should have updated the :start node's output")
     (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
         "should have updated the :end node's input")
-    (is (= (get-in actual-pg [:nodes 1]) {:id 1
+    (is (= (get-in actual-pg [:nodes :1]) {:id :1
                                           :recipe (get-in w [:recipes "iron-plate"])
                                           :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
                                           :output {"iron-plate" 123}
                                           :catalysts {}})
         "should have added a node that crafts iron plates")
-    (is (= (get-in actual-pg [:nodes 2]) {:id 2
+    (is (= (get-in actual-pg [:nodes :2]) {:id :2
                                           :recipe (get-in w [:recipes "iron-ingot"])
                                           :recipe-ratio 246
                                           :input  {"iron-ore" 246}
@@ -116,25 +116,25 @@
         factory     (assoc factory :desired-output {"cable" 1})
         pg          (pgraph/empty-pgraph-for-factory w factory)
         [actual-pg _] (pgraph/try-satisfy-node pg :end)
-        [actual-pg _] (pgraph/try-satisfy-node actual-pg 1)]
-    (is (= (:edges actual-pg) {:start {2 {"copper-ore" 1}}
-                               2 {1 {"copper-wire" 2}
+        [actual-pg _] (pgraph/try-satisfy-node actual-pg :1)]
+    (is (= (:edges actual-pg) {:start {:2 {"copper-ore" 1}}
+                               :2 {:1 {"copper-wire" 2}
                                   :end {"copper-wire" 2}}
-                               1 {:end {"cable" 1}}})
+                               :1 {:end {"cable" 1}}})
         "should have three edges")
     (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"copper-ore" 1}})
         "should have updated the :start node")
     (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"copper-wire" 2
                                                      "cable" 1}})
         "should have updated the :end node")
-    (is (= (get-in actual-pg [:nodes 1]) {:id 1
+    (is (= (get-in actual-pg [:nodes :1]) {:id :1
                                           :recipe (get-in w [:recipes "cable"])
                                           :recipe-ratio 1
                                           :input  {"copper-wire" 2}
                                           :output {"cable" 1}
                                           :catalysts {}})
         "should have added a node that crafts iron plates")
-    (is (= (get-in actual-pg [:nodes 2]) {:id 2
+    (is (= (get-in actual-pg [:nodes :2]) {:id :2
                                           :recipe (get-in w [:recipes "copper-wire"])
                                           :recipe-ratio 1
                                           :input  {"copper-ore" 1}
@@ -148,22 +148,22 @@
         factory     (assoc factory :desired-output {"iron-plate" 123})
         pg          (pgraph/empty-pgraph-for-factory w factory)
         actual-pg   (pgraph/try-satisfy pg)]
-    (is (= (:edges actual-pg) {:start {2 {"iron-ore" 246}}
-                               2     {1 {"iron-ingot" 246}}
-                               1     {:end {"iron-plate" 123}}})
+    (is (= (:edges actual-pg) {:start {:2 {"iron-ore" 246}}
+                               :2     {:1 {"iron-ingot" 246}}
+                               :1     {:end {"iron-plate" 123}}})
         "should have three edges")
     (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ore" 246}})
         "should have updated the :start node's output")
     (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
         "should have updated the :end node's input")
-    (is (= (get-in actual-pg [:nodes 1]) {:id 1
+    (is (= (get-in actual-pg [:nodes :1]) {:id :1
                                           :recipe (get-in w [:recipes "iron-plate"])
                                           :recipe-ratio 123
                                           :input  {"iron-ingot" 246}
                                           :output {"iron-plate" 123}
                                           :catalysts {}})
         "should have added a node that crafts iron plates")
-    (is (= (get-in actual-pg [:nodes 2]) {:id 2
+    (is (= (get-in actual-pg [:nodes :2]) {:id :2
                                           :recipe (get-in w [:recipes "iron-ingot"])
                                           :recipe-ratio 246
                                           :input  {"iron-ore" 246}
@@ -177,9 +177,9 @@
         factory     (assoc factory :desired-output {"concrete" 123 "steel-ingot" 123})
         pg          (pgraph/empty-pgraph-for-factory w factory)
         actual-pg   (pgraph/try-satisfy pg)]
-    (is (= (:edges actual-pg) {:start {1     {"iron-ore" 123 "coal" 246}}
-                               1     {:end {"steel-ingot" 123}
-                                      2     {"slag" 123}}
-                               2     {:end {"concrete" 123}}
-                               3     {2     {"water" 1230}}})
+    (is (= (:edges actual-pg) {:start {:1     {"iron-ore" 123 "coal" 246}}
+                               :1     {:end {"steel-ingot" 123}
+                                      :2     {"slag" 123}}
+                               :2     {:end {"concrete" 123}}
+                               :3     {:2     {"water" 1230}}})
         "should feed slag directly from one node to the next")))
