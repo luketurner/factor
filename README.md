@@ -42,10 +42,12 @@ Here's the list:
   - [x] Factories have configurable *desired outputs* (e.g. 1 blue research per second).
   - [x] Factories can generate a *Production Graph* that shows what recipes can be used to produce the desired output.
     - [x] The production graph is rendered as a Production Tree for users to visualize.
-    - [ ] Circular dependencies are supported. (when Recipe A's output is required for Recipe B, and Recipe B's output is required for a predecessor of Recipe A)
+    - [x] The graph is exportable to dot code
+    - [ ] The graph is renderable in the browser
+    - [x] Circular dependencies are supported. (when Recipe A's output is required for Recipe B, and Recipe B's output is required for a predecessor of Recipe A)
       - [ ] The "seed items" required for the circular dependency are calculated and included in the factory's catalysts.
     - [ ] Production graph calculation takes machine speed into account.
-  - [ ] Factories can specify machines/recipes/items to exclude (e.g. don't use Recipe A for given factory.)
+  - [ ] Factories can specify machines/recipes/items to exclude (e.g. don't use Recipe A for given factory.) Should support both allow-lists and deny-lists, in hard and soft variants. ("Soft" meaning it's a preference -- things in a soft-deny list will only be picked if there are no soft-denied alternatives. Things in a hard-deny list will never be picked.)
   - [ ] Factories can report the overall power usage required for all machines.
   - [ ] Factories include a "checklist" of all the machines needed to build the factory.
 - [x] All quantities/rates have *units* (e.g. J, W, items/sec, etc.)
