@@ -3,7 +3,14 @@
             [cljs.test :refer [deftest is]]
             [factor.pgraph :as pgraph]))
 
-(def test-world {:factories {"testfactory" (world/new-factory {:id "testfactory"})}
+(def test-world {:factories {"testfactory" (world/new-factory {:id "testfactory"
+                                                            ;;    :hard-denied-machines #{"pump"}
+                                                            ;;    :soft-denied-machines #{"smelter"}
+                                                            ;;    :hard-denied-recipes #{"iron-ingot"}
+                                                            ;;    :soft-denied-recipes #{"steel-ingot"}
+                                                            ;;    :hard-denied-items #{"water"}
+                                                            ;;    :soft-denied-items #{"water"}
+                                                               :desired-output {"iron-ingot" 10}})}
                  :items {"iron-ore" (world/new-item {:id "iron-ore" :name "iron-ore"})
                          "iron-ingot" (world/new-item {:id "iron-ingot" :name "iron-ingot"})
                          "coal" (world/new-item {:id "coal" :name "coal"})
@@ -14,10 +21,13 @@
                          "steel-beam" (world/new-item {:id "steel-beam" :name "steel-beam"})
                          "cable" (world/new-item {:id "cable" :name "cable"})
                          "slag" (world/new-item {:id "slag" :name "slag"})
-                         "water" (world/new-item {:id "water" :name "water"})}
-                 :machines {"smelter" (world/new-machine {:id "smelter" :name "smelter"})
-                            "assembler" (world/new-machine {:id "assembler" :name "assembler"})
-                            "pump" (world/new-machine {:id "pump" :name "pump"})}
+                         "water" (world/new-item {:id "water" :name "water"})
+                         "sulfuric-acid" (world/new-item {:id "sulfuric-acid" :name "sulfuric-acid"})
+                         "iron-ore-slurry" (world/new-item {:id "iron-ore-slurry" :name "iron-ore-slurry"})
+                         "purified-iron-ore" (world/new-item {:id "purified-iron-ore" :name "purified-iron-ore"})}
+                 :machines {"smelter" (world/new-machine {:id "smelter" :name "smelter" :power 1 :speed 1})
+                            "assembler" (world/new-machine {:id "assembler" :name "assembler" :power 1 :speed 1})
+                            "pump" (world/new-machine {:id "pump" :name "pump" :power 1 :speed 1})}
                  :recipes {"iron-ingot" (world/new-recipe {:id "iron-ingot"
                                                            :name "iron-ingot"
                                                            :input {"iron-ore" 1}
@@ -57,129 +67,76 @@
                                                       :name "cable"
                                                       :input {"copper-wire" 2}
                                                       :output {"cable" 1}
-                                                      :machines #{"assembler"}})}})
+                                                      :machines #{"assembler"}})
+                           "iron-ore-slurry" (world/new-recipe {:id "iron-ore-slurry"
+                                                      :name "iron-ore-slurry"
+                                                      :input {"iron-ore" 2
+                                                              "sulfuric-acid" 10}
+                                                      :output {"iron-ore-slurry" 10}
+                                                      :machines #{"assembler"}})
+                           "iron-slurry-refining" (world/new-recipe {:id "iron-slurry-refining"
+                                                                     :name "iron-slurry-refining"
+                                                                     :input {"iron-ore-slurry" 10}
+                                                                     :output {"purified-iron-ore" 3
+                                                                              "sulfuric-acid" 10}
+                                                                     :machines #{"assembler"}})}})
 
-(deftest pgraph-try-satisfy-node-should-satisfy-root-node
+(deftest pgraph-for-factory-should-satisfy-desired-output
+  (let [w           test-world
+        factory     (get-in w [:factories "testfactory"])
+        factory     (assoc factory :desired-output {"iron-ingot" 123})
+        pg          (pgraph/pgraph-for-factory w factory)]
+    (is (= (pgraph/missing-input pg) {"iron-ore" 123})
+        "should be missing iron ore")
+    (is (empty? (pgraph/excess-output pg))
+        "should have no excess output")
+    (is (= (count (pgraph/all-nodes pg)) 4)
+        "should have 4 nodes (missing, excess, desired, ingot crafting)")))
+
+(deftest pgraph-for-factory-should-satisfy-desired-output-iteratively
   (let [w           test-world
         factory     (get-in w [:factories "testfactory"])
         factory     (assoc factory :desired-output {"iron-plate" 123})
-        pg          (pgraph/empty-pgraph-for-factory w factory)
-        [actual-pg _] (pgraph/try-satisfy-node pg :end)]
-    (is (= (:edges actual-pg) {:start {:1 {"iron-ingot" 246}}
-                               :1 {:end {"iron-plate" 123}}})
-        "should have an edge from root to the node, and from the node to root")
-    (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ingot" 246}})
-        "should have updated the :start node's output")
-    (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
-        "should have updated the :end node's input")
-    (is (= (get-in actual-pg [:nodes :1]) {:id :1
-                                          :recipe (get-in w [:recipes "iron-plate"])
-                                          :recipe-ratio 123
-                                          :input  {"iron-ingot" 246}
-                                          :output {"iron-plate" 123}
-                                          :catalysts {}})
-        "should have added a node that crafts iron plates")))
+        pg          (pgraph/pgraph-for-factory w factory)]
+    (is (= (pgraph/missing-input pg) {"iron-ore" 246})
+        "should be missing iron ore")
+    (is (empty? (pgraph/excess-output pg))
+        "should have no excess output")
+    (is (= (count (pgraph/all-nodes pg)) 5)
+        "should have 5 nodes (missing, excess, desired, plate crafting, ingot crafting)")))
 
-(deftest pgraph-try-satisfy-node-should-satisfy-second-node
-  (let [w           test-world
-        factory     (get-in w [:factories "testfactory"])
-        factory     (assoc factory :desired-output {"iron-plate" 123})
-        pg          (pgraph/empty-pgraph-for-factory w factory)
-        [actual-pg _] (pgraph/try-satisfy-node pg :end)
-        [actual-pg _] (pgraph/try-satisfy-node actual-pg :1)]
-    (is (= (:edges actual-pg) {:start {:2 {"iron-ore" 246}}
-                               :2      {:1 {"iron-ingot" 246}}
-                               :1      {:end {"iron-plate" 123}}})
-        "should have three edges")
-    (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ore" 246}})
-        "should have updated the :start node's output")
-    (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
-        "should have updated the :end node's input")
-    (is (= (get-in actual-pg [:nodes :1]) {:id :1
-                                          :recipe (get-in w [:recipes "iron-plate"])
-                                          :recipe-ratio 123
-                                          :input  {"iron-ingot" 246}
-                                          :output {"iron-plate" 123}
-                                          :catalysts {}})
-        "should have added a node that crafts iron plates")
-    (is (= (get-in actual-pg [:nodes :2]) {:id :2
-                                          :recipe (get-in w [:recipes "iron-ingot"])
-                                          :recipe-ratio 246
-                                          :input  {"iron-ore" 246}
-                                          :output {"iron-ingot" 246}
-                                          :catalysts {}})
-        "should have added a node that crafts iron ingots")))
-
-(deftest pgraph-try-satisfy-node-should-handle-partial-satisfaction
+(deftest pgraph-for-factory-should-handle-partial-satisfaction
   (let [w           test-world
         factory     (get-in w [:factories "testfactory"])
         factory     (assoc factory :desired-output {"cable" 1})
-        pg          (pgraph/empty-pgraph-for-factory w factory)
-        [actual-pg _] (pgraph/try-satisfy-node pg :end)
-        [actual-pg _] (pgraph/try-satisfy-node actual-pg :1)]
-    (is (= (:edges actual-pg) {:start {:2 {"copper-ore" 1}}
-                               :2 {:1 {"copper-wire" 2}
-                                  :end {"copper-wire" 2}}
-                               :1 {:end {"cable" 1}}})
-        "should have three edges")
-    (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"copper-ore" 1}})
-        "should have updated the :start node")
-    (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"copper-wire" 2
-                                                     "cable" 1}})
-        "should have updated the :end node")
-    (is (= (get-in actual-pg [:nodes :1]) {:id :1
-                                          :recipe (get-in w [:recipes "cable"])
-                                          :recipe-ratio 1
-                                          :input  {"copper-wire" 2}
-                                          :output {"cable" 1}
-                                          :catalysts {}})
-        "should have added a node that crafts iron plates")
-    (is (= (get-in actual-pg [:nodes :2]) {:id :2
-                                          :recipe (get-in w [:recipes "copper-wire"])
-                                          :recipe-ratio 1
-                                          :input  {"copper-ore" 1}
-                                          :output {"copper-wire" 4}
-                                          :catalysts {}})
-        "should have added a node that crafts iron ingots")))
+        pg          (pgraph/pgraph-for-factory w factory)]
+    (is (= (pgraph/missing-input pg) {"copper-ore" 1})
+        "should be missing copper ore")
+    (is (= (pgraph/excess-output pg) {"copper-wire" 2})
+        "should produce excess copper wire")
+    (is (= (count (pgraph/all-nodes pg)) 5)
+        "should have 5 nodes (missing, excess, desired, wire crafting, cable crafting)")))
 
-(deftest pgraph-try-satisfy-should-satisfy-multiple-nodes
-  (let [w           test-world
-        factory     (get-in w [:factories "testfactory"])
-        factory     (assoc factory :desired-output {"iron-plate" 123})
-        pg          (pgraph/empty-pgraph-for-factory w factory)
-        actual-pg   (pgraph/try-satisfy pg)]
-    (is (= (:edges actual-pg) {:start {:2 {"iron-ore" 246}}
-                               :2     {:1 {"iron-ingot" 246}}
-                               :1     {:end {"iron-plate" 123}}})
-        "should have three edges")
-    (is (= (get-in actual-pg [:nodes :start]) {:id :start :output {"iron-ore" 246}})
-        "should have updated the :start node's output")
-    (is (= (get-in actual-pg [:nodes :end]) {:id :end :input {"iron-plate" 123}})
-        "should have updated the :end node's input")
-    (is (= (get-in actual-pg [:nodes :1]) {:id :1
-                                          :recipe (get-in w [:recipes "iron-plate"])
-                                          :recipe-ratio 123
-                                          :input  {"iron-ingot" 246}
-                                          :output {"iron-plate" 123}
-                                          :catalysts {}})
-        "should have added a node that crafts iron plates")
-    (is (= (get-in actual-pg [:nodes :2]) {:id :2
-                                          :recipe (get-in w [:recipes "iron-ingot"])
-                                          :recipe-ratio 246
-                                          :input  {"iron-ore" 246}
-                                          :output {"iron-ingot" 246}
-                                          :catalysts {}})
-        "should have added a node that crafts iron ingots")))
-
-(deftest pgraph-try-satisfy-should-reuse-existing-output-where-possible
+(deftest pgraph-for-factory-should-reuse-existing-output-where-possible
   (let [w           test-world
         factory     (get-in w [:factories "testfactory"])
         factory     (assoc factory :desired-output {"concrete" 123 "steel-ingot" 123})
-        pg          (pgraph/empty-pgraph-for-factory w factory)
-        actual-pg   (pgraph/try-satisfy pg)]
-    (is (= (:edges actual-pg) {:start {:1     {"iron-ore" 123 "coal" 246}}
-                               :1     {:end {"steel-ingot" 123}
-                                      :2     {"slag" 123}}
-                               :2     {:end {"concrete" 123}}
-                               :3     {:2     {"water" 1230}}})
-        "should feed slag directly from one node to the next")))
+        pg          (pgraph/pgraph-for-factory w factory)]
+    (is (= (pgraph/missing-input pg) {"iron-ore" 123 "coal" 246})
+        "should be missing iron ore and coal")
+    (is (empty? (pgraph/excess-output pg))
+        "should have no excess outputs")
+    (is (= (count (pgraph/all-nodes pg)) 6)
+        "should have 6 nodes (missing, excess, desired, concrete crafting, iron ingot crafting, steel ingot crafting)")))
+
+(deftest pgraph-for-factory-should-support-circular-recipes
+  (let [w           test-world
+        factory     (get-in w [:factories "testfactory"])
+        factory     (assoc factory :desired-output {"purified-iron-ore" 3})
+        pg          (pgraph/pgraph-for-factory w factory)]
+    (is (= (pgraph/missing-input pg) {"iron-ore" 2})
+        "should be missing iron ore")
+    (is (empty? (pgraph/excess-output pg))
+        "should have no excess outputs")
+    (is (= (count (pgraph/all-nodes pg)) 5)
+        "should have 5 nodes (missing, excess, desired, slurry crafting, purify crafting)")))

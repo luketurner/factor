@@ -5,34 +5,93 @@
    (e.g. an array of smelters turning Iron Ore to Iron Ingots is a single node in the graph).
    The edges of the pgraph represent the flow of items from one processing unit's output to the next unit's input."
   (:require [factor.qmap :as qmap]
-            [medley.core]
+            [medley.core :refer [map-vals filter-vals]]
             [com.rpl.specter :as s]
             [factor.world :as w]
+            [factor.util :as util]
             [clojure.string :as string]
             [re-frame.core :refer [subscribe]]))
 
-(defn satisfying-ratio [goal base]
-  (js/Math.ceil (apply max (for [[k v] base]
-                             (when (contains? goal k)
-                               (/ (goal k) v))))))
+(defn all-edges
+  "Returns a seq of tuples of form [lid rid  edge], where
+   lid and rid are node IDs, and edge is a qmap representing
+   the edge quantity. Includes one tuple for every edge in the pgraph."
+  [pg]
+  (for [[lid xs] (:edges pg) [rid edge] xs]
+    [lid rid edge]))
 
-(defn normalized-inputs [recipe] (qmap/* (:input recipe) (/ 1 (:duration recipe))))
-(defn normalized-outputs [recipe] (qmap/* (:output recipe) (/ 1 (:duration recipe))))
+(defn get-edge
+  "Returns a qmap representing the edge pointing from lid to rid (if one exists.)"
+  [pg lid rid]
+  (get-in pg [:edges lid rid]))
 
-(defn recipe-matches-qm [recipe qm]
-  (some true? (for [[k v] qm] (contains? (:output recipe) k))))
+(defn input-edges
+  "Retrieves the input edges for given node-id.
+   (In other words, edges where node-id is the right-hand node.)
+   Returns a map of form {lid edge-qmap}, where lid is the ID of the node
+   on the left side of the input edge."
+  [pg node-id]
+  (get-in pg [:edges-rev node-id]))
 
-(defn empty-pgraph-for-factory
-  [world {:keys [desired-output] :as factory}]
-  {:world world
-   :factory factory
-   :edges     {:start {:end   desired-output}}
-   :edges-rev {:end   {:start desired-output}}
-   :next-node-id 1
-   :nodes {:start {:id :start :output desired-output}
-           :end   {:id :end   :input  desired-output}}})
+(defn output-edges
+  "Retrieves the output edges for given node-id.
+   (In other words, edges where node-id is the left-hand node.)
+   Returns a map of form {rid edge-qmap}, where rid is the ID of the node
+   on the right end of the output edge."
+  [pg node-id]
+  (get-in pg [:edges node-id]))
+
+(defn all-nodes
+  "Returns a seq of all nodes in the pgraph.
+   (Includes the special nodes :missing and :excess)."
+  [pg]
+  (-> pg (get :nodes) (vals)))
+
+(defn get-node
+  "Given a node ID, returns the matching node map (or nil
+   if the node doesn't exist in the pgraph.)"
+  [pg id]
+  (get-in pg [:nodes id]))
+
+(defn desired-output-node
+  "Returns the node that represents the desired output of the pgraph."
+  [pg]
+  (get-node pg :1))
+
+(defn normalized-inputs
+  "Returns a qmap derived by dividing each quantity of the recipe's input qmap by the recipe's duration.
+   The resulting value (called the recipe's normalized input) represent the number of items the recipe requires
+   per second (or per minute, depending on user's configured unit.)"
+  [recipe]
+  (qmap/* (:input recipe) (/ 1 (:duration recipe))))
+
+(defn normalized-outputs
+  "Returns a qmap derived by dividing each quantity of the recipe's output qmap by the recipe's duration.
+   The resulting value (called the recipe's normalized output) represent the number of items the recipe produces
+   per second (or per minute, depending on user's configured unit.)"
+  [recipe]
+  (qmap/* (:output recipe) (/ 1 (:duration recipe))))
+
+(defn real-inputs
+  "Given a `recipe` and `machine`, calculates the \"real\" input rates
+   (i.e. what would actually be consumed by one machine in-game).
+   This factors in the recipe input quantities, duration, and machine speed."
+  [{:keys [input duration]} {:keys [speed]}]
+  (qmap/* input (/ speed duration)))
+
+(defn real-outputs
+  "Given a `recipe `and `machine `calculates the \"real \" output rates
+   (i.e. what would actually be produced by one machine in-game).
+   This factors in the recipe input quantities, duration, and machine speed."
+  [{:keys [output duration]}
+   {:keys [speed]}] (qmap/* output (/ speed duration)))
 
 (defn update-node
+  "Updates data for node by ID. UPDATER can be an update function or a simple value.
+   Returns an updated version of PG.
+   
+   Note -- this is a low-level function, to add nodes to the pgraph in a way that
+   ensures edges are created properly as well, use (add-node)."
   [pg id updater]
   (let [current (get-in pg [:nodes id])
         updated (if (fn? updater) (updater current) updater)]
@@ -41,6 +100,9 @@
       (assoc-in pg [:nodes id] updated))))
 
 (defn update-edge
+  "Updates the qmap for the edge between LID and RID.
+   UPDATER can be an update function or a simple value.
+   Returns an updated version of PG."
   [pg lid rid updater]
   (let [current (get-in pg [:edges lid rid])
         updated (if (fn? updater) (updater current) updater)]
@@ -52,148 +114,273 @@
           (assoc-in [:edges lid rid] updated)
           (assoc-in [:edges-rev rid lid] updated)))))
 
-(defn add-node
-  [pg node]
-  (let [id (keyword (str (:next-node-id pg)))
-        node (assoc node :id id)]
-    [(-> pg
-         (update-node id node)
-         (update :next-node-id inc)) node]))
-
-(defn get-edge
-  [pg lid rid]
-  (get-in pg [:edges lid rid]))
-
-(defn get-node
-  [pg id]
-  (get-in pg [:nodes id]))
-
 (defn connect-nodes
   "Connects the output of one node (called the LEFT node) to the input of another node (the RIGHT node).
-   All the output of LEFT will be used to fulfill any missing input on RIGHT. Since all inputs of a node
-   must be accounted for with an edge, the 'missing' input on RIGHT is all the input coming from the ROOT node.
-   The LEFT node will connect itself between ROOT and RIGHT. However, because LEFT may produce more or less output
-   than needed by RIGHT's input, additional connections to ROOT will be maintained. See the following diagram:
+   The qmap for the edge is specified by the QM parameter. This subtracts the value of QM from the edge going
+   from :missing to RIGHT, and from the edge going from LEFT to :excess, to ensure that the edges remain balanced.
+   See the following diagram:
    
    before:    
-           START (input) -------> (input) RIGHT (output) -------> (output) END
-   
+               +-----------> LEFT -----------+
+               |                             |
+      MISSING--+                             +->EXCESS
+               |                             |
+               +-----------> RIGHT ----------+
+
    after:
-                                                              (any excess output from LEFT)
-                                                   +-------------------------------------------------+
-                                                   |                                                 V
-           START (output) -------> (input) LEFT (output) -------> (input) RIGHT (output) -------> (input) END
-                    |                                               ^
-                    +-----------------------------------------------+
-                     (any of RIGHT's input that LEFT doesn't supply)
-   "
-  [pg lid rid]
-  (when (= lid :end) (throw "Cannot connect ending node to another node."))
-  (let [{left-out :output left-in :input} (get-node pg lid)
-        start=>right             (get-edge pg :start rid)
-        start=>right-unsatisfied (qmap/- start=>right left-out)
-        start=>right-satisfied   (qmap/- start=>right start=>right-unsatisfied)
-        left-out-unused          (qmap/- left-out start=>right-satisfied)]
-    (-> pg
-        (update-node :start #(-> %
-                                 (update :output qmap/- start=>right-satisfied)
-                                 (update :output qmap/+ left-in)))
-        (update-node :end   #(update % :input qmap/+ left-out-unused))
-        (update-edge :start rid   start=>right-unsatisfied)
-        (update-edge lid    :end  left-out-unused)
-        (update-edge :start lid   left-in)
-        (update-edge lid    rid   (partial qmap/+ start=>right-satisfied)))))
+               +-----------> LEFT -----------+
+               |               |             |
+      MISSING--+               |             +->EXCESS
+               |               v             |
+               +-----------> RIGHT ----------+"
+  [pg left-id right-id qm]
+  (-> pg
+      (update-edge :missing right-id #(qmap/- % qm))
+      (update-edge left-id :excess #(qmap/- % qm))
+      (update-edge left-id right-id qm)))
 
-(defn add-node-for-recipe
-  [pg recipe ratio]
-  (add-node pg {:recipe recipe
-                :recipe-ratio ratio
-                :input     (qmap/* (normalized-inputs recipe)  ratio)
-                :output    (qmap/* (normalized-outputs recipe) ratio)
-                :catalysts (qmap/* (:catalysts recipe)         ratio)}))
-
-(defn matching-recipe-for-node
-  [pg node-id]
-  (let [{:keys [world]} pg
-        needed-input    (get-edge pg :start node-id)]
-    (if-let [matching-recipe (s/select-first [(s/must :recipes) s/MAP-VALS #(recipe-matches-qm % needed-input)] world)]
-      [matching-recipe (satisfying-ratio needed-input (normalized-outputs matching-recipe))])))
-
-(defn edges
+(defn missing-input
+  "Returns a qmap representing all the aggregate missing input for all nodes for the pgraph."
   [pg]
-  (for [[lid xs] (:edges pg) [rid edge] xs]
-    [lid rid edge]))
+  (-> pg
+      (output-edges :missing)
+      (vals)
+      (->> (apply qmap/+))))
 
-(defn matching-node-for-node
+(defn missing-input-for
+  "Returns a qmap representing the missing input for a given node (by ID)."
   [pg node-id]
-  (let [needed-input    (get-edge pg :start node-id)]
-    (if-let [matching-node-id (->> (edges pg)
-                                   (some (fn [[lid rid edge]]
-                                           (when (and (= rid :end)
-                                                      (not= lid :start)
-                                                      (qmap/intersects? edge needed-input))
-                                             lid))))]
-      (get-node pg matching-node-id))))
+  (get-edge pg :missing node-id))
 
-(defn try-satisfy-node [pg node-id]
-  (if-let [existing-node (matching-node-for-node pg node-id)]
-    [(connect-nodes pg (:id existing-node) node-id) existing-node]
-    (if-let [matching-recipe (matching-recipe-for-node pg node-id)]
-      (let [[recipe ratio] matching-recipe
-            [pg new-node] (add-node-for-recipe pg recipe ratio)
-            pg            (connect-nodes pg (:id new-node) node-id)]
-        [pg new-node])
-      [pg nil])))
+(defn excess-output
+  "Returns a qmap representing the aggregate excess output for all nodes in the pgraph."
+  [pg]
+  (-> pg
+      (input-edges :excess)
+      (vals)
+      (->> (apply qmap/+))))
 
-(defn try-satisfy-any-node [pg]
-  (let [[new-pg new-node] (->> pg
-                               (:nodes)
-                               (keys)
-                               (filter #(not= % :start))
-                               (map (partial try-satisfy-node pg))
-                               (filter (fn [[_ new-node]] (some? new-node)))
-                               (first))]
-    (if (some? new-node)
-      [new-pg new-node]
-      [pg nil])))
+(defn excess-output-for
+  "Returns a qmap representing the excess output for a given node (by ID)."
+  [pg node-id]
+  (get-edge pg node-id :excess))
 
-(defn try-satisfy
+(defn nodes-with-excess-outputs
+  "Returns list of all the nodes that have excess outputs -- that is, nodes that have
+   an output edge to :excess. Each entry in the list is vec of form [node-id edge]"
+  [pg]
+  (input-edges pg :excess))
+
+(defn nodes-with-missing-inputs
+  "Returns list of all the nodes that have missing inputs -- that is, nodes that have
+   an input edge from :missing. Each entry in the list is vec of form [node-id edge]"
+  [pg]
+  (output-edges pg :missing))
+
+(defn connect-input-edges
+  "Accepts a pgraph `pg` and a `node` (which must have already been added to the pgraph with add-node),
+   and creates edges in the graph to satisfy the inputs of `node`. If inputs cannot be satisfied by any other
+   node, they get satisfied by :missing node.
+   (Note this function DOES NOT respect existing input edges. Calling it on a node with preexisting input edges
+   will result in the node having too many edges! But it *does* check whether the node at the other end of the
+   edge has capacity.)"
+  [pg {:keys [input id] :as node}]
+  (loop [pg pg]
+    (if-let [output-node+edge (->> pg
+                                   (nodes-with-excess-outputs)
+                                   (map-vals #(qmap/intersection input %))
+                                   (filter-vals not-empty)
+                                   (first))]
+      (recur
+       (connect-nodes pg (first output-node+edge) id (last output-node+edge)))
+      pg)))
+
+(defn connect-output-edges
+  "Accepts a pgraph `pg` and a `node` (which must have already been added to the pgraph with add-node),
+   and creates edges in the graph to utilize the outputs of `node`. If outputs cannot be utilized by any other
+   node, they get sent to the :excess node.
+   (Note this function DOES NOT respect existing output edges. Calling it on a node with preexisting output edges
+   will result in the node having too many edges! But it *does* check whether the node at the other end of the
+   edge has capacity.)"
+  [pg {:keys [output id] :as node}]
+  (loop [pg pg]
+    (if-let [input-node+edge (->> pg
+                                  (nodes-with-missing-inputs)
+                                  (map-vals #(qmap/intersection output %))
+                                  (filter-vals not-empty)
+                                  (first))]
+      (recur
+       (connect-nodes pg id (first input-node+edge) (last input-node+edge)))
+      pg)))
+
+(defn add-node
+  "Adds a new node to the pgraph. A numeric ID is generated for the node.
+   Additionally, if the node has inputs or outputs, edges are created from
+   :missing (for inputs) or to :excess (for outputs). This maintains the constraint
+   that the sum of the edges in and out of a node must equal the node's stated input
+   and output."
+  [pg {:keys [input output] :as node}]
+  (let [id (keyword (str (:next-node-id pg)))
+        node (assoc node :id id)]
+    (-> pg
+        (update-node id node)
+        (update :next-node-id inc)
+        (update-edge :missing id input)
+        (update-edge id :excess output)
+        (connect-input-edges node)
+        (connect-output-edges node))))
+
+(defn is-denied?
+  "returns true if `deny` contains `v`,
+   or if `allow` is non-empty and does not contain `v`"
+  [v deny allow]
+  (boolean (or (contains? deny v)
+              (and (not-empty allow)
+                   (not (contains? allow v))))))
+
+(defn machine-id-hard-denied?
+  [{{:keys [hard-denied-machines hard-allowed-machines]} :factory} m]
+  (is-denied? m hard-denied-machines hard-allowed-machines))
+
+(defn machine-id-soft-denied?
+  [{{:keys [soft-denied-machines soft-allowed-machines]} :factory} m]
+  (is-denied? m soft-denied-machines soft-allowed-machines))
+
+(defn item-id-hard-denied?
+  [{{:keys [hard-denied-items hard-allowed-items]} :factory} i]
+  (is-denied? i hard-denied-items hard-allowed-items))
+
+(defn item-id-soft-denied?
+  [{{:keys [soft-denied-items soft-allowed-items]} :factory} i]
+  (is-denied? i soft-denied-items soft-allowed-items))
+
+(defn recipe-id-hard-denied?
+  [{{:keys [hard-denied-recipes hard-allowed-recipes]} :factory} r]
+  (is-denied? r hard-denied-recipes hard-allowed-recipes))
+
+(defn recipe-id-soft-denied?
+  [{{:keys [soft-denied-recipes soft-allowed-recipes]} :factory} r]
+  (is-denied? r soft-denied-recipes soft-allowed-recipes))
+
+(defn recipe-hard-denied?
+  [pg r]
+  (let [item-id-hard-denied? (partial item-id-hard-denied? pg)
+        machine-id-hard-denied? (partial machine-id-hard-denied? pg)]
+    (or (recipe-id-hard-denied? pg (:id r))
+        (empty? (filter #(not (machine-id-hard-denied? %)) (:machines r)))
+        (some item-id-hard-denied? (keys (:input r)))
+        (some item-id-hard-denied? (keys (:output r)))
+        (some item-id-hard-denied? (keys (:catalysts r))))))
+
+(defn recipe-soft-denied?
+  [pg r]
+  (let [item-id-soft-denied? (partial item-id-soft-denied? pg)
+        machine-id-soft-denied? (partial machine-id-soft-denied? pg)]
+    (or (recipe-id-soft-denied? pg (:id r))
+        (empty? (filter #(not (machine-id-soft-denied? %)) (:machines r)))
+        (some item-id-soft-denied? (keys (:input r)))
+        (some item-id-soft-denied? (keys (:output r)))
+        (some item-id-soft-denied? (keys (:catalysts r))))))
+
+(defn valid-candidate-recipe?
+  "Returns true if the given recipe could be used as a cadidate -- namely, if the output of the recipe could be used to
+   satisfy any of the missing inputs of the pgraph."
+  [pg recipe]
+  (boolean (qmap/intersects? (:output recipe) (missing-input pg))))
+
+(defn preferred-machine
+  "Given a recipe, returns an ID for one of the machines the recipe supports. Respects factory allow/deny lists. Picks the highest-speed machine."
+  [pg recipe]
+  (let [{:keys [factory]} pg
+        {:keys [soft-denied not-denied]} (->> (:machines recipe)
+                                              (filter #(not (machine-id-hard-denied? factory %)))
+                                              (group-by #(if (machine-id-soft-denied? pg %)
+                                                           :soft-denied
+                                                           :not-denied)))]
+    (->> (if (seq not-denied) not-denied soft-denied)
+         (util/pick-max :speed))))
+
+(defn candidate-for-recipe
+  "Accepts a recipe and returns a map representing a 'candidate' -- a concrete proposal for adding that recipe as a node,
+   including what machine should be used and how many are needed."
+  [pg recipe]
+  {:recipe recipe
+   :machine (get-in pg [:world :machines (preferred-machine pg recipe)])
+   :num (qmap/satisfying-ratio (missing-input pg) (:output recipe))})
+
+(defn candidate-list
+  "Returns a list of possible candidates for the given pgraph. A 'possible candidate' exists when there is:
+   
+   1. An edge from :missing to any node (such edges are called missing inputs)
+   2. A recipe with *output* that overlaps with the unsatisfied input edge.
+
+   The recipe also cannot be forbidden by a hard deny-list or hard allow-list.
+   
+   Note that if there are ANY recipes that are NOT soft-denied, ONLY those will be returned. If the only candidates
+   are soft-denied, then they will ALL be returned. Sorry if that's confusing -- basically the returned list will
+   either have NO soft-denied candidates, or ALL soft-denied candidates."
+  [pg]
+  (let [candidates (s/select [(s/must :world :recipes)
+                              s/MAP-VALS
+                              (s/pred #(valid-candidate-recipe? pg %))
+                              (s/pred #(not (recipe-hard-denied? pg %)))
+                              (s/view #(candidate-for-recipe pg %))]
+                             pg)
+        {:keys [soft-denied not-denied]} (group-by #(if (recipe-soft-denied? pg (:recipe %))
+                                                      :soft-denied
+                                                      :not-denied) candidates)]
+    (if (seq not-denied)
+      not-denied
+      soft-denied)))
+
+(defn weight-candidate
+  "Returns a numeric weight value for the given candidate. Higher-weight candidates are preferred over lower-weight candidates."
+  [pg candidate]
+  ; TODO
+  1)
+
+(defn candidate
+  "Returns a valid candidate to insert into given pgraph. If no candidates could be found, returns nil."
+  [pg]
+  (when-let [c (util/pick-max (partial weight-candidate pg) (candidate-list pg))]
+    c))
+
+(defn node-for-candidate
+  "Accepts a candidate object and returns a corresponding node."
+  [{:keys [recipe machine num]}]
+  {:num-machines num
+   :recipe       recipe
+   :machine      machine
+   :power        (* (:power machine) num)
+   :input        (qmap/* (real-inputs recipe machine)  num)
+   :output       (qmap/* (real-outputs recipe machine) num)
+   :catalysts    (qmap/* (:catalysts recipe)         num)})
+
+(defn satisfy
+  "Accepts a pgraph and iteratively adds nodes until the graph is 'satisfied' -- i.e. no more nodes can be added."
   [pg]
   (loop [pg pg]
-    (let [[pg new-node] (try-satisfy-any-node pg)]
-      (if (some? new-node)
-        (recur pg)
-        pg))))
+    (if-let [c (candidate pg)]
+      (recur (add-node pg (node-for-candidate c)))
+      pg)))
 
 (defn pgraph-for-factory
-  [world factory]
-  (try-satisfy (empty-pgraph-for-factory world factory)))
+  [world {:keys [desired-output] :as factory}]
+  
+  ; 1. construct "empty" pgraph (only has :missing and :excess nodes)
+  (-> {:world world
+       :factory factory
+       :edges     {}
+       :edges-rev {}
+       :next-node-id 1
+       :nodes {:missing {:id :missing}
+               :excess  {:id :excess}}}
+      
+      ; 2. add a node for our desired outputs
+      (add-node {:input desired-output})
 
-(defn input-edges
-  [pg node-id]
-  (get-in pg [:edges-rev node-id]))
-
-(defn output-edges
-  [pg node-id]
-  (get-in pg [:edges node-id]))
-
-(defn node-recipe
-  [node]
-  [(:recipe node) (:recipe-ratio node)])
-
-(defn node-machine
-  [{:keys [factory] :as pg} node]
-  (let [[recipe ratio] (node-recipe node)]
-    [(w/machine-for-factory-recipe factory recipe) ratio]))
-
-(defn all-nodes
-  [pg]
-  (-> pg (get :nodes) (vals)))
-
-(defn is-empty?
-  [pg]
-  (and (= 2 (count (all-nodes pg)))
-       (empty? (:input (get-node pg :end)))))
+      ; 3. satisfy the node we just added
+      (satisfy)))
 
 (defn all-catalysts
   "Returns a qmap representing the sum of all catalysts required for all nodes in the graph.
@@ -205,33 +392,21 @@
 ; TODO -- this should not be needed in this file! Abstract better
 (defn get-item-name [id] (:name @(subscribe [:item id])))
 
-(defn node->dot-label
-  [node]
-  (case (:id node)
-    :start (str "FACTORY INPUT\n" (qmap/qmap->str (:output node) get-item-name "\n"))
-    :end (str "FACTORY OUTPUT\n" (qmap/qmap->str (:input node) get-item-name "\n"))
-    (qmap/qmap->str (:output node) get-item-name "\n")))
-
-(defn node->dot
-  [{:keys [id] :as node}]
-  (println node)
-  (str (name id) "[label=\"" (node->dot-label node) "\"]" ";\n"))
-
-(defn edge->dot-label
-  [edge]
-  (qmap/qmap->str edge get-item-name "\n"))
-
-(defn edge->dot
-  [[lid rid edge]]
-  (str (name lid) " -> " (name rid) "[label=\"" (edge->dot-label edge) "\"]" ";\n"))
-
 (defn pg->dot
   "Accepts a pgraph and returns a dot document representing it.
    
    WARNING: Data is not sanitized/escaped!"
   [pg]
-  (str
+  (let [node->dot-label #(case (:id %)
+                           :missing (str "MISSING\n" (qmap/qmap->str (:output %) get-item-name "\n"))
+                           :excess (str "EXCESS\n" (qmap/qmap->str (:input %) get-item-name "\n"))
+                           (qmap/qmap->str (:output %) get-item-name "\n"))
+        node->dot (fn [{:keys [id] :as node}]
+                    (str (name id) "[label=\"" (node->dot-label node) "\"]" ";\n"))
+        edge->dot (fn [[lid rid edge]]
+                    (str (name lid) " -> " (name rid) "[label=\"" (qmap/qmap->str edge get-item-name "\n") "\"]" ";\n"))]
+   (str
    "digraph PG {\n"
    (apply str (map node->dot (all-nodes pg)))
-   (apply str (map edge->dot (edges pg)))
-   "}"))
+   (apply str (map edge->dot (all-edges pg)))
+   "}")))

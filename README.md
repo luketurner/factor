@@ -81,6 +81,34 @@ Used in Factor's codebase and developer documentation.
 - **Database**: Factor's "database" is just an *in-memory map* accessed using the conventions of [re-frame](https://github.com/day8/re-frame). There is NO server-side database in Factor (or indeed, any network access at all!)
 - **Migration**: In the context of Factor, a "migration" is a function that performs some modifications on application data when it's loaded from local storage or imported by the user. Whenever a breaking change is made in the schema, a corresponding migration function is defined to update old versions of the database. All migrations are idempotent and are always applied; there is no state tracking of which migrations have/haven't been run.
 - **Quantity map (qmap)**: Widely used in the codebase, a `qmap` is a hash-map where keys are opaque strings (usually the IDs of items/machines) and values are a numeric quantity. Quantities can be floating-point, but zero or negative values are not allowed in a `qmap`.
+
+## Production Graphs
+
+Under the hood -- but not very far under! -- Factor models the flow of items through a factory using a [directed graph](https://en.wikipedia.org/wiki/Directed_graph). The **nodes** of the graph represent groups of machines that are processing a recipe (e.g. "12 smelters using the Smelt iron ore recipe" would be one node) and the **edges** represent the flow of items between them. 
+
+Each edge has an associated quantity-map that defines the amount of items flowing along it. 
+
+Edges must follow an important constraint: The sum of the quantities of the edges pointing *to* a node must equal the node's specified inputs. Inversely, the sum of the quantities of the edges pointing *from* a node must equal the node's specified outputs.
+
+There are two "special" nodes for which the above constraint does not apply: the **missing node** and **excess node**, which are used to "balance" the I/O of the pgraph. For example, if a recipe produces two outputs but only one is consumed by the next recipe, the "excess" output is connected to the excess node. Similarly, if a recipe is not satisfied (i.e. requires inputs not produced within the pgraph itself), those missing inputs are connected to the missing node. In this way, missing inputs and excess outputs are modeled without violating the edges-sum constraint.
+
+For technical users, it can be helpful to understand how Factor constructs (aka "satisfies") a production graph (pgraph) for your factory.
+
+A summary of the process:
+
+1. An "empty" pgraph is created. It's called "empty" because it models an empty processing chain -- like a factory with no machines. No edges exist in the graph yet. It has two nodes, though: the special `missing` and `excess` nodes are created in this step. 
+2. A node is added to the pgraph to represent the desired output for the factory. This is called the `desired` node, and it consumes the desired items as input.
+    - Since there are no other nodes to produce the desired items, an edge is created from `missing -> desired` to indicate that all the desired items are missing.
+3. Factor looks for a **recipe** that produces some or all of the items that are currently being provided by the `missing` node.
+    - If no such recipes can be found or the `missing` node isn't providing any items, the pgraph is said to be **satisfied** and steps 4-5 is skipped.
+4. If such a recipe _is_ found, Factor decides what machines, and how many, should process the recipe. This combo of recipe+machine+number is called a "candidate."
+    - If more than one candidate is found, Factor picks one of them -- a process called "candidate selection."
+    - If no candidates can be selected (e.g. because of a hard deny-list), pgraph is said to be **satisfied** and step 5 is skipped.
+5. Once a candidate is selected, Factor adds a *node* for that candidate to the pgraph, and then iteratively *connects* the inputs and outputs of that nodes to other nodes where they may be produced/consumed.
+    - If the node has any inputs that aren't produced anywhere, they are provided from the `missing` node. If the node produces outputs that aren't needed anywhere, they are sent to the `excess` node.
+    - Factor may produce **cyclical connections** -- single nodes feeding into themselves, and more complex cycles involving multiple nodes. Whenever your factory includes a cyclical connection, you'll need to bootstrap some part of processing when the factory is built in-game. (e.g. if items flow from `X -> Y -> Z -> X`, you will need to get some of the output of `X`, `Y`, or `Z` to bootstrap the cyclical crafting process.)
+6. Repeat steps 3-5 until the pgraph is determined to be satisfied. The algorithm is done! 🎉
+
 ## Development
 
 This section of the README describes how to compile and run Factor on your own computer. Note that this isn't necessary for normal usage (you can visit https://factor.luketurner.org instead), but is necessary if you want to hack on Factor yourself.

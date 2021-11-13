@@ -52,40 +52,41 @@
                       child-nodes)]
     {:id tree-node-id
      :label (qmap/qmap->str (case node-id
-                              :start (:output node)
-                              :end (:input node)
-                              (:output node))
+                              :missing (pgraph/missing-input-for pg parent-id)
+                              :excess (pgraph/excess-output-for pg parent-id)
+                              (if (= (:id node) (:id (pgraph/desired-output-node pg)))
+                                (:input node)
+                                (:output node)))
                             get-item-name
                             ", ")
-    ;;  :secondaryLabel (case node-id
-    ;;           :start "Required Input"
-    ;;           :end "Factory Output"
-    ;;           (:name recipe))
      :isExpanded expanded
      :isSelected selected
      :disabled disabled
      :hasCaret (not-empty child-nodes)
      :icon (case node-id
-             :start :cube
-             :end :office
-             :data-lineage)
+             :missing :cube
+             :excess :cube
+             (if (= (:id node) (:id (pgraph/desired-output-node pg)))
+               :office
+               :data-lineage))
      :childNodes child-nodes}))
 
 (defn pgraph-tree
   [pg]
   (reagent.core/with-let [node-states (reagent.core/atom {})]
-    (if (pgraph/is-empty? pg) [:p "Add desired output(s) to view production graph."]
-     [c/tree {:contents (clj->js [(pgraph-tree-node pg @node-states #{} nil :end)])
-             :on-node-expand #(swap! node-states assoc-in [(.-id %) :expanded] true)
-             :on-node-collapse #(swap! node-states assoc-in [(.-id %) :expanded] false)}])))
+    (if (empty? (get-in pg [:factory :desired-output])) [:p "Add desired output(s) to view production graph."]
+        [c/tree {:contents (clj->js [(pgraph-tree-node pg @node-states #{} nil (:id (pgraph/desired-output-node pg)))])
+                 :on-node-expand #(swap! node-states assoc-in [(.-id %) :expanded] true)
+                 :on-node-collapse #(swap! node-states assoc-in [(.-id %) :expanded] false)}])))
 
 (defn node-list
   [pg]
-  (if (pgraph/is-empty? pg)
+  (if (empty? (get-in pg [:factory :desired-output]))
     [:p "Add desired output(s) to view production nodes."]
-    (into [:ul] (for [node (pgraph/all-nodes pg) :when (and (not= (:id node) :start)
-                                                            (not= (:id node) :end))]
-                  [:li (str (get node :recipe-ratio) "x " (get-in node [:recipe :name]))]))))
+    (into [:ul] (for [node (pgraph/all-nodes pg) :when (and (not= (:id node) :excess)
+                                                            (not= (:id node) :missing)
+                                                            (not= (:id node) (:id (pgraph/desired-output-node pg))))]
+                  [:li (str (get node :num-machines) "x " (get-in node [:recipe :name]))]))))
 
 (defn catalyst-list
   [pg]
@@ -105,12 +106,12 @@
          [c/input {:value (:id factory) :disabled true}]]
         [c/form-group {:label "Name"}
          [c/input {:value (:name factory) :on-change #(update-factory (assoc factory :name %))}]]]
-       [c/card-lg [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")" )}
+       [c/card-lg [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")")}
                    [c/quantity-set-input :item (:desired-output factory) #(update-factory (assoc factory :desired-output %))]]]
-       [c/card-lg [c/form-group {:label (str "Outputs (" item-rate-unit ")")}
-                   (into [:ul] (for [[x n] (:input (pgraph/get-node pg :end))] [:li n "x " (get-item-name x)]))]]
-       [c/card-lg [c/form-group {:label (str "Inputs (" item-rate-unit ")")}
-                   (into [:ul] (for [[x n] (:output (pgraph/get-node pg :start))] [:li n "x " (get-item-name x)]))]]
+       [c/card-lg [c/form-group {:label (str "Excess Outputs (" item-rate-unit ")")}
+                   (into [:ul] (for [[x n] (pgraph/excess-output pg)] [:li n "x " (get-item-name x)]))]]
+       [c/card-lg [c/form-group {:label (str "Needed Inputs (" item-rate-unit ")")}
+                   (into [:ul] (for [[x n] (pgraph/missing-input pg)] [:li n "x " (get-item-name x)]))]]
        [c/card-lg [c/form-group {:label (str "Catalysts (" item-rate-unit ")")}
                    [catalyst-list pg]]]
       ;;  [c/card-lg [c/form-group {:label "Machines"}
@@ -120,7 +121,7 @@
        [c/card-lg [c/form-group {:label (str "Production Graph (" item-rate-unit ")")}
                    [pgraph-tree pg]]]
        [c/card-lg [c/form-group {:label (str "Production Stages (" item-rate-unit ")")}
-                   [node-list pg]]]       
+                   [node-list pg]]]
        [c/card-lg
         [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"}
          [c/textarea {:value (pgraph/pg->dot pg)

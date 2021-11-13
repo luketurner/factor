@@ -46,3 +46,8 @@
 (defn try-fn
   "Returns `(apply f args)` if `f` is a function, otherwise returns `nil`."
   [f & args] (when (fn? f) (apply f args)))
+
+(defn pick-max
+  "Returns the max of value you get when calling (f x) for each x in xs."
+  [f xs]
+  (apply max-key f xs))

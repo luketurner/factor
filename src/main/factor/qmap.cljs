@@ -6,6 +6,7 @@
    e.g. the required inputs and outputs for recipes."
   (:refer-clojure :exclude [+ - *])
   (:require [medley.core :refer [map-vals filter-vals]]
+            [com.rpl.specter :as s]
             [clojure.set :as set]
             [clojure.string :as string]))
 
@@ -35,7 +36,23 @@
 (defn intersects?
   "Returns true if any of the keys in A are also present in B."
   [a b]
-  (not-empty (set/intersection (set (keys a)) (set (keys b)))))
+  (boolean (not-empty (set/intersection (set (keys a)) (set (keys b))))))
+
+(defn intersection
+  "Accepts two or more qmaps and returns their intersection.
+   The intersection is defined similarly to that of a set --
+   it only contains keys if the keys are present in both qmaps.
+   For each key, the value will be set to the minimum of all the values of that key."
+  ([a b]
+   (trim (into {} (s/select [(s/submap (keys b)) s/ALL (s/view (fn [[k v]] [k (min v (b k))]))] a)))))
+
+(defn satisfying-ratio
+  "Given two qmaps GOAL and BASE, returns an integer N such that for every key in
+   both GOAL and BASE, quantity(GOAL) <= N * quantity(BASE)"
+  [goal base]
+  (js/Math.ceil (apply max (for [[k v] base]
+                             (when (contains? goal k)
+                               (/ (goal k) v))))))
 
 (defn qmap->str
   [qm name-fn delimiter]
