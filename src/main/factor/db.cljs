@@ -23,7 +23,19 @@
                [:output [:map-of :string number?]]
                [:input [:map-of :string number?]]
                [:recipes [:map-of :string number?]]
-               [:machines [:map-of :string number?]]]]]
+               [:machines [:map-of :string number?]]
+               [:hard-denied-machines [:set :string]]
+               [:soft-denied-machines [:set :string]]
+               [:hard-denied-recipes [:set :string]]
+               [:soft-denied-recipes [:set :string]]
+               [:hard-denied-items [:set :string]]
+               [:soft-denied-items [:set :string]]
+               [:hard-allowed-machines [:set :string]]
+               [:soft-allowed-machines [:set :string]]
+               [:hard-allowed-recipes [:set :string]]
+               [:soft-allowed-recipes [:set :string]]
+               [:hard-allowed-items [:set :string]]
+               [:soft-allowed-items [:set :string]]]]]
             [:items
              [:map-of :string
               [:map {:closed true}
@@ -96,6 +108,27 @@
   [db]
   (s/transform [(s/keypath :world :recipes) s/MAP-VALS (s/keypath :machines) (s/pred set?)] vec db))
 
+(defn add-allow-deny-lists-to-factories
+  "Adds the hard/soft allow/deny lists for items, machines, and recipes to factory maps where they aren't
+   already set."
+  [db]
+  (->> db
+       (s/multi-transform [(s/keypath :world :factories)
+                           s/MAP-VALS
+                           (s/multi-path
+                            [(s/keypath :hard-denied-machines) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :soft-denied-machines) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :hard-denied-recipes) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :soft-denied-recipes) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :hard-denied-items) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :soft-denied-items) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :hard-allowed-machines) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :soft-allowed-machines) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :hard-allowed-recipes) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :soft-allowed-recipes) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :hard-allowed-items) (s/pred nil?) (s/terminal-val #{})]
+                            [(s/keypath :soft-allowed-items) (s/pred nil?) (s/terminal-val #{})])])))
+
 (defn migrate-database
   "A function that accepts user-provided database contents, which might have been generated
    from an earlier version of Factor (e.g. when importing a world or loading from local storage),
@@ -109,7 +142,8 @@
   (->> db
        (add-catalysts-map-to-recipes)
        (add-duration-to-recipes)
-       (switch-recipe-machines-to-vector)))
+       (switch-recipe-machines-to-vector)
+       (add-allow-deny-lists-to-factories)))
 
 (defn ->migrate-database
   "An interceptor that runs the `migrate-database` function on the :db effect after the event executes.
