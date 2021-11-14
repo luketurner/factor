@@ -129,6 +129,18 @@
                             [(s/keypath :hard-allowed-items) (s/pred nil?) (s/terminal-val #{})]
                             [(s/keypath :soft-allowed-items) (s/pred nil?) (s/terminal-val #{})])])))
 
+(defn config-set-default-units
+  "Sets default values for units that were added in settings. (Without this migration, the units are empty
+   until the user goes into settings and configures them.)"
+  [db]
+  (->> db
+       (s/multi-transform [(s/keypath :config :unit)
+                           s/MAP-VALS
+                           (s/multi-path
+                            [(s/keypath :item-rate) (s/pred nil?) (s/terminal-val "items/sec")]
+                            [(s/keypath :power) (s/pred nil?) (s/terminal-val "W")]
+                            [(s/keypath :energy) (s/pred nil?) (s/terminal-val "J")])])))
+
 (defn migrate-database
   "A function that accepts user-provided database contents, which might have been generated
    from an earlier version of Factor (e.g. when importing a world or loading from local storage),
@@ -143,7 +155,8 @@
        (add-catalysts-map-to-recipes)
        (add-duration-to-recipes)
        (switch-recipe-machines-to-vector)
-       (add-allow-deny-lists-to-factories)))
+       (add-allow-deny-lists-to-factories)
+       (config-set-default-units)))
 
 (defn ->migrate-database
   "An interceptor that runs the `migrate-database` function on the :db effect after the event executes.
