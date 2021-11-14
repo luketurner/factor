@@ -8,6 +8,7 @@
             [medley.core :refer [map-vals filter-vals]]
             [com.rpl.specter :as s]
             [factor.world :as w]
+            [factor.factory :as f]
             [factor.util :as util]
             [clojure.string :as string]
             [re-frame.core :refer [subscribe]]))
@@ -230,84 +231,6 @@
         (connect-input-edges node)
         (connect-output-edges node))))
 
-(defn is-denied?
-  "returns true if `deny` contains `v`,
-   or if `allow` is non-empty and does not contain `v`"
-  [v deny allow]
-  (boolean (or (contains? deny v)
-              (and (not-empty allow)
-                   (not (contains? allow v))))))
-
-(defn machine-id-hard-denied?
-  [{{:keys [hard-denied-machines hard-allowed-machines]} :factory} m]
-  (is-denied? m hard-denied-machines hard-allowed-machines))
-
-(defn machine-id-soft-denied?
-  [{{:keys [soft-denied-machines soft-allowed-machines]} :factory} m]
-  (is-denied? m soft-denied-machines soft-allowed-machines))
-
-(defn item-id-hard-denied?
-  [{{:keys [hard-denied-items hard-allowed-items]} :factory} i]
-  (is-denied? i hard-denied-items hard-allowed-items))
-
-(defn item-id-soft-denied?
-  [{{:keys [soft-denied-items soft-allowed-items]} :factory} i]
-  (is-denied? i soft-denied-items soft-allowed-items))
-
-(defn recipe-id-hard-denied?
-  [{{:keys [hard-denied-recipes hard-allowed-recipes]} :factory} r]
-  (is-denied? r hard-denied-recipes hard-allowed-recipes))
-
-(defn recipe-id-soft-denied?
-  [{{:keys [soft-denied-recipes soft-allowed-recipes]} :factory} r]
-  (is-denied? r soft-denied-recipes soft-allowed-recipes))
-
-(defn recipe-hard-denied?
-  [pg r]
-  (let [item-id-hard-denied? (partial item-id-hard-denied? pg)
-        machine-id-hard-denied? (partial machine-id-hard-denied? pg)]
-    (or (recipe-id-hard-denied? pg (:id r))
-        (empty? (filter #(not (machine-id-hard-denied? %)) (:machines r)))
-        (some item-id-hard-denied? (keys (:input r)))
-        (some item-id-hard-denied? (keys (:output r)))
-        (some item-id-hard-denied? (keys (:catalysts r))))))
-
-(defn recipe-soft-denied?
-  [pg r]
-  (let [item-id-soft-denied? (partial item-id-soft-denied? pg)
-        machine-id-soft-denied? (partial machine-id-soft-denied? pg)]
-    (or (recipe-id-soft-denied? pg (:id r))
-        (empty? (filter #(not (machine-id-soft-denied? %)) (:machines r)))
-        (some item-id-soft-denied? (keys (:input r)))
-        (some item-id-soft-denied? (keys (:output r)))
-        (some item-id-soft-denied? (keys (:catalysts r))))))
-
-(defn valid-candidate-recipe?
-  "Returns true if the given recipe could be used as a cadidate -- namely, if the output of the recipe could be used to
-   satisfy any of the missing inputs of the pgraph."
-  [pg recipe]
-  (boolean (qmap/intersects? (:output recipe) (missing-input pg))))
-
-(defn preferred-machine
-  "Given a recipe, returns an ID for one of the machines the recipe supports. Respects factory allow/deny lists. Picks the highest-speed machine."
-  [pg recipe]
-  (let [{:keys [factory]} pg
-        {:keys [soft-denied not-denied]} (->> (:machines recipe)
-                                              (filter #(not (machine-id-hard-denied? factory %)))
-                                              (group-by #(if (machine-id-soft-denied? pg %)
-                                                           :soft-denied
-                                                           :not-denied)))]
-    (->> (if (seq not-denied) not-denied soft-denied)
-         (util/pick-max :speed))))
-
-(defn candidate-for-recipe
-  "Accepts a recipe and returns a map representing a 'candidate' -- a concrete proposal for adding that recipe as a node,
-   including what machine should be used and how many are needed."
-  [pg recipe]
-  {:recipe recipe
-   :machine (get-in pg [:world :machines (preferred-machine pg recipe)])
-   :num (qmap/satisfying-ratio (missing-input pg) (:output recipe))})
-
 (defn candidate-list
   "Returns a list of possible candidates for the given pgraph. A 'possible candidate' exists when there is:
    
@@ -320,13 +243,20 @@
    are soft-denied, then they will ALL be returned. Sorry if that's confusing -- basically the returned list will
    either have NO soft-denied candidates, or ALL soft-denied candidates."
   [pg]
-  (let [candidates (s/select [(s/must :world :recipes)
+  (let [valid-candidate-recipe? (fn [recipe]
+                                  (boolean (qmap/intersects? (:output recipe)
+                                                             (missing-input pg))))
+        candidate-for-recipe (fn [recipe]
+                               {:recipe recipe
+                                :machine (get-in pg [:world :machines (f/preferred-machine pg recipe)])
+                                :num (qmap/satisfying-ratio (missing-input pg) (:output recipe))})
+        candidates (s/select [(s/must :world :recipes)
                               s/MAP-VALS
-                              (s/pred #(valid-candidate-recipe? pg %))
-                              (s/pred #(not (recipe-hard-denied? pg %)))
-                              (s/view #(candidate-for-recipe pg %))]
+                              (s/pred valid-candidate-recipe?)
+                              (s/pred #(not (f/recipe-hard-denied? pg %)))
+                              (s/view candidate-for-recipe)]
                              pg)
-        {:keys [soft-denied not-denied]} (group-by #(if (recipe-soft-denied? pg (:recipe %))
+        {:keys [soft-denied not-denied]} (group-by #(if (f/recipe-soft-denied? pg (:recipe %))
                                                       :soft-denied
                                                       :not-denied) candidates)]
     (if (seq not-denied)
@@ -365,6 +295,7 @@
       pg)))
 
 (defn pgraph-for-factory
+  "Returns a satisfied pgraph for the given world and factory."
   [world {:keys [desired-output] :as factory}]
   
   ; 1. construct "empty" pgraph (only has :missing and :excess nodes)

@@ -51,3 +51,12 @@
   "Returns the max of value you get when calling (f x) for each x in xs."
   [f xs]
   (apply max-key f xs))
+
+
+(defn is-denied?
+  "returns true if `deny` contains `v`,
+   or if `allow` is non-empty and does not contain `v`"
+  [v deny allow]
+  (boolean (or (contains? deny v)
+               (and (not-empty allow)
+                    (not (contains? allow v))))))
