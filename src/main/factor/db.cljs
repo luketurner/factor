@@ -169,3 +169,26 @@
             (->> (get-effect ctx :db)
                  (migrate-database)
                  (assoc-effect ctx :db)))))
+
+(defn migrate-config
+  "A function that accepts user-provided database contents, which might have been generated
+   from an earlier version of Factor (e.g. when loading from local storage),
+   and returns an updated database where the :config key is updated to the latest version of Factor's schema.
+   
+   (This function only updates the :config key -- it's intended for use with config-loading events specifically.)"
+  [db]
+  (->> db
+       (config-set-default-units)))
+
+(defn ->migrate-config
+  "An interceptor that runs the `migrate-config` function on the :db effect after the event executes.
+   
+   Note, if the event also has a validation interceptor, this should run before that
+   (meaning it should be AFTER that in the interceptor list)."
+  []
+  (->interceptor
+   :id :migrate-config
+   :after (fn [ctx]
+            (->> (get-effect ctx :db)
+                 (migrate-config)
+                 (assoc-effect ctx :db)))))

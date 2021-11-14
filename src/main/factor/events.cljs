@@ -55,7 +55,8 @@
 
   (reg-event-fx
    :config-load
-   [(inject-cofx :localstorage :config)]
+   [(inject-cofx :localstorage :config)
+    (db/->migrate-config)]
    (fn [{{config :config} :localstorage db :db} [_ default-config]]
      {:db (assoc db :config (if (not-empty config) config default-config))}))
 
