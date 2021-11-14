@@ -135,7 +135,6 @@
   [db]
   (->> db
        (s/multi-transform [(s/keypath :config :unit)
-                           s/MAP-VALS
                            (s/multi-path
                             [(s/keypath :item-rate) (s/pred nil?) (s/terminal-val "items/sec")]
                             [(s/keypath :power) (s/pred nil?) (s/terminal-val "W")]
