@@ -27,7 +27,7 @@
   (reg-event-db :delete-item    (path :world) (fn [world [_ item]]    (w/remove-item-by-id    world item)))
 
   (reg-event-db :world-reset
-                [(db/->world-validator db/schema)
+                [(db/->world-validator)
                  (db/->migrate-database)]
                 (fn [db [_ w]] (assoc db :world w)))
 
@@ -36,7 +36,7 @@
   (reg-event-fx
    :world-load
    [(inject-cofx :localstorage :world)
-    (db/->world-validator db/schema)
+    (db/->world-validator)
     (db/->migrate-database)]
    (fn [{{world :world} :localstorage db :db} [_ default-world]]
      {:db (assoc db :world (if (not-empty world) world default-world))}))

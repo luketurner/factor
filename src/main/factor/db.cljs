@@ -11,67 +11,74 @@
   (dispatch-sync [:world-load w/empty-world])
   (dispatch-sync [:config-load {}]))
 
+(def world-schema
+  [:map {:closed true}
+   [:factories
+    [:map-of :string
+     [:map {:closed true}
+      [:id :string]
+      [:name :string]
+      [:desired-output [:map-of :string number?]]
+      [:output [:map-of :string number?]]
+      [:input [:map-of :string number?]]
+      [:recipes [:map-of :string number?]]
+      [:machines [:map-of :string number?]]
+      [:hard-denied-machines [:set :string]]
+      [:soft-denied-machines [:set :string]]
+      [:hard-denied-recipes [:set :string]]
+      [:soft-denied-recipes [:set :string]]
+      [:hard-denied-items [:set :string]]
+      [:soft-denied-items [:set :string]]
+      [:hard-allowed-machines [:set :string]]
+      [:soft-allowed-machines [:set :string]]
+      [:hard-allowed-recipes [:set :string]]
+      [:soft-allowed-recipes [:set :string]]
+      [:hard-allowed-items [:set :string]]
+      [:soft-allowed-items [:set :string]]]]]
+   [:items
+    [:map-of :string
+     [:map {:closed true}
+      [:id :string]
+      [:name :string]
+      [:created-at number?]]]]
+   [:machines
+    [:map-of :string
+     [:map {:closed true}
+      [:id :string]
+      [:name :string]
+      [:power number?]
+      [:speed number?]
+      [:created-at number?]]]]
+   [:recipes
+    [:map-of :string
+     [:map {:closed true}
+      [:id :string]
+      [:name :string]
+      [:input [:map-of :string number?]]
+      [:output [:map-of :string number?]]
+      [:catalysts [:map-of :string number?]]
+      [:machines [:vector :string]]
+      [:duration number?]
+      [:created-at number?]]]]])
+
 (def schema
   [:map {:closed true}
-   [:world [:map {:closed true}
-            [:factories
-             [:map-of :string
-              [:map {:closed true}
-               [:id :string]
-               [:name :string]
-               [:desired-output [:map-of :string number?]]
-               [:output [:map-of :string number?]]
-               [:input [:map-of :string number?]]
-               [:recipes [:map-of :string number?]]
-               [:machines [:map-of :string number?]]
-               [:hard-denied-machines [:set :string]]
-               [:soft-denied-machines [:set :string]]
-               [:hard-denied-recipes [:set :string]]
-               [:soft-denied-recipes [:set :string]]
-               [:hard-denied-items [:set :string]]
-               [:soft-denied-items [:set :string]]
-               [:hard-allowed-machines [:set :string]]
-               [:soft-allowed-machines [:set :string]]
-               [:hard-allowed-recipes [:set :string]]
-               [:soft-allowed-recipes [:set :string]]
-               [:hard-allowed-items [:set :string]]
-               [:soft-allowed-items [:set :string]]]]]
-            [:items
-             [:map-of :string
-              [:map {:closed true}
-               [:id :string]
-               [:name :string]
-               [:created-at number?]]]]
-            [:machines
-             [:map-of :string
-              [:map {:closed true}
-               [:id :string]
-               [:name :string]
-               [:power number?]
-               [:speed number?]
-               [:created-at number?]]]]
-            [:recipes
-             [:map-of :string
-              [:map {:closed true}
-               [:id :string]
-               [:name :string]
-               [:input [:map-of :string number?]]
-               [:output [:map-of :string number?]]
-               [:catalysts [:map-of :string number?]]
-               [:machines [:vector :string]]
-               [:duration number?]
-               [:created-at number?]]]]]]
+   [:world world-schema]
    [:config [:map]]
    [:ui [:map]]])
 
-(defn ->world-validator [schema]
+(defn ->world-validator []
   (->interceptor
-   :id :db-validator
-   :after (fn [{{db :db} :effects :as ctx}]
-            (let [invalid? (and db (not (validate schema db)))]
-              (cond-> ctx
-                invalid? (dissoc-in [:effects :db])
-                invalid? (add-fx [:toast (str "validate failed: " (pr-str (explain schema db)))]))))))
+   :id :world-validator
+   :after (fn [ctx]
+            (let [world (-> ctx (get-effect :db) (get :world))]
+              (if (or (not world)
+                      (validate world-schema world))
+                ctx
+                (let [reason (explain world-schema world)]
+                  (-> ctx
+                      (assoc-effect :db nil)
+                      (add-fx [:toast (str "validate failed: " (pr-str reason))]))))))))
 
 (defn ->world-saver []
   (->interceptor

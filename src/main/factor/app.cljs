@@ -16,7 +16,7 @@
   (subs/reg-all)
   (events/reg-all)
   (fx/reg-all)
-  (when DEV (reg-global-interceptor (db/->world-validator db/schema)))
+  (when DEV (reg-global-interceptor (db/->world-validator)))
   (reg-global-interceptor (db/->world-saver))
   (reg-global-interceptor (db/->config-saver)))
 
