@@ -26,9 +26,17 @@
       [c/navbar-heading "Factories"]
       [c/navbar-divider]
       [c/suggest :factory selected select-factory]
-      [c/button {:class :bp3-minimal :on-click create-and-select-factory :icon :plus :text "Add factory"}]
-      [c/navbar-divider]
-      [c/button {:on-click #(delete-and-unselect-factory selected) :intent :danger :text "Delete factory"}]]]))
+      
+      [c/alerting-button
+       {:text "Delete"
+        :class :bp3-minimal
+        :icon :delete
+        :intent :danger}
+       {:on-confirm #(delete-and-unselect-factory selected)
+        :intent :danger
+        :confirm-button-text "Delete It!"}
+       [:p "This will permanently delete this factory! (Your items/machines/recipes will stick around.)"]]
+      [c/button {:class :bp3-minimal :intent :success :on-click create-and-select-factory :icon :plus :text "New"}]]]))
 
 
 (defn get-item-name [id] (:name @(subscribe [:item id])))
@@ -99,7 +107,6 @@
           pg @(subscribe [:factory-pgraph factory-id])
           update-factory #(dispatch [:update-factory %])
           item-rate-unit @(subscribe [:unit :item-rate])]
-      ;; (println "nodes" (tree-node-for-pgraph-node pg :root))
       [:div.card-stack
        [c/card-lg
         [c/form-group {:label "ID"}
