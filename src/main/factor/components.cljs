@@ -172,8 +172,9 @@
    The only exception is the on-change prop, which is wrapped such that the value is already extracted from
    the InputGroup's React.SyntheticEvent before being passed to the `on-change` function."
   [{:keys [on-change] :as props}]
-  (let [override-props {:on-change #(-> % (.-target) (.-value) (on-change))}
-        props (merge props override-props)]
+  (let [default-props {:async-control true}
+        override-props {:on-change #(-> % (.-target) (.-value) (on-change))}
+        props (merge default-props props override-props)]
     [(c b/InputGroup) props]))
 
 (defn grid-cb->clj
