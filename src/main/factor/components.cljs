@@ -67,7 +67,7 @@
    (e.g. if `type` is `:item`, it will suggest items.)"
   [type value on-change]
   (let [type-name (name type)
-        ids->names @(subscribe [(keyword (str type-name "-names"))])]
+        ids->names @(subscribe [(keyword (str type-name "-ids->names"))])]
     [(c bs/Suggest) {:items (if (not-empty ids->names) (keys ids->names) [])
                      :selected-item value
                      :on-item-select on-change

@@ -8,7 +8,7 @@
             [medley.core :refer [map-vals filter-vals]]
             [com.rpl.specter :as s]
             [factor.world :as w]
-            [factor.factory :as f]
+            [factor.filter :as filter]
             [factor.util :as util]
             [clojure.string :as string]
             [re-frame.core :refer [subscribe]]))
@@ -231,6 +231,17 @@
         (connect-input-edges node)
         (connect-output-edges node))))
 
+(defn preferred-machine
+  "Given a recipe, returns an ID for one of the machines the recipe supports. Respects factory allow/deny lists. Picks the highest-speed machine."
+  [pg recipe]
+  (let [{:keys [soft-denied not-denied]} (->> (:machines recipe)
+                                              (filter #(not (filter/machine-id-hard-denied? (:filter pg) %)))
+                                              (group-by #(if (filter/machine-id-soft-denied? (:filter pg) %)
+                                                           :soft-denied
+                                                           :not-denied)))]
+    (->> (if (seq not-denied) not-denied soft-denied)
+         (util/pick-max :speed))))
+
 (defn candidate-list
   "Returns a list of possible candidates for the given pgraph. A 'possible candidate' exists when there is:
    
@@ -248,15 +259,15 @@
                                                              (missing-input pg))))
         candidate-for-recipe (fn [recipe]
                                {:recipe recipe
-                                :machine (get-in pg [:world :machines (f/preferred-machine pg recipe)])
+                                :machine (get-in pg [:machines (preferred-machine pg recipe)])
                                 :num (qmap/satisfying-ratio (missing-input pg) (:output recipe))})
-        candidates (s/select [(s/must :world :recipes)
+        candidates (s/select [(s/must :recipes)
                               s/MAP-VALS
                               (s/pred valid-candidate-recipe?)
-                              (s/pred #(not (f/recipe-hard-denied? pg %)))
+                              (s/pred #(not (filter/recipe-hard-denied? (:filter pg) %)))
                               (s/view candidate-for-recipe)]
                              pg)
-        {:keys [soft-denied not-denied]} (group-by #(if (f/recipe-soft-denied? pg (:recipe %))
+        {:keys [soft-denied not-denied]} (group-by #(if (filter/recipe-soft-denied? (:filter pg) (:recipe %))
                                                       :soft-denied
                                                       :not-denied) candidates)]
     (if (seq not-denied)
@@ -294,19 +305,18 @@
       (recur (add-node pg (node-for-candidate c)))
       pg)))
 
-(defn pgraph-for-factory
-  "Returns a satisfied pgraph for the given world and factory."
-  [world {:keys [desired-output] :as factory}]
-  
+(defn pgraph
+  [{:keys [recipes machines filter desired-output]}]
   ; 1. construct "empty" pgraph (only has :missing and :excess nodes)
-  (-> {:world world
-       :factory factory
+  (-> {:recipes recipes
+       :machines machines
+       :filter filter
        :edges     {}
        :edges-rev {}
        :next-node-id 1
        :nodes {:missing {:id :missing}
                :excess  {:id :excess}}}
-      
+
       ; 2. add a node for our desired outputs
       (add-node {:input desired-output})
 

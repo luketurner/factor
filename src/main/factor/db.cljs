@@ -23,18 +23,19 @@
       [:input [:map-of :string number?]]
       [:recipes [:map-of :string number?]]
       [:machines [:map-of :string number?]]
-      [:hard-denied-machines [:set :string]]
-      [:soft-denied-machines [:set :string]]
-      [:hard-denied-recipes [:set :string]]
-      [:soft-denied-recipes [:set :string]]
-      [:hard-denied-items [:set :string]]
-      [:soft-denied-items [:set :string]]
-      [:hard-allowed-machines [:set :string]]
-      [:soft-allowed-machines [:set :string]]
-      [:hard-allowed-recipes [:set :string]]
-      [:soft-allowed-recipes [:set :string]]
-      [:hard-allowed-items [:set :string]]
-      [:soft-allowed-items [:set :string]]]]]
+      [:filter [:map {:closed true}
+                [:hard-denied-machines [:set :string]]
+                [:soft-denied-machines [:set :string]]
+                [:hard-denied-recipes [:set :string]]
+                [:soft-denied-recipes [:set :string]]
+                [:hard-denied-items [:set :string]]
+                [:soft-denied-items [:set :string]]
+                [:hard-allowed-machines [:set :string]]
+                [:soft-allowed-machines [:set :string]]
+                [:hard-allowed-recipes [:set :string]]
+                [:soft-allowed-recipes [:set :string]]
+                [:hard-allowed-items [:set :string]]
+                [:soft-allowed-items [:set :string]]]]]]]
    [:items
     [:map-of :string
      [:map {:closed true}
@@ -136,6 +137,40 @@
                             [(s/keypath :hard-allowed-items) (s/pred nil?) (s/terminal-val #{})]
                             [(s/keypath :soft-allowed-items) (s/pred nil?) (s/terminal-val #{})])])))
 
+(defn move-allow-deny-lists-to-filter
+  "Adds the hard/soft allow/deny lists for items, machines, and recipes to factory maps where they aren't
+   already set."
+  [db]
+  (->> db
+       (s/transform [(s/keypath :world :factories) s/MAP-VALS]
+                    #(dissoc
+                      %
+                      :hard-allowed-machines
+                      :soft-allowed-machines
+                      :hard-allowed-items
+                      :soft-allowed-items
+                      :hard-allowed-recipes
+                      :soft-allowed-recipes
+                      :hard-denied-machines
+                      :soft-denied-machines
+                      :hard-denied-items
+                      :soft-denied-items
+                      :hard-denied-recipes
+                      :soft-denied-recipes))
+       (s/setval [(s/keypath :world :factories) s/MAP-VALS (s/keypath :filter) (s/pred nil?)]
+                 {:hard-allowed-machines #{}
+                  :soft-allowed-machines #{}
+                  :hard-allowed-items #{}
+                  :soft-allowed-items #{}
+                  :hard-allowed-recipes #{}
+                  :soft-allowed-recipes #{}
+                  :hard-denied-machines #{}
+                  :soft-denied-machines #{}
+                  :hard-denied-items #{}
+                  :soft-denied-items #{}
+                  :hard-denied-recipes #{}
+                  :soft-denied-recipes #{}})))
+
 (defn config-set-default-units
   "Sets default values for units that were added in settings. (Without this migration, the units are empty
    until the user goes into settings and configures them.)"
@@ -162,6 +197,7 @@
        (add-duration-to-recipes)
        (switch-recipe-machines-to-vector)
        (add-allow-deny-lists-to-factories)
+       (move-allow-deny-lists-to-filter)
        (config-set-default-units)))
 
 (defn ->migrate-database

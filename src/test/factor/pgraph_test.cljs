@@ -82,10 +82,11 @@
                                                                      :machines #{"assembler"}})}})
 
 (deftest pgraph-for-factory-should-satisfy-desired-output
-  (let [w           test-world
-        factory     (get-in w [:factories "testfactory"])
-        factory     (assoc factory :desired-output {"iron-ingot" 123})
-        pg          (pgraph/pgraph-for-factory w factory)]
+  (let [{:keys [machines recipes]} test-world
+        pg (pgraph/pgraph {:machines machines
+                           :recipes recipes
+                           :desired-output {"iron-ingot" 123}
+                           :filter {}})]
     (is (= (pgraph/missing-input pg) {"iron-ore" 123})
         "should be missing iron ore")
     (is (empty? (pgraph/excess-output pg))
@@ -94,10 +95,11 @@
         "should have 4 nodes (missing, excess, desired, ingot crafting)")))
 
 (deftest pgraph-for-factory-should-satisfy-desired-output-iteratively
-  (let [w           test-world
-        factory     (get-in w [:factories "testfactory"])
-        factory     (assoc factory :desired-output {"iron-plate" 123})
-        pg          (pgraph/pgraph-for-factory w factory)]
+  (let [{:keys [machines recipes]} test-world
+        pg (pgraph/pgraph {:machines machines
+                           :recipes recipes
+                           :desired-output {"iron-plate" 123}
+                           :filter {}})]
     (is (= (pgraph/missing-input pg) {"iron-ore" 246})
         "should be missing iron ore")
     (is (empty? (pgraph/excess-output pg))
@@ -106,10 +108,11 @@
         "should have 5 nodes (missing, excess, desired, plate crafting, ingot crafting)")))
 
 (deftest pgraph-for-factory-should-handle-partial-satisfaction
-  (let [w           test-world
-        factory     (get-in w [:factories "testfactory"])
-        factory     (assoc factory :desired-output {"cable" 1})
-        pg          (pgraph/pgraph-for-factory w factory)]
+  (let [{:keys [machines recipes]} test-world
+        pg (pgraph/pgraph {:machines machines
+                           :recipes recipes
+                           :desired-output {"cable" 1}
+                           :filter {}})]
     (is (= (pgraph/missing-input pg) {"copper-ore" 1})
         "should be missing copper ore")
     (is (= (pgraph/excess-output pg) {"copper-wire" 2})
@@ -118,10 +121,11 @@
         "should have 5 nodes (missing, excess, desired, wire crafting, cable crafting)")))
 
 (deftest pgraph-for-factory-should-reuse-existing-output-where-possible
-  (let [w           test-world
-        factory     (get-in w [:factories "testfactory"])
-        factory     (assoc factory :desired-output {"concrete" 123 "steel-ingot" 123})
-        pg          (pgraph/pgraph-for-factory w factory)]
+  (let [{:keys [machines recipes]} test-world
+        pg (pgraph/pgraph {:machines machines
+                           :recipes recipes
+                           :desired-output {"concrete" 123 "steel-ingot" 123}
+                           :filter {}})]
     (is (= (pgraph/missing-input pg) {"iron-ore" 123 "coal" 246})
         "should be missing iron ore and coal")
     (is (empty? (pgraph/excess-output pg))
@@ -130,10 +134,11 @@
         "should have 6 nodes (missing, excess, desired, concrete crafting, iron ingot crafting, steel ingot crafting)")))
 
 (deftest pgraph-for-factory-should-support-circular-recipes
-  (let [w           test-world
-        factory     (get-in w [:factories "testfactory"])
-        factory     (assoc factory :desired-output {"purified-iron-ore" 3})
-        pg          (pgraph/pgraph-for-factory w factory)]
+  (let [{:keys [machines recipes]} test-world
+        pg (pgraph/pgraph {:machines machines
+                           :recipes recipes
+                           :desired-output {"purified-iron-ore" 3}
+                           :filter {}})]
     (is (= (pgraph/missing-input pg) {"iron-ore" 2})
         "should be missing iron ore")
     (is (empty? (pgraph/excess-output pg))
