@@ -1,7 +1,7 @@
 (ns factor.view.factory
   (:require [factor.components :as c]
             [factor.pgraph :as pgraph]
-            [re-frame.core :refer [dispatch subscribe]]
+            [re-frame.core :refer [dispatch subscribe dispatch-sync]]
             [reagent.core :refer [as-element]]
             [clojure.string :as string]
             [factor.qmap :as qmap]
@@ -102,7 +102,7 @@
   (if-let [factory-id @(subscribe [:open-factory])]
     (let [factory @(subscribe [:factory factory-id])
           pg @(subscribe [:factory-pgraph factory-id])
-          update-factory #(dispatch [:update-factory %])
+          update-factory #(dispatch-sync [:update-factory %])
           item-rate-unit @(subscribe [:unit :item-rate])]
       [:div.card-stack
        [c/card-lg
