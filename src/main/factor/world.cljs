@@ -107,7 +107,7 @@
                   :input {}
                   :output {}
                   :catalysts {}
-                  :machines #{}
+                  :machines []
                   :duration 1
                   :created-at (.now js/Date)} opts)))
 
