@@ -232,7 +232,8 @@
         (connect-output-edges node))))
 
 (defn preferred-machine
-  "Given a recipe, returns an ID for one of the machines the recipe supports. Respects factory allow/deny lists. Picks the highest-speed machine."
+  "Given a recipe, returns a map for one of the machines the recipe supports. Respects factory allow/deny lists. Picks the highest-speed machine.
+   (Note, this calls the get-machine function from the pg for each machine candidate in order to compare speeds.)"
   [pg recipe]
   (let [{:keys [get-machine]} pg
         {:keys [soft-denied not-denied]} (->> (:machines recipe)
