@@ -81,12 +81,17 @@
                                                                               "sulfuric-acid" 10}
                                                                      :machines #{"assembler"}})}})
 
-(deftest pgraph-for-factory-should-satisfy-desired-output
+(defn build-test-pg
+  [desired-output filter]
   (let [{:keys [machines recipes]} test-world
-        pg (pgraph/pgraph {:machines machines
-                           :recipes recipes
-                           :desired-output {"iron-ingot" 123}
-                           :filter {}})]
+        recipe-index (world/recipe-index (vals recipes))]
+   (pgraph/pgraph {:get-recipes-with-output #(map recipes (get-in recipe-index [:output %]))
+                   :get-machine #(get machines %)
+                   :desired-output desired-output
+                   :filter filter})))
+
+(deftest pgraph-for-factory-should-satisfy-desired-output
+  (let [pg (build-test-pg {"iron-ingot" 123} {})]
     (is (= (pgraph/missing-input pg) {"iron-ore" 123})
         "should be missing iron ore")
     (is (empty? (pgraph/excess-output pg))
@@ -95,11 +100,7 @@
         "should have 4 nodes (missing, excess, desired, ingot crafting)")))
 
 (deftest pgraph-for-factory-should-satisfy-desired-output-iteratively
-  (let [{:keys [machines recipes]} test-world
-        pg (pgraph/pgraph {:machines machines
-                           :recipes recipes
-                           :desired-output {"iron-plate" 123}
-                           :filter {}})]
+  (let [pg (build-test-pg {"iron-plate" 123} {})]
     (is (= (pgraph/missing-input pg) {"iron-ore" 246})
         "should be missing iron ore")
     (is (empty? (pgraph/excess-output pg))
@@ -108,11 +109,7 @@
         "should have 5 nodes (missing, excess, desired, plate crafting, ingot crafting)")))
 
 (deftest pgraph-for-factory-should-handle-partial-satisfaction
-  (let [{:keys [machines recipes]} test-world
-        pg (pgraph/pgraph {:machines machines
-                           :recipes recipes
-                           :desired-output {"cable" 1}
-                           :filter {}})]
+  (let [pg (build-test-pg {"cable" 1} {})]
     (is (= (pgraph/missing-input pg) {"copper-ore" 1})
         "should be missing copper ore")
     (is (= (pgraph/excess-output pg) {"copper-wire" 2})
@@ -121,11 +118,7 @@
         "should have 5 nodes (missing, excess, desired, wire crafting, cable crafting)")))
 
 (deftest pgraph-for-factory-should-reuse-existing-output-where-possible
-  (let [{:keys [machines recipes]} test-world
-        pg (pgraph/pgraph {:machines machines
-                           :recipes recipes
-                           :desired-output {"concrete" 123 "steel-ingot" 123}
-                           :filter {}})]
+  (let [pg (build-test-pg {"concrete" 123 "steel-ingot" 123} {})]
     (is (= (pgraph/missing-input pg) {"iron-ore" 123 "coal" 246})
         "should be missing iron ore and coal")
     (is (empty? (pgraph/excess-output pg))
@@ -134,11 +127,7 @@
         "should have 6 nodes (missing, excess, desired, concrete crafting, iron ingot crafting, steel ingot crafting)")))
 
 (deftest pgraph-for-factory-should-support-circular-recipes
-  (let [{:keys [machines recipes]} test-world
-        pg (pgraph/pgraph {:machines machines
-                           :recipes recipes
-                           :desired-output {"purified-iron-ore" 3}
-                           :filter {}})]
+  (let [pg (build-test-pg {"purified-iron-ore" 3} {})]
     (is (= (pgraph/missing-input pg) {"iron-ore" 2})
         "should be missing iron ore")
     (is (empty? (pgraph/excess-output pg))

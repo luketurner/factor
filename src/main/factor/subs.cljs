@@ -1,5 +1,6 @@
 (ns factor.subs
-  (:require [re-frame.core :refer [reg-sub subscribe]]
+  (:require [re-frame.core :refer [reg-sub reg-sub-raw subscribe]]
+            [reagent.ratom :refer [reaction]]
             [medley.core :refer [map-vals]]
             [factor.world :as world]
             [factor.pgraph :as pgraph]))
@@ -48,33 +49,41 @@
   (reg-sub :factory-count :<- [:factory-seq] (fn [m] (count m)))
   (reg-sub :machine-count :<- [:machine-seq] (fn [m] (count m)))
 
+  (reg-sub :recipe-index :<- [:recipe-seq] (fn [xs] (world/recipe-index xs)))
+  (reg-sub :recipe-input-index :<- [:recipe-index] (fn [m] (get m :input)))
+  (reg-sub :recipe-output-index :<- [:recipe-index] (fn [m] (get m :output)))
+
   ; These subs exclude fields that don't matter for pgraph processing.
   ; This way, if e.g. a factory name changes, the whole pgraph doesn't recalculate.
-  (reg-sub :factory-for-pgraph (fn [[_ id]] (subscribe [:factory id])) (fn [f] (dissoc f :name :id)))
-  (reg-sub :recipes-for-pgraph :<- [:recipes] (fn [m] (map-vals #(dissoc % :name) m)))
-  (reg-sub :machines-for-pgraph :<- [:machines] (fn [m] (map-vals #(dissoc % :name) m)))
+  (reg-sub :factory-for-pgraph (fn [[_ id]] (subscribe [:factory id])) (fn [x] (dissoc x :name :id)))
+  (reg-sub :machine-for-pgraph (fn [[_ id]] (subscribe [:machine id])) (fn [x] (dissoc x :name)))
+  (reg-sub :recipe-for-pgraph (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (dissoc x :name)))
 
+  ; The :recipes-with-output sub accepts an item ID as a parameter, uses the recipe-index to
+  ; look up all recipes that provide that item as output, and returns a set of recipe objects (NOT ids)
+  ; Will re-run whenever the recipe index changes or any of the recipe objects change.
+  (reg-sub-raw
+   :recipes-with-output
+   (fn [_ [_ id]]
+     (reaction
+      (let [recipe-output-index @(subscribe [:recipe-output-index])
+            recipe-ids (get recipe-output-index id #{})
+            recipes (map (fn [r] @(subscribe [:recipe-for-pgraph r])) recipe-ids)]
+        recipes))))
 
-  ;; :hard-denied-items (:hard-denied-items factory)
-  ;; :soft-denied-items (:hard-denied-items factory)
-  ;; :hard-denied-machines (:hard-denied-machines factory)
-  ;; :soft-denied-machines (:hard-denied-machines factory)
-  ;; :hard-denied-recipes (:hard-denied-recipes factory)
-  ;; :soft-denied-recipes (:hard-denied-recipes factory)
-  ;; :hard-allowed-items (:hard-denied-items factory)
-  ;; :soft-allowed-items (:hard-denied-items factory)
-  ;; :hard-allowed-machines (:hard-denied-machines factory)
-  ;; :soft-allowed-machines (:hard-denied-machines factory)
-  ;; :hard-allowed-recipes (:hard-denied-recipes factory)
-  ;; :soft-allowed-recipes (:hard-denied-recipes factory)
-
-  (reg-sub :factory-pgraph
-           (fn [[_ id]] {:recipes (subscribe [:recipes-for-pgraph])
-                         :machines (subscribe [:machines-for-pgraph])
-                         :factory (subscribe [:factory-for-pgraph id])})
-           (fn [{:keys [recipes machines factory]}]
-             (pgraph/pgraph {:recipes recipes
-                             :machines machines
-                             :filter (:filter factory)
-                             :desired-output (:desired-output factory)}))))
+  ; Calculates a pgraph for the given factory. Uses reg-sub-raw because it only needs to re-run in specific cases:
+  ; 1. A machine or recipe referenced by a node/candidate in the pgraph was updated.
+  ; 2. Any recipes were added/removed from the recipe index nodes that were checked when the pgraph was built.
+  ; By limiting our subscriptions to only those required machines/recipes/etc. we can avoid having to recalculate
+  ; the expensive pgraph when unused recipes/etc. are changed.
+  (reg-sub-raw :factory-pgraph
+               (fn [_ [_ factory-id]]
+                 (reaction
+                  (let [factory @(subscribe [:factory-for-pgraph factory-id])
+                        get-recipes-with-output (fn [item] @(subscribe [:recipes-with-output item]))
+                        get-machine (fn [id] @(subscribe [:machine-for-pgraph id]))]
+                    (pgraph/pgraph {:get-recipes-with-output get-recipes-with-output
+                                    :get-machine get-machine
+                                    :filter (:filter factory)
+                                    :desired-output (:desired-output factory)}))))))
 

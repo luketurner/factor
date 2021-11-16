@@ -121,3 +121,13 @@
   (s/select-first
    [(s/keypath :machines)] ; Add filtering logic here when implemented in factory
    recipe))
+
+(defn recipe-index
+  [recipes]
+  (reduce
+   (fn [m x]
+     (-> m
+         (update :output (partial merge-with concat) (map-vals #(identity #{(:id x)}) (:output x)))
+         (update :input  (partial merge-with concat) (map-vals #(identity #{(:id x)}) (:input  x)))))
+   {:input {} :output {}}
+   recipes))

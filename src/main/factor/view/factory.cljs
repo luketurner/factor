@@ -91,7 +91,7 @@
   (into [:ul] (for [node (pgraph/all-nodes pg) :when (and (not= (:id node) :excess)
                                                           (not= (:id node) :missing)
                                                           (not= (:id node) (:id (pgraph/desired-output-node pg))))]
-                [:li (str (get node :num-machines) "x " (get-in node [:recipe :name]))])))
+                [:li (str (get node :num-machines) "x " (:name @(subscribe [:recipe (get-in node [:recipe :id])])))])))
 
 (defn catalyst-list
   [pg]

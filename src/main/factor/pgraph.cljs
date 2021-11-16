@@ -234,12 +234,14 @@
 (defn preferred-machine
   "Given a recipe, returns an ID for one of the machines the recipe supports. Respects factory allow/deny lists. Picks the highest-speed machine."
   [pg recipe]
-  (let [{:keys [soft-denied not-denied]} (->> (:machines recipe)
+  (let [{:keys [get-machine]} pg
+        {:keys [soft-denied not-denied]} (->> (:machines recipe)
                                               (filter #(not (filter/machine-id-hard-denied? (:filter pg) %)))
                                               (group-by #(if (filter/machine-id-soft-denied? (:filter pg) %)
                                                            :soft-denied
                                                            :not-denied)))]
     (->> (if (seq not-denied) not-denied soft-denied)
+         (map get-machine)
          (util/pick-max :speed))))
 
 (defn candidate-list
@@ -254,19 +256,16 @@
    are soft-denied, then they will ALL be returned. Sorry if that's confusing -- basically the returned list will
    either have NO soft-denied candidates, or ALL soft-denied candidates."
   [pg]
-  (let [valid-candidate-recipe? (fn [recipe]
-                                  (boolean (qmap/intersects? (:output recipe)
-                                                             (missing-input pg))))
+  (let [candidate-recipes (->> pg
+                               (missing-input)
+                               (map (comp (:get-recipes-with-output pg) key))
+                               (apply concat)
+                               (filter #(not (filter/recipe-hard-denied? (:filter pg) %))))
         candidate-for-recipe (fn [recipe]
                                {:recipe recipe
-                                :machine (get-in pg [:machines (preferred-machine pg recipe)])
+                                :machine (preferred-machine pg recipe)
                                 :num (qmap/satisfying-ratio (missing-input pg) (:output recipe))})
-        candidates (s/select [(s/must :recipes)
-                              s/MAP-VALS
-                              (s/pred valid-candidate-recipe?)
-                              (s/pred #(not (filter/recipe-hard-denied? (:filter pg) %)))
-                              (s/view candidate-for-recipe)]
-                             pg)
+        candidates (map candidate-for-recipe candidate-recipes)
         {:keys [soft-denied not-denied]} (group-by #(if (filter/recipe-soft-denied? (:filter pg) (:recipe %))
                                                       :soft-denied
                                                       :not-denied) candidates)]
@@ -306,10 +305,17 @@
       pg)))
 
 (defn pgraph
-  [{:keys [recipes machines filter desired-output]}]
+  "Creates a pgraph for the specified `desired-output` and satisfies it. Returns the satisfied pgraph.
+   The optional `filter` should contain allow/deny lists (see :filter schema in factor.db) and is intended
+   to be pulled from a factory object, just like the desired output.
+  `get-recipes-with-output` and `get-machine` should be functions that can be called to retrieve a set of recipes
+   or a machine, respectively. This is done to provide better support for reactive flow. Rather than requesting a
+   list of all recipes, all machines, etc. -- which would necessitate rebuilding the pgraph whenever anything changed
+   -- the pgraph will only be subscribed to the specific recipe index keys and machine keys it needs for its calculations."
+  [{:keys [filter desired-output get-recipes-with-output get-machine]}]
   ; 1. construct "empty" pgraph (only has :missing and :excess nodes)
-  (-> {:recipes recipes
-       :machines machines
+  (-> {:get-recipes-with-output get-recipes-with-output
+       :get-machine get-machine
        :filter filter
        :edges     {}
        :edges-rev {}
