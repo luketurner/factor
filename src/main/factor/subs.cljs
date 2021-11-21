@@ -34,10 +34,10 @@
   (reg-sub :recipe-seq :<- [:recipes] (fn [m] (into [] (vals m))))
   (reg-sub :item-seq :<- [:items] (fn [m] (into [] (vals m))))
 
-  (reg-sub :machine-ids :<- [:machine-seq] (fn [m] (into [] (keys m))))
-  (reg-sub :factory-ids :<- [:factory-seq] (fn [m] (into [] (keys m))))
-  (reg-sub :recipe-ids :<- [:recipe-seq] (fn [m] (into [] (keys m))))
-  (reg-sub :item-ids :<- [:item-seq] (fn [m] (into [] (keys m))))
+  (reg-sub :machine-ids :<- [:machines] (fn [m] (into [] (keys m))))
+  (reg-sub :factory-ids :<- [:factories] (fn [m] (into [] (keys m))))
+  (reg-sub :recipe-ids :<- [:recipes] (fn [m] (into [] (keys m))))
+  (reg-sub :item-ids :<- [:items] (fn [m] (into [] (keys m))))
 
   (reg-sub :item-ids->names :<- [:items] (fn [m] (map-vals :name m)))
   (reg-sub :recipe-ids->names :<- [:recipes] (fn [m] (map-vals :name m)))
