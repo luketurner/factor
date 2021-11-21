@@ -21,10 +21,10 @@
   (reg-event-db :update-machine (path :world) (fn [world [_ machine]] (w/update-machine world machine)))
   (reg-event-db :update-recipe  (path :world) (fn [world [_ recipe]]  (w/update-recipe  world recipe)))
 
-  (reg-event-db :delete-factory (path :world) (fn [world [_ factory]] (w/remove-factory-by-id world factory)))
-  (reg-event-db :delete-recipe  (path :world) (fn [world [_ recipe]]  (w/remove-recipe-by-id  world recipe)))
-  (reg-event-db :delete-machine (path :world) (fn [world [_ machine]] (w/remove-machine-by-id world machine)))
-  (reg-event-db :delete-item    (path :world) (fn [world [_ item]]    (w/remove-item-by-id    world item)))
+  (reg-event-db :delete-factories [(path :world)] (fn [world [_ xs]] (reduce w/remove-factory-by-id world xs)))
+  (reg-event-db :delete-recipes   [(path :world)] (fn [world [_ xs]] (reduce w/remove-recipe-by-id  world xs)))
+  (reg-event-db :delete-machines  [(path :world)] (fn [world [_ xs]] (reduce w/remove-machine-by-id world xs)))
+  (reg-event-db :delete-items     [(path :world)] (fn [world [_ xs]] (reduce w/remove-item-by-id    world xs)))
 
   (reg-event-db :world-reset
                 [(db/->world-validator)
@@ -69,12 +69,6 @@
      {:db (assoc db :config (if (not-empty config) config default-config))}))
 
   (reg-event-fx :config-save (fn [_ [_ config]] {:localstorage {:config config}}))
-
-  ;; Helper events (triggers other events)
-
-  (reg-event-fx :delete-items    (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-item %]])    ids)}))
-  (reg-event-fx :delete-machines (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-machine %]]) ids)}))
-  (reg-event-fx :delete-recipes  (fn [_ [_ ids]] {:fx (map #(identity [:dispatch [:delete-recipe %]])  ids)}))
 
   ;; UI mutation event
 

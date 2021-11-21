@@ -16,7 +16,7 @@
 (defn delete-and-unselect-factory [id]
   (let [factory-ids     @(subscribe [:factory-ids])
         other-factory-id (some #(when (not= % id) %) factory-ids)]
-    (dispatch [:delete-factory id])
+    (dispatch [:delete-factories [id]])
     (dispatch [:open-factory other-factory-id])))
 
 (defn navbar []
