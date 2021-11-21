@@ -22,5 +22,5 @@ pom.xml.asc
 
 .calva
 .lsp
-.clj-kondo
+.clj-kondo/.cache
 test-out
