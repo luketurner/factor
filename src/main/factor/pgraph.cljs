@@ -263,9 +263,10 @@
                                (apply concat)
                                (filter #(not (filter/recipe-hard-denied? (:filter pg) %))))
         candidate-for-recipe (fn [recipe]
-                               {:recipe recipe
-                                :machine (preferred-machine pg recipe)
-                                :num (qmap/satisfying-ratio (missing-input pg) (:output recipe))})
+                               (let [m (preferred-machine pg recipe)]
+                                 {:recipe recipe
+                                  :machine m
+                                  :num (qmap/satisfying-ratio (missing-input pg) (real-outputs recipe m))}))
         candidates (map candidate-for-recipe candidate-recipes)
         {:keys [soft-denied not-denied]} (group-by #(if (filter/recipe-soft-denied? (:filter pg) (:recipe %))
                                                       :soft-denied
