@@ -167,7 +167,7 @@
 
 (defn factory-missing-inputs
   [id]
-  [item-list-for-qmap (pgraph/excess-output @(subscribe [:factory-pgraph id]))])
+  [item-list-for-qmap (pgraph/missing-input @(subscribe [:factory-pgraph id]))])
 
 (defn no-factories
   []
@@ -193,7 +193,7 @@
        [c/card-lg [c/form-group {:label (str "Production Graph (" item-rate-unit ")")} [pgraph-tree id]]]
        [c/card-lg [c/form-group {:label (str "Production Stages (" item-rate-unit ")")} [node-list id]]]
        [c/card-lg
-        [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"} pgraph-dot-data]
+        [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"} [pgraph-dot-data id]]
         [c/form-group {:label "Raw Data - Production Graph"} [pgraph-raw-data id]]
         [c/form-group {:label "Raw Data - Factory Object"} [factory-raw-data id]]]])
     [no-factories]))
