@@ -84,3 +84,20 @@
   (boolean (or (contains? deny v)
                (and (not-empty allow)
                     (not (contains? allow v))))))
+
+(defn callback-factory-factory
+  "returns a function which will always return the `same-callback` every time 
+   it is called. 
+   `same-callback` is what actually calls your `callback` and, when it does,
+   it supplies any necessary args, including those supplied at wrapper creation
+   time and any supplied by the browser (a DOM event object?) at call time.
+   
+   (from https://github.com/day8/re-frame/blob/f2d9fadb257d5249f5bbe4a1d7ca850b0847db2b/docs/on-stable-dom-handlers.md)"
+  [the-real-callback]
+  (let [*args1        (atom nil)
+        same-callback (fn [& args2]
+                        (apply the-real-callback (concat @*args1 args2)))]
+    (fn callback-factory
+      [& args1]
+      (reset! *args1 args1)
+      same-callback)))
