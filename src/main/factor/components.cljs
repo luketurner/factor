@@ -205,7 +205,7 @@
     (fn [type on-add]
       [control-group
        [suggest type @new-val update-new-val]
-       [button {:icon :plus :on-click (add-cb-factory on-add)}]])))
+       [button {:icon :plus :on-click (add-cb-factory on-add @new-val)}]])))
 
 (defn list-input
   "A complex control for editing a list of objects (items, machines, etc.) Each entry in the list is rendered as a line that's editable
