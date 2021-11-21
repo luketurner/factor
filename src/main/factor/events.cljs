@@ -31,8 +31,13 @@
                  (db/->migrate-database)]
                 (fn [db [_ w]] (assoc db :world w)))
 
-  (reg-event-db :update-factory-name (path :world) (fn [world [_ id name]] (assoc-in world [:factories id :name] name)))
-  (reg-event-db :update-factory-desired-output (path :world) (fn [world [_ id qm]] (assoc-in world [:factories id :desired-output] qm)))
+
+  (reg-event-db :update-recipe-input [(path :world)] (fn [world [_ id qm]] (assoc-in world [:recipes id :input] qm)))
+  (reg-event-db :update-recipe-output [(path :world)] (fn [world [_ id qm]] (assoc-in world [:recipes id :output] qm)))
+  (reg-event-db :update-recipe-catalysts [(path :world)] (fn [world [_ id qm]] (assoc-in world [:recipes id :catalysts] qm)))
+  (reg-event-db :update-recipe-machines [(path :world)] (fn [world [_ id xs]] (assoc-in world [:recipes id :machines] xs)))
+  (reg-event-db :update-recipe-duration [(path :world)] (fn [world [_ id n]] (assoc-in world [:recipes id :duration] n)))
+
 
   ;; World persistence events
 
