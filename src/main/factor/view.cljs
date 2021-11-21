@@ -18,17 +18,17 @@
   [c/navbar
    [c/navbar-group-left
     [c/navbar-heading [:strong "factor."]]
-    [c/nav-link [:home] :home "Home"]
+    [c/nav-link :home :home "Home"]
     [c/navbar-divider]
-    [c/nav-link [:factories] :office "Factories"]
-    [c/nav-link [:items] :cube "Items"]
-    [c/nav-link [:machines] :oil-field "Machines"]
-    [c/nav-link [:recipes] :data-lineage "Recipes"]
+    [c/nav-link :factories :office "Factories"]
+    [c/nav-link :items :cube "Items"]
+    [c/nav-link :machines :oil-field "Machines"]
+    [c/nav-link :recipes :data-lineage "Recipes"]
     [c/navbar-divider]
-    [c/nav-link [:settings] :settings "Settings"]]])
+    [c/nav-link :settings :settings "Settings"]]])
 
 (defn secondary-navbar []
-  (let [[x] @(subscribe [:ui [:selected-page]])]
+  (let [x @(subscribe [:ui [:selected-page]])]
     (case x
       :home [home/navbar]
       :factories [factory/navbar]
@@ -38,7 +38,7 @@
       :settings [settings/navbar])))
 
 (defn main-content []
-  (let [[x] @(subscribe [:ui [:selected-page]])]
+  (let [x @(subscribe [:ui [:selected-page]])]
     [:main
      (case x
        :home [home/page]
@@ -60,11 +60,10 @@
                       :text "github"}]]])
 
 (defn app []
-  (let []
-    [:<> 
-     [:style (apply css styles/css-rules)]
-     [:div.app-container
-      [primary-navbar]
-      [secondary-navbar]
-      [main-content]
-      [footer]]]))
+  [:<>
+   [:style (apply css styles/css-rules)]
+   [:div.app-container
+    [primary-navbar]
+    [secondary-navbar]
+    [main-content]
+    [footer]]])

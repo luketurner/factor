@@ -41,6 +41,7 @@
       [c/navbar
        [c/navbar-group-left
         [c/navbar-heading "Item List"]
+        [c/undo-redo]
         [c/button {:class :bp3-minimal :on-click create-item :icon :plus :title "Add item"}]
         [c/navbar-divider]
         (when (< 0 num-selected)

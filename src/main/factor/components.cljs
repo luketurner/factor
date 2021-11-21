@@ -260,7 +260,7 @@
 (defn nav-link
   "A minimally styled button that, when clicked, will change the currently selected page."
   [page icon text]
-  (with-let [on-click #(dispatch [:ui [:selected-page] %])
+  (with-let [on-click #(dispatch [:select-page %])
              on-click-factory (callback-factory-factory on-click)]
     (let [selected-page @(subscribe [:ui [:selected-page]])]
       [button {:class :bp3-minimal
@@ -286,3 +286,12 @@
                           :cancel-button-text "Cancel"
                           :on-close close} alert-props)]
            children)]))
+
+(defn undo-redo
+  "A control group containing undo/redo buttons. The buttons are wired to the global undo/redo stack."
+  []
+  (with-let [undo #(dispatch [:undo])
+             redo #(dispatch [:redo])]
+        [control-group {}
+         [button {:class :bp3-minimal :disabled (not @(subscribe [:undos?])) :on-click undo :icon :undo :title "Undo"}]
+         [button {:class :bp3-minimal :disabled (not @(subscribe [:redos?])) :on-click redo :icon :redo :title "Redo"}]]))

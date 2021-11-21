@@ -48,6 +48,7 @@
       [c/navbar
        [c/navbar-group-left
         [c/navbar-heading "Recipe List"]
+        [c/undo-redo]
         [c/button {:class :bp3-minimal :on-click create-recipe :icon :plus :title "Add recipe"}]
         [c/navbar-divider]
         (when (< 0 num-selected)

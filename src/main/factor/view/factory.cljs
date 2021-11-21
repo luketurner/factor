@@ -26,6 +26,7 @@
       [c/navbar
        [c/navbar-group-left
         [c/navbar-heading "Factories"]
+        [c/undo-redo]
         [c/navbar-divider]
         [c/suggest :factory selected select-factory]
 

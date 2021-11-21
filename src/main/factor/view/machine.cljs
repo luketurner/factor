@@ -52,6 +52,7 @@
       [c/navbar
        [c/navbar-group-left
         [c/navbar-heading "Machine List"]
+        [c/undo-redo]
         [c/button {:class :bp3-minimal :on-click create-machine :icon :plus :title "Add machine"}]
         [c/navbar-divider]
         (when (< 0 num-selected)
