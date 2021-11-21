@@ -73,18 +73,18 @@
                   :output {}
                   :machines {}
                   :recipes {}
-                  :hard-denied-machines #{}
-                  :soft-denied-machines #{}
-                  :hard-denied-items #{}
-                  :soft-denied-items #{}
-                  :hard-denied-recipes #{}
-                  :soft-denied-recipes #{}
-                  :hard-allowed-machines #{}
-                  :soft-allowed-machines #{}
-                  :hard-allowed-items #{}
-                  :soft-allowed-items #{}
-                  :hard-allowed-recipes #{}
-                  :soft-allowed-recipes #{}} opts)))
+                  :filter {:hard-denied-machines #{}
+                           :soft-denied-machines #{}
+                           :hard-denied-items #{}
+                           :soft-denied-items #{}
+                           :hard-denied-recipes #{}
+                           :soft-denied-recipes #{}
+                           :hard-allowed-machines #{}
+                           :soft-allowed-machines #{}
+                           :hard-allowed-items #{}
+                           :soft-allowed-items #{}
+                           :hard-allowed-recipes #{}
+                           :soft-allowed-recipes #{}}} opts)))
 
 (defn new-item
   ([] (new-item {}))
