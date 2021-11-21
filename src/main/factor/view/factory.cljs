@@ -2,7 +2,7 @@
   (:require [factor.components :as c]
             [factor.pgraph :as pgraph]
             [re-frame.core :refer [dispatch subscribe dispatch-sync]]
-            [reagent.core :refer [as-element]]
+            [reagent.core :refer [as-element with-let]]
             [clojure.string :as string]
             [factor.qmap :as qmap]
             [factor.world :as w]
@@ -20,24 +20,25 @@
     (dispatch [:open-factory other-factory-id])))
 
 (defn navbar []
-  (let [selected       @(subscribe [:open-factory])
-        select-factory #(dispatch [:open-factory %])]
-    [c/navbar
-     [c/navbar-group-left
-      [c/navbar-heading "Factories"]
-      [c/navbar-divider]
-      [c/suggest :factory selected select-factory]
+  (with-let [select-factory #(dispatch [:open-factory %])
+             delete-cb-factory (callback-factory-factory delete-and-unselect-factory)]
+    (let [selected @(subscribe [:open-factory])]
+      [c/navbar
+       [c/navbar-group-left
+        [c/navbar-heading "Factories"]
+        [c/navbar-divider]
+        [c/suggest :factory selected select-factory]
 
-      [c/alerting-button
-       {:text "Delete"
-        :class :bp3-minimal
-        :icon :delete
-        :intent :danger}
-       {:on-confirm #(delete-and-unselect-factory selected)
-        :intent :danger
-        :confirm-button-text "Delete It!"}
-       [:p "This will permanently delete this factory! (Your items/machines/recipes will stick around.)"]]
-      [c/button {:class :bp3-minimal :intent :success :on-click create-and-select-factory :icon :plus :text "New"}]]]))
+        [c/alerting-button
+         {:text "Delete"
+          :class :bp3-minimal
+          :icon :delete
+          :intent :danger}
+         {:on-confirm (delete-cb-factory selected)
+          :intent :danger
+          :confirm-button-text "Delete It!"}
+         [:p "This will permanently delete this factory! (Your items/machines/recipes will stick around.)"]]
+        [c/button {:class :bp3-minimal :intent :success :on-click create-and-select-factory :icon :plus :text "New"}]]])))
 
 
 (defn get-item-name [id] (:name @(subscribe [:item id])))
