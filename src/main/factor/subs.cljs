@@ -29,6 +29,9 @@
 
   ;; Materialized views
 
+  (reg-sub :factory-name (fn [[_ id]] (subscribe [:factory id])) (fn [x] (get x :name)))
+  (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (get x :desired-output)))
+
   (reg-sub :machine-seq :<- [:machines] (fn [m] (into [] (vals m))))
   (reg-sub :factory-seq :<- [:factories] (fn [m] (into [] (vals m))))
   (reg-sub :recipe-seq :<- [:recipes] (fn [m] (into [] (vals m))))

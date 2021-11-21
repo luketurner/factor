@@ -31,6 +31,9 @@
                  (db/->migrate-database)]
                 (fn [db [_ w]] (assoc db :world w)))
 
+  (reg-event-db :update-factory-name (path :world) (fn [world [_ id name]] (assoc-in world [:factories id :name] name)))
+  (reg-event-db :update-factory-desired-output (path :world) (fn [world [_ id qm]] (assoc-in world [:factories id :desired-output] qm)))
+
   ;; World persistence events
 
   (reg-event-fx
