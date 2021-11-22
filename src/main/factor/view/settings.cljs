@@ -78,5 +78,5 @@
     [c/form-group {:label "Energy unit (default: J)"} [energy-unit-editor]]]
    [c/card-lg [c/form-group {:label "Export (Copy World Data)"} [world-exporter]]]
    [c/card-lg [c/form-group {:label "Import (Paste World Data)"} [world-loader]]]
-   [c/card-lg [c/form-group {:label "Delete All Data"} world-delete-button]]
+   [c/card-lg [c/form-group {:label "Delete All Data"} [world-delete-button]]]
    [c/card-lg [c/form-group {:label "Import Preset"} [preset-load-button]]]])
