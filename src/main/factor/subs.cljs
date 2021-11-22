@@ -24,10 +24,14 @@
 
   (reg-sub :ui (fn [db [_ path]] (get-in db (into [:ui] path))))
 
-  (reg-sub :open-factory (fn [db _] (get-in db [:config :open-factory])))
-  (reg-sub :unit (fn [db [_ k]] (get-in db [:config :unit k])))
+  (reg-sub :config (fn [db] (get db :config)))
 
   ;; Materialized views
+
+  (reg-sub :open-factory
+           (fn [] [(subscribe [:config]) (subscribe [:factory-id-set])])
+           (fn [[{:keys [open-factory]} ids]] (when (contains? ids open-factory) open-factory)))
+  (reg-sub :unit         :<- [:config] (fn [c [_ k]] (get-in c [:unit k])))
 
   (reg-sub :factory-name (fn [[_ id]] (subscribe [:factory id])) (fn [x] (get x :name)))
   (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (get x :desired-output)))
@@ -48,6 +52,8 @@
   (reg-sub :factory-ids :<- [:factories] (fn [m] (into [] (keys m))))
   (reg-sub :recipe-ids :<- [:recipes] (fn [m] (into [] (keys m))))
   (reg-sub :item-ids :<- [:items] (fn [m] (into [] (keys m))))
+
+  (reg-sub :factory-id-set :<- [:factory-ids] (fn [xs] (into #{} xs)))
 
   (reg-sub :item-ids->names :<- [:items] (fn [m] (map-vals :name m)))
   (reg-sub :recipe-ids->names :<- [:recipes] (fn [m] (map-vals :name m)))
