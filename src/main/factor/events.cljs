@@ -1,4 +1,5 @@
 (ns factor.events
+  "Defines all the events used by Factor."
   (:require [re-frame.core :refer [inject-cofx reg-event-db reg-event-fx path ->interceptor]]
             [factor.world :as w]
             [factor.db :as db]
@@ -60,7 +61,7 @@
 
 
   ;; World persistence events
-  ;; (Not undoable)
+  ;; Not undoable
 
   (reg-event-fx
    :world-load
@@ -76,7 +77,7 @@
      {:localstorage {:world world}}))
 
   ;; Config-mutating events
-  ;; (Not undoable (for now?))
+  ;; Not undoable (for now?)
 
   (reg-event-db :open-factory (fn [db [_ id]] (assoc-in db [:config :open-factory] id)))
   (reg-event-db :set-unit (fn [db [_ k v]] (assoc-in db [:config :unit k] v)))

@@ -1,11 +1,7 @@
 (ns factor.view
-  (:require [re-frame.core :refer [subscribe dispatch]]
-            [reagent.core :refer [as-element]]
+  (:require [re-frame.core :refer [subscribe]]
             [factor.styles :as styles]
-            [factor.world :as w]
-            [factor.pgraph :as pgraph]
             [garden.core :refer [css]]
-            [factor.util :refer [new-uuid]]
             [factor.components :as c]
             [factor.view.settings :as settings]
             [factor.view.item :as item]

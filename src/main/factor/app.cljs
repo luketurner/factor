@@ -1,10 +1,10 @@
 (ns factor.app
+  "Entry point for the application. Call `init` function to start."
   (:require [reagent.dom :as dom]
             [re-frame.core :refer [reg-global-interceptor]]
             [factor.fx :as fx]
             [factor.subs :as subs]
             [factor.events :as events]
-            [factor.world :as world]
             [factor.db :as db]
             [factor.view :as view]))
 

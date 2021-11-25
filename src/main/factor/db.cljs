@@ -1,7 +1,7 @@
 (ns factor.db
+  "Defines app-db-related functions and schemas."
   (:require [re-frame.core :refer [->interceptor dispatch-sync get-effect assoc-effect]]
             [malli.core :refer [validate explain]]
-            [medley.core :refer [dissoc-in]]
             [factor.util :refer [add-fx]]
             [factor.world :as w]
             [com.rpl.specter :as s]))

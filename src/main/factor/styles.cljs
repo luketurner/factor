@@ -1,8 +1,5 @@
 (ns factor.styles
-  (:require [garden.core :refer [css]]
-            [garden.units :refer [px percent rem]]
-            [garden.selectors :as s]
-            [garden.stylesheet :refer [at-media]]))
+  (:require [garden.selectors :as s]))
 
 (def css-rules
   [[:* {:box-sizing "border-box"}]

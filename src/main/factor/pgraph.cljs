@@ -7,10 +7,8 @@
   (:require [factor.qmap :as qmap]
             [medley.core :refer [map-vals filter-vals]]
             [com.rpl.specter :as s]
-            [factor.world :as w]
             [factor.filter :as filter]
             [factor.util :as util]
-            [clojure.string :as string]
             [re-frame.core :refer [subscribe]]))
 
 (defn all-edges

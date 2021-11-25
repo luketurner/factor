@@ -1,4 +1,5 @@
 (ns factor.components
+  "Defines reusable components for use in views. Includes wrappers for Blueprint components."
   (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as reagent :refer [with-let]]
             [factor.util :refer [c]]
@@ -7,7 +8,6 @@
             ["ag-grid-react" :refer [AgGridReact]]
             [clojure.string :as string]
             [factor.util :refer [ipairs try-fn delete-index move-index-ahead move-index-behind callback-factory-factory]]
-            [com.rpl.specter :as s]
             [medley.core :refer [map-keys]]))
 
 ;; WRAPPER COMPONENTS

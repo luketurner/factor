@@ -42,7 +42,6 @@
   (reg-sub :recipe-machines (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (get x :machines)))
   (reg-sub :recipe-duration (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (get x :duration)))
 
-
   (reg-sub :machine-seq :<- [:machines] (fn [m] (into [] (vals m))))
   (reg-sub :factory-seq :<- [:factories] (fn [m] (into [] (vals m))))
   (reg-sub :recipe-seq :<- [:recipes] (fn [m] (into [] (vals m))))

@@ -3,7 +3,6 @@
             [factor.pgraph :as pgraph]
             [re-frame.core :refer [dispatch subscribe dispatch-sync]]
             [reagent.core :refer [as-element with-let]]
-            [clojure.string :as string]
             [factor.qmap :as qmap]
             [factor.world :as w]
             [factor.util :refer [callback-factory-factory]]))
