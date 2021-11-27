@@ -1,85 +1,81 @@
 (ns factor.pgraph-test
   (:require [factor.world :as world]
+            [factor.schema :as sc]
             [cljs.test :refer [deftest is]]
             [factor.pgraph :as pgraph]))
 
-(def test-world {:factories {"testfactory" (world/new-factory {:id "testfactory"
-                                                            ;;    :hard-denied-machines #{"pump"}
-                                                            ;;    :soft-denied-machines #{"smelter"}
-                                                            ;;    :hard-denied-recipes #{"iron-ingot"}
-                                                            ;;    :soft-denied-recipes #{"steel-ingot"}
-                                                            ;;    :hard-denied-items #{"water"}
-                                                            ;;    :soft-denied-items #{"water"}
-                                                               :desired-output {"iron-ingot" 10}})}
-                 :items {"iron-ore" (world/new-item {:id "iron-ore" :name "iron-ore"})
-                         "iron-ingot" (world/new-item {:id "iron-ingot" :name "iron-ingot"})
-                         "coal" (world/new-item {:id "coal" :name "coal"})
-                         "copper-ore" (world/new-item {:id "copper-ore" :name "copper-ore"})
-                         "copper-wire" (world/new-item {:id "copper-wire" :name "copper-wire"})
-                         "iron-plate" (world/new-item {:id "iron-plate" :name "iron-plate"})
-                         "steel-ingot" (world/new-item {:id "steel-ingot" :name "steel-ingot"})
-                         "steel-beam" (world/new-item {:id "steel-beam" :name "steel-beam"})
-                         "cable" (world/new-item {:id "cable" :name "cable"})
-                         "slag" (world/new-item {:id "slag" :name "slag"})
-                         "water" (world/new-item {:id "water" :name "water"})
-                         "sulfuric-acid" (world/new-item {:id "sulfuric-acid" :name "sulfuric-acid"})
-                         "iron-ore-slurry" (world/new-item {:id "iron-ore-slurry" :name "iron-ore-slurry"})
-                         "purified-iron-ore" (world/new-item {:id "purified-iron-ore" :name "purified-iron-ore"})}
-                 :machines {"smelter" (world/new-machine {:id "smelter" :name "smelter" :power 1 :speed 1})
-                            "assembler" (world/new-machine {:id "assembler" :name "assembler" :power 1 :speed 1})
-                            "pump" (world/new-machine {:id "pump" :name "pump" :power 1 :speed 1})}
-                 :recipes {"iron-ingot" (world/new-recipe {:id "iron-ingot"
-                                                           :name "iron-ingot"
-                                                           :input {"iron-ore" 1}
-                                                           :output {"iron-ingot" 1}
-                                                           :machines #{"smelter"}})
-                           "steel-ingot" (world/new-recipe {:id "steel-ingot"
-                                                            :name "steel-ingot"
-                                                            :input {"iron-ore" 1 "coal" 2}
-                                                            :output {"steel-ingot" 1 "slag" 1}
-                                                            :machines #{"smelter"}})
-                           "iron-plate" (world/new-recipe {:id "iron-plate"
-                                                           :name "iron-plate"
-                                                           :input {"iron-ingot" 2}
-                                                           :output {"iron-plate" 1}
-                                                           :machines #{"assembler"}})
-                           "steel-beam" (world/new-recipe {:id "steel-beam"
-                                                           :name "steel-beam"
-                                                           :input {"steel-ingot" 3}
-                                                           :output {"steel-beam" 2}
-                                                           :machines #{"assembler"}})
-                           "copper-wire" (world/new-recipe {:id "copper-wire"
-                                                            :name "copper-wire"
-                                                            :input {"copper-ore" 1}
-                                                            :output {"copper-wire" 4}
-                                                            :machines #{"assembler"}})
-                           "concrete" (world/new-recipe {:id "concrete"
-                                                         :name "concrete"
-                                                         :input {"slag" 1 "water" 10}
-                                                         :output {"concrete" 1}
-                                                         :machines #{"assembler"}})
-                           "water" (world/new-recipe {:id "water"
-                                                      :name "water"
-                                                      :input {}
-                                                      :output {"water" 10}
-                                                      :machines #{"pump"}})
-                           "cable" (world/new-recipe {:id "cable"
-                                                      :name "cable"
-                                                      :input {"copper-wire" 2}
-                                                      :output {"cable" 1}
-                                                      :machines #{"assembler"}})
-                           "iron-ore-slurry" (world/new-recipe {:id "iron-ore-slurry"
-                                                      :name "iron-ore-slurry"
-                                                      :input {"iron-ore" 2
-                                                              "sulfuric-acid" 10}
-                                                      :output {"iron-ore-slurry" 10}
-                                                      :machines #{"assembler"}})
-                           "iron-slurry-refining" (world/new-recipe {:id "iron-slurry-refining"
-                                                                     :name "iron-slurry-refining"
-                                                                     :input {"iron-ore-slurry" 10}
-                                                                     :output {"purified-iron-ore" 3
-                                                                              "sulfuric-acid" 10}
-                                                                     :machines #{"assembler"}})}})
+(def test-world
+  (sc/make sc/World {:factories {"testfactory" {:id "testfactory"
+                                                :desired-output {"iron-ingot" 10}}}
+                     :items {"iron-ore"  {:id "iron-ore" :name "iron-ore"}
+                             "iron-ingot"  {:id "iron-ingot" :name "iron-ingot"}
+                             "coal"  {:id "coal" :name "coal"}
+                             "copper-ore"  {:id "copper-ore" :name "copper-ore"}
+                             "copper-wire"  {:id "copper-wire" :name "copper-wire"}
+                             "iron-plate"  {:id "iron-plate" :name "iron-plate"}
+                             "steel-ingot"  {:id "steel-ingot" :name "steel-ingot"}
+                             "steel-beam"  {:id "steel-beam" :name "steel-beam"}
+                             "cable"  {:id "cable" :name "cable"}
+                             "slag"  {:id "slag" :name "slag"}
+                             "water"  {:id "water" :name "water"}
+                             "sulfuric-acid"  {:id "sulfuric-acid" :name "sulfuric-acid"}
+                             "iron-ore-slurry"  {:id "iron-ore-slurry" :name "iron-ore-slurry"}
+                             "purified-iron-ore"  {:id "purified-iron-ore" :name "purified-iron-ore"}}
+                     :machines {"smelter"  {:id "smelter" :name "smelter" :power 1 :speed 1}
+                                "assembler"  {:id "assembler" :name "assembler" :power 1 :speed 1}
+                                "pump"  {:id "pump" :name "pump" :power 1 :speed 1}}
+                     :recipes {"iron-ingot" {:id "iron-ingot"
+                                             :name "iron-ingot"
+                                             :input {"iron-ore" 1}
+                                             :output {"iron-ingot" 1}
+                                             :machines #{"smelter"}}
+                               "steel-ingot" {:id "steel-ingot"
+                                              :name "steel-ingot"
+                                              :input {"iron-ore" 1 "coal" 2}
+                                              :output {"steel-ingot" 1 "slag" 1}
+                                              :machines #{"smelter"}}
+                               "iron-plate" {:id "iron-plate"
+                                             :name "iron-plate"
+                                             :input {"iron-ingot" 2}
+                                             :output {"iron-plate" 1}
+                                             :machines #{"assembler"}}
+                               "steel-beam" {:id "steel-beam"
+                                             :name "steel-beam"
+                                             :input {"steel-ingot" 3}
+                                             :output {"steel-beam" 2}
+                                             :machines #{"assembler"}}
+                               "copper-wire" {:id "copper-wire"
+                                              :name "copper-wire"
+                                              :input {"copper-ore" 1}
+                                              :output {"copper-wire" 4}
+                                              :machines #{"assembler"}}
+                               "concrete" {:id "concrete"
+                                           :name "concrete"
+                                           :input {"slag" 1 "water" 10}
+                                           :output {"concrete" 1}
+                                           :machines #{"assembler"}}
+                               "water" {:id "water"
+                                        :name "water"
+                                        :input {}
+                                        :output {"water" 10}
+                                        :machines #{"pump"}}
+                               "cable" {:id "cable"
+                                        :name "cable"
+                                        :input {"copper-wire" 2}
+                                        :output {"cable" 1}
+                                        :machines #{"assembler"}}
+                               "iron-ore-slurry" {:id "iron-ore-slurry"
+                                                  :name "iron-ore-slurry"
+                                                  :input {"iron-ore" 2
+                                                          "sulfuric-acid" 10}
+                                                  :output {"iron-ore-slurry" 10}
+                                                  :machines #{"assembler"}}
+                               "iron-slurry-refining" {:id "iron-slurry-refining"
+                                                       :name "iron-slurry-refining"
+                                                       :input {"iron-ore-slurry" 10}
+                                                       :output {"purified-iron-ore" 3
+                                                                "sulfuric-acid" 10}
+                                                       :machines #{"assembler"}}}}))
 
 (defn build-test-pg
   [desired-output filter]

@@ -1,72 +1,17 @@
 (ns factor.db
   "Defines app-db-related functions and schemas."
   (:require [re-frame.core :refer [->interceptor dispatch-sync get-effect assoc-effect]]
-            [malli.core :refer [validate explain]]
+            [malli.core :refer [validate explain decode encode]]
             [factor.util :refer [add-fx]]
             [factor.world :as w]
-            [com.rpl.specter :as s]))
+            [com.rpl.specter :as s]
+            [malli.transform :as mt]
+            [factor.schema :as schema]))
 
 (defn init []
   (dispatch-sync [:initialize-db])
   (dispatch-sync [:world-load w/empty-world])
   (dispatch-sync [:config-load {}]))
-
-(def world-schema
-  [:map {:closed true}
-   [:factories
-    [:map-of :string
-     [:map {:closed true}
-      [:id :string]
-      [:name :string]
-      [:desired-output [:map-of :string number?]]
-      [:output [:map-of :string number?]]
-      [:input [:map-of :string number?]]
-      [:recipes [:map-of :string number?]]
-      [:machines [:map-of :string number?]]
-      [:filter [:map {:closed true}
-                [:hard-denied-machines [:set :string]]
-                [:soft-denied-machines [:set :string]]
-                [:hard-denied-recipes [:set :string]]
-                [:soft-denied-recipes [:set :string]]
-                [:hard-denied-items [:set :string]]
-                [:soft-denied-items [:set :string]]
-                [:hard-allowed-machines [:set :string]]
-                [:soft-allowed-machines [:set :string]]
-                [:hard-allowed-recipes [:set :string]]
-                [:soft-allowed-recipes [:set :string]]
-                [:hard-allowed-items [:set :string]]
-                [:soft-allowed-items [:set :string]]]]]]]
-   [:items
-    [:map-of :string
-     [:map {:closed true}
-      [:id :string]
-      [:name :string]
-      [:created-at number?]]]]
-   [:machines
-    [:map-of :string
-     [:map {:closed true}
-      [:id :string]
-      [:name :string]
-      [:power number?]
-      [:speed number?]
-      [:created-at number?]]]]
-   [:recipes
-    [:map-of :string
-     [:map {:closed true}
-      [:id :string]
-      [:name :string]
-      [:input [:map-of :string number?]]
-      [:output [:map-of :string number?]]
-      [:catalysts [:map-of :string number?]]
-      [:machines [:vector :string]]
-      [:duration number?]
-      [:created-at number?]]]]])
-
-(def schema
-  [:map {:closed true}
-   [:world world-schema]
-   [:config [:map]]
-   [:ui [:map]]])
 
 (defn ->world-validator []
   (->interceptor
@@ -74,9 +19,9 @@
    :after (fn [ctx]
             (let [world (-> ctx (get-effect :db) (get :world))]
               (if (or (not world)
-                      (validate world-schema world))
+                      (validate schema/World world))
                 ctx
-                (let [reason (explain world-schema world)]
+                (let [reason (explain schema/World world)]
                   (-> ctx
                       (assoc-effect :db nil)
                       (add-fx [:toast (str "validate failed: " (pr-str reason))]))))))))

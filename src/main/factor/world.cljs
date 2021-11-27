@@ -111,9 +111,6 @@
                   :duration 1
                   :created-at (.now js/Date)} opts)))
 
-(defn world->str [world] (pr-str world))
-(defn str->world [s] (edn/read-string s))
-
 (defn machine-for-factory-recipe 
   "Picks which machine should be used to craft given `recipe`. Respects the machine
    constraints assigned by `factory`, if any. Returns nil if there are no matching machines."

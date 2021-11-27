@@ -3,7 +3,6 @@
             [re-frame.core :refer [dispatch subscribe]]
             [factor.world :as w]
             [reagent.core :as reagent :refer [with-let]]
-            [factor.util :refer [callback-factory-factory]]
             [factor.presets.factorio :as factorio]))
 
 (defn navbar [] [c/navbar])
@@ -15,7 +14,7 @@
                              (.-target)
                              (.-value)
                              (reset! v))
-             on-confirm #(dispatch [:world-reset (w/str->world @v)])]
+             on-confirm #(dispatch [:load-world-from-edn @v])]
     [:<>
      ;; TODO -- update textarea to extract value from on-change within component
      ;; instead of having to do the .-target .-value jazz everywhere
@@ -56,7 +55,7 @@
 
 (defn world-exporter
   []
-  [c/textarea {:value (w/world->str @(subscribe [:world-data])) :read-only true}])
+  [c/textarea {:value @(subscribe [:world-as-edn]) :read-only true}])
 
 (defn world-delete-button
   []

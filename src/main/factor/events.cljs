@@ -3,7 +3,9 @@
   (:require [re-frame.core :refer [inject-cofx reg-event-db reg-event-fx path ->interceptor]]
             [factor.world :as w]
             [factor.db :as db]
-            [day8.re-frame.undo :as undo :refer [undoable]]))
+            [day8.re-frame.undo :as undo :refer [undoable]]
+            [factor.schema :as schema]
+            [factor.util :refer [json->clj edn->clj]]))
 
 
 (defn reg-all []
@@ -49,6 +51,24 @@
                  (db/->world-validator)
                  (db/->migrate-database)]
                 (fn [db [_ w]] (assoc db :world w)))
+
+  (reg-event-db :load-world-from-json
+                [(undoable)
+                 (db/->world-validator)
+                 (db/->migrate-database)]
+                (fn [db [_ x]] (->> x
+                                    (json->clj)
+                                    (schema/json-decode schema/World)
+                                    (assoc db :world))))
+
+  (reg-event-db :load-world-from-edn
+                [(undoable)
+                 (db/->world-validator)
+                 (db/->migrate-database)]
+                (fn [db [_ x]] (->> x
+                                    (edn->clj)
+                                    (schema/edn-decode schema/World)
+                                    (assoc db :world))))
 
   (reg-event-db :update-factory-name [(undoable) (path :world)] (fn [world [_ id name]] (assoc-in world [:factories id :name] name)))
   (reg-event-db :update-factory-desired-output [(undoable) (path :world)] (fn [world [_ id qm]] (assoc-in world [:factories id :desired-output] qm)))

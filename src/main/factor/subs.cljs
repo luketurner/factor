@@ -1,9 +1,12 @@
 (ns factor.subs
   (:require [re-frame.core :refer [reg-sub reg-sub-raw subscribe]]
+            [factor.db :as db]
             [reagent.ratom :refer [reaction]]
             [medley.core :refer [map-vals]]
             [factor.world :as world]
-            [factor.pgraph :as pgraph]))
+            [factor.pgraph :as pgraph]
+            [factor.util :refer [clj->json clj->edn]]
+            [factor.schema :as schema]))
 
 (defn reg-all []
 
@@ -27,6 +30,18 @@
   (reg-sub :config (fn [db] (get db :config)))
 
   ;; Materialized views
+
+  (reg-sub :world-as-json
+           :<- [:world-data]
+           (fn [w] (->> w
+                        (schema/json-encode schema/World)
+                        (clj->json))))
+
+  (reg-sub :world-as-edn
+           :<- [:world-data]
+           (fn [w] (->> w
+                        (schema/edn-encode schema/World)
+                        (clj->edn))))
 
   (reg-sub :open-factory
            (fn [] [(subscribe [:config]) (subscribe [:factory-id-set])])

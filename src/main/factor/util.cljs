@@ -1,6 +1,7 @@
 (ns factor.util
   (:require [re-frame.core :refer [get-coeffect get-effect ->interceptor assoc-effect]]
-            [reagent.core :refer [adapt-react-class]]))
+            [reagent.core :refer [adapt-react-class]]
+            [clojure.edn :as edn]))
 
 (defn new-uuid
   "Returns a string containing a random UUID."
@@ -101,3 +102,8 @@
       [& args1]
       (reset! *args1 args1)
       same-callback)))
+
+(defn clj->json [x] (-> x (clj->js) (js/JSON.stringify)))
+(defn json->clj [x] (-> x (js/JSON.parse) (js->clj)))
+(defn edn->clj [x] (edn/read-string x))
+(defn clj->edn [x] (pr-str x))
