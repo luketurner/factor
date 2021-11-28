@@ -7,7 +7,6 @@
   (:require [factor.qmap :as qmap]
             [medley.core :refer [map-vals filter-vals]]
             [com.rpl.specter :as s]
-            [factor.filter :as filter]
             [factor.util :as util]
             [re-frame.core :refer [subscribe]]))
 
@@ -242,14 +241,59 @@
         (connect-input-edges node)
         (connect-output-edges node))))
 
+(defn machine-id-hard-denied?
+  [{:keys [hard-denied-machines hard-allowed-machines]} m]
+  (util/is-denied? m hard-denied-machines hard-allowed-machines))
+
+(defn machine-id-soft-denied?
+  [{:keys [soft-denied-machines soft-allowed-machines]} m]
+  (util/is-denied? m soft-denied-machines soft-allowed-machines))
+
+(defn item-id-hard-denied?
+  [{:keys [hard-denied-items hard-allowed-items]} i]
+  (util/is-denied? i hard-denied-items hard-allowed-items))
+
+(defn item-id-soft-denied?
+  [{:keys [soft-denied-items soft-allowed-items]} i]
+  (util/is-denied? i soft-denied-items soft-allowed-items))
+
+(defn recipe-id-hard-denied?
+  [{:keys [hard-denied-recipes hard-allowed-recipes]} r]
+  (util/is-denied? r hard-denied-recipes hard-allowed-recipes))
+
+(defn recipe-id-soft-denied?
+  [{:keys [soft-denied-recipes soft-allowed-recipes]} r]
+  (util/is-denied? r soft-denied-recipes soft-allowed-recipes))
+
+(defn recipe-hard-denied?
+  [f r]
+  (let [item-id-hard-denied? (partial item-id-hard-denied? f)
+        machine-id-hard-denied? (partial machine-id-hard-denied? f)]
+    (or (recipe-id-hard-denied? f (:id r))
+        (empty? (filter #(not (machine-id-hard-denied? %)) (:machines r)))
+        (some item-id-hard-denied? (keys (:input r)))
+        (some item-id-hard-denied? (keys (:output r)))
+        (some item-id-hard-denied? (keys (:catalysts r))))))
+
+(defn recipe-soft-denied?
+  [f r]
+  (let [item-id-soft-denied? (partial item-id-soft-denied? f)
+        machine-id-soft-denied? (partial machine-id-soft-denied? f)]
+    (or (recipe-id-soft-denied? f (:id r))
+        (empty? (filter #(not (machine-id-soft-denied? %)) (:machines r)))
+        (some item-id-soft-denied? (keys (:input r)))
+        (some item-id-soft-denied? (keys (:output r)))
+        (some item-id-soft-denied? (keys (:catalysts r))))))
+
+
 (defn preferred-machine
   "Given a recipe, returns a map for one of the machines the recipe supports. Respects factory allow/deny lists. Picks the highest-speed machine.
    (Note, this calls the get-machine function from the pg for each machine candidate in order to compare speeds.)"
   [pg recipe]
   (let [{:keys [get-machine]} pg
         {:keys [soft-denied not-denied]} (->> (:machines recipe)
-                                              (filter #(not (filter/machine-id-hard-denied? (:filter pg) %)))
-                                              (group-by #(if (filter/machine-id-soft-denied? (:filter pg) %)
+                                              (filter #(not (machine-id-hard-denied? (:filter pg) %)))
+                                              (group-by #(if (machine-id-soft-denied? (:filter pg) %)
                                                            :soft-denied
                                                            :not-denied)))]
     (->> (if (seq not-denied) not-denied soft-denied)
@@ -272,14 +316,14 @@
                                (missing-input)
                                (map (comp (:get-recipes-with-output pg) key))
                                (apply concat)
-                               (filter #(not (filter/recipe-hard-denied? (:filter pg) %))))
+                               (filter #(not (recipe-hard-denied? (:filter pg) %))))
         candidate-for-recipe (fn [recipe]
                                (let [m (preferred-machine pg recipe)]
                                  {:recipe recipe
                                   :machine m
                                   :num (qmap/satisfying-ratio (missing-input pg) (real-outputs recipe m))}))
         candidates (map candidate-for-recipe candidate-recipes)
-        {:keys [soft-denied not-denied]} (group-by #(if (filter/recipe-soft-denied? (:filter pg) (:recipe %))
+        {:keys [soft-denied not-denied]} (group-by #(if (recipe-soft-denied? (:filter pg) (:recipe %))
                                                       :soft-denied
                                                       :not-denied) candidates)]
     (if (seq not-denied)
