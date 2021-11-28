@@ -1,1 +1,6 @@
-{:lint-as {reagent.core/with-let clojure.core/let}}
+{:lint-as {reagent.core/with-let clojure.core/let
+           com.rpl.specter/defcollector clojure.core/defn
+           com.rpl.specter/defdynamicnav clojure.core/defn
+           com.rpl.specter/defmacroalias clojure.core/def
+           com.rpl.specter/defnav clojure.core/defn
+           com.rpl.specter/defrichnav clojure.core/defn}}
