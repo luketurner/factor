@@ -34,7 +34,7 @@
 (def Factory
   [:map {:closed true}
    [:id Id]
-   [:name Name]
+   [:name {:default "Unnamed Factory"} Name]
    [:desired-output Qmap]
    [:output Qmap]
    [:input Qmap]
@@ -45,7 +45,7 @@
 
 (def Item [:map {:closed true}
            [:id Id]
-           [:name {:default "Unnamed Factory"} Name]
+           [:name {:default "Unnamed Item"} Name]
            [:created-at number?]])
 
 (def Machine [:map {:closed true}
