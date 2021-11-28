@@ -1,7 +1,6 @@
 (ns factor.view.settings
   (:require [factor.components :as c]
             [re-frame.core :refer [dispatch subscribe]]
-            [factor.world :as w]
             [reagent.core :as reagent :refer [with-let]]
             [factor.presets.factorio :as factorio]))
 
@@ -59,7 +58,7 @@
 
 (defn world-delete-button
   []
-  (with-let [on-confirm #(dispatch [:world-reset w/empty-world])]
+  (with-let [on-confirm #(dispatch [:world-reset])]
     [c/alerting-button
      {:text "RESET WORLD"
       :intent :danger}

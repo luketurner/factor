@@ -10,8 +10,8 @@
 
 (defn init []
   (dispatch-sync [:initialize-db])
-  (dispatch-sync [:world-load w/empty-world])
-  (dispatch-sync [:config-load {}]))
+  (dispatch-sync [:world-load])
+  (dispatch-sync [:config-load]))
 
 (defn ->world-validator []
   (->interceptor

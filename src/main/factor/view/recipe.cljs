@@ -3,7 +3,6 @@
             [re-frame.core :refer [dispatch subscribe]]
             [reagent.core :refer [with-let]]
             [factor.util :refer [callback-factory-factory]]
-            [factor.world :as w]
             [clojure.string :as string]))
 
 (defn get-selected-ids [ev]
@@ -38,7 +37,7 @@
                               :headerName "Created"}]}])))
 
 (defn navbar []
-  (with-let [create-recipe  #(dispatch [:update-recipe (w/new-recipe)])
+  (with-let [create-recipe  #(dispatch [:create-recipe])
              delete-recipes #(do
                                (dispatch [:delete-recipes %])
                                (dispatch [:ui [:recipe-page :selected] []]))

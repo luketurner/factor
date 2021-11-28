@@ -2,7 +2,6 @@
   (:require [factor.components :as c]
             [re-frame.core :refer [dispatch subscribe]]
             [reagent.core :refer [with-let]]
-            [factor.world :as w]
             [clojure.string :as string]
             [factor.util :refer [callback-factory-factory]]))
 
@@ -42,7 +41,7 @@
                               :headerName "Created"}]}])))
 
 (defn navbar []
-  (with-let [create-machine #(dispatch [:update-machine (w/new-machine)])
+  (with-let [create-machine #(dispatch [:create-machine])
              delete-machines   #(do
                                   (dispatch [:delete-machines %])
                                   (dispatch [:ui [:machine-page :selected] []]))

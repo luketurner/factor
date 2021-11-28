@@ -2,9 +2,8 @@
   (:require [clojure.edn :as edn]
             [factor.util :refer [new-uuid dissoc-in]]
             [medley.core :refer [map-vals]]
+            [factor.schema :as sc]
             [com.rpl.specter :as s]))
-
-(def empty-world {:items {} :machines {} :recipes {} :factories {}})
 
 (defn update-item [world item]
   (-> world
@@ -63,53 +62,6 @@
   (-> world
       (update :factories (partial map-vals #(factory-without-recipe % id world)))
       (dissoc-in [:recipes] id)))
-
-(defn new-factory
-  ([] (new-factory {}))
-  ([opts] (merge {:id (new-uuid)
-                  :name "Unnamed factory"
-                  :desired-output {}
-                  :input {}
-                  :output {}
-                  :machines {}
-                  :recipes {}
-                  :filter {:hard-denied-machines #{}
-                           :soft-denied-machines #{}
-                           :hard-denied-items #{}
-                           :soft-denied-items #{}
-                           :hard-denied-recipes #{}
-                           :soft-denied-recipes #{}
-                           :hard-allowed-machines #{}
-                           :soft-allowed-machines #{}
-                           :hard-allowed-items #{}
-                           :soft-allowed-items #{}
-                           :hard-allowed-recipes #{}
-                           :soft-allowed-recipes #{}}} opts)))
-
-(defn new-item
-  ([] (new-item {}))
-  ([opts] (merge {:id (new-uuid)
-                  :name "Unnamed item"
-                  :created-at (.now js/Date)} opts)))
-
-(defn new-machine 
-  ([] (new-machine {}))
-  ([opts] (merge {:id (new-uuid)
-                  :name "Unnamed machine"
-                  :power 0
-                  :speed 1
-                  :created-at (.now js/Date)} opts)))
-
-(defn new-recipe
-  ([] (new-recipe {}))
-  ([opts] (merge {:id (new-uuid)
-                  :name "Unnamed recipe"
-                  :input {}
-                  :output {}
-                  :catalysts {}
-                  :machines []
-                  :duration 1
-                  :created-at (.now js/Date)} opts)))
 
 (defn machine-for-factory-recipe 
   "Picks which machine should be used to craft given `recipe`. Respects the machine

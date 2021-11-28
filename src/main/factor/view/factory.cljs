@@ -4,13 +4,10 @@
             [re-frame.core :refer [dispatch subscribe dispatch-sync]]
             [reagent.core :refer [as-element with-let]]
             [factor.qmap :as qmap]
-            [factor.world :as w]
             [factor.util :refer [callback-factory-factory]]))
 
 (defn create-and-select-factory []
-  (let [factory (w/new-factory)]
-    (dispatch [:update-factory factory])
-    (dispatch [:open-factory (:id factory)])))
+  (dispatch [:create-factory]))
 
 (defn delete-and-unselect-factory [id]
   (let [factory-ids     @(subscribe [:factory-ids])

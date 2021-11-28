@@ -4,8 +4,8 @@
             [factor.world :as w]
             [factor.db :as db]
             [day8.re-frame.undo :as undo :refer [undoable]]
-            [factor.schema :as schema]
-            [factor.util :refer [json->clj edn->clj]]))
+            [factor.schema :refer [make edn-decode edn-encode json-decode Config Factory Item Recipe Machine World AppDb]]
+            [factor.util :refer [json->clj edn->clj new-uuid]]))
 
 
 (defn reg-all []
@@ -27,14 +27,45 @@
 
   ;; General events
 
-  (reg-event-db :initialize-db (fn [] {:ui {:selected-page :home}
-                                       :config {:unit {:item-rate "items/sec"
-                                                       :power "W"
-                                                       :energy "J"}}
-                                       :world w/empty-world}))
+  (reg-event-db :initialize-db (fn [] (make AppDb nil)))
 
   ;; World-mutating events
   ;; Undoable
+
+
+  (reg-event-db :create-factory [(undoable)]
+                (fn [db [_ factory]]
+                  (let [id (new-uuid)]
+                    (-> db
+                        (assoc-in [:config :open-factory] id)
+                        (assoc-in [:world :factories id]
+                                  (->> factory
+                                       (merge {:created-at (.now js/Date) :id id})
+                                       (make Factory)))))))
+
+  (reg-event-db :create-item [(undoable) (path :world :items)]
+                (fn [items [_ item]] 
+                 (let [id (new-uuid)]
+                   (->> item
+                        (merge {:created-at (.now js/Date) :id id})
+                        (make Item)
+                        (assoc items id)))))
+
+  (reg-event-db :create-recipe [(undoable) (path :world :recipes)]
+                (fn [recipes [_ recipe]]
+                  (let [id (new-uuid)]
+                    (->> recipe
+                         (merge {:created-at (.now js/Date) :id id})
+                         (make Recipe)
+                         (assoc recipes id)))))
+  
+    (reg-event-db :create-machine [(undoable) (path :world :machines)]
+                  (fn [machines [_ machine]]
+                    (let [id (new-uuid)]
+                      (->> machine
+                           (merge {:created-at (.now js/Date) :id id})
+                           (make Machine)
+                           (assoc machines id)))))
 
   (reg-event-db :update-factory [(undoable) (path :world)] (fn [world [_ factory]] (w/update-factory world factory)))
   (reg-event-db :update-item    [(undoable) (path :world)] (fn [world [_ item]]    (w/update-item    world item)))
@@ -50,7 +81,7 @@
                 [(undoable)
                  (db/->world-validator)
                  (db/->migrate-database)]
-                (fn [db [_ w]] (assoc db :world w)))
+                (fn [db [_ w]] (assoc db :world (make World w))))
 
   (reg-event-db :load-world-from-json
                 [(undoable)
@@ -58,7 +89,7 @@
                  (db/->migrate-database)]
                 (fn [db [_ x]] (->> x
                                     (json->clj)
-                                    (schema/json-decode schema/World)
+                                    (json-decode World)
                                     (assoc db :world))))
 
   (reg-event-db :load-world-from-edn
@@ -67,7 +98,7 @@
                  (db/->migrate-database)]
                 (fn [db [_ x]] (->> x
                                     (edn->clj)
-                                    (schema/edn-decode schema/World)
+                                    (edn-decode World)
                                     (assoc db :world))))
 
   (reg-event-db :update-factory-name [(undoable) (path :world)] (fn [world [_ id name]] (assoc-in world [:factories id :name] name)))
@@ -88,13 +119,13 @@
    [(inject-cofx :localstorage :world)
     (db/->world-validator)
     (db/->migrate-database)]
-   (fn [{{world :world} :localstorage db :db} [_ default-world]]
-     {:db (assoc db :world (if (not-empty world) world default-world))}))
+   (fn [{{world :world} :localstorage db :db}]
+     {:db (assoc db :world (edn-decode World world))}))
 
   (reg-event-fx
    :world-save
    (fn [_ [_ world]]
-     {:localstorage {:world world}}))
+     {:localstorage {:world (edn-encode World world)}}))
 
   ;; Config-mutating events
   ;; Not undoable (for now?)
@@ -109,10 +140,10 @@
    :config-load
    [(inject-cofx :localstorage :config)
     (db/->migrate-config)]
-   (fn [{{config :config} :localstorage db :db} [_ default-config]]
-     {:db (assoc db :config (if (not-empty config) config default-config))}))
+   (fn [{{config :config} :localstorage db :db}]
+     {:db (assoc db :config (edn-decode Config config))}))
 
-  (reg-event-fx :config-save (fn [_ [_ config]] {:localstorage {:config config}}))
+  (reg-event-fx :config-save (fn [_ [_ config]] {:localstorage {:config (edn-encode Config config)}}))
 
   ;; UI mutation events
   ;; Not undoable

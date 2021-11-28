@@ -1,7 +1,6 @@
 (ns factor.view.item
   (:require [factor.components :as c]
             [re-frame.core :refer [dispatch subscribe]]
-            [factor.world :as w]
             [reagent.core :refer [with-let]]
             [factor.util :refer [callback-factory-factory]]))
 
@@ -31,7 +30,7 @@
                             :headerName "Created"}]}]))
 
 (defn navbar []
-  (with-let [create-item    #(dispatch [:update-item (w/new-item)])
+  (with-let [create-item    #(dispatch [:create-item])
              delete-items   #(do
                                (dispatch [:delete-items %])
                                (dispatch [:ui [:item-page :selected] []]))
