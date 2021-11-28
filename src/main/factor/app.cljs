@@ -1,12 +1,12 @@
 (ns factor.app
   "Entry point for the application. Call `init` function to start."
   (:require [reagent.dom :as dom]
-            [re-frame.core :refer [reg-global-interceptor]]
+            [re-frame.core :refer [reg-global-interceptor dispatch-sync]]
             [factor.fx :as fx]
             [factor.subs :as subs]
             [factor.events :as events]
-            [factor.db :as db]
-            [factor.view :as view]))
+            [factor.interceptors :refer [->world-validator ->world-saver ->config-saver]]
+            [factor.view.app :refer [app]]))
 
 (goog-define DEV false)
 
@@ -16,18 +16,20 @@
   (subs/reg-all)
   (events/reg-all)
   (fx/reg-all)
-  (when DEV (reg-global-interceptor (db/->world-validator)))
-  (reg-global-interceptor (db/->world-saver))
-  (reg-global-interceptor (db/->config-saver)))
+  (when DEV (reg-global-interceptor (->world-validator)))
+  (reg-global-interceptor (->world-saver))
+  (reg-global-interceptor (->config-saver)))
 
 (defn render []
-  (dom/render [view/app] (js/document.getElementById "app")))
+  (dom/render [app] (js/document.getElementById "app")))
 
 (defn init
   "Init function called on page load."
   []
   (reg-all)
-  (db/init)
+  (dispatch-sync [:initialize-db])
+  (dispatch-sync [:world-load])
+  (dispatch-sync [:config-load])
   (render))
 
 (defn after-load

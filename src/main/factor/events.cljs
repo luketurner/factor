@@ -1,30 +1,15 @@
 (ns factor.events
   "Defines all the events used by Factor."
-  (:require [re-frame.core :refer [inject-cofx reg-event-db reg-event-fx path ->interceptor]]
-            [factor.db :as db]
-            [day8.re-frame.undo :as undo :refer [undoable]]
+  (:require [re-frame.core :refer [inject-cofx reg-event-db reg-event-fx path]]
+            [day8.re-frame.undo :refer [undoable]]
             [com.rpl.specter :as s]
             [factor.schema :refer [make edn-decode edn-encode json-decode Config Factory Item Recipe Machine World AppDb]]
-            [factor.util :refer [json->clj edn->clj new-uuid]]))
+            [factor.util :refer [json->clj edn->clj new-uuid]]
+            [factor.interceptors :refer [->purge-redos ->purge-undos ->world-validator]]))
 
 (def TERM-NONE (s/path (s/terminal-val s/NONE)))
 
 (defn reg-all []
-
-  ;; Custom interceptors that provide functions similar to [:purge-redos] event.
-  (defn ->purge-undos []
-    (->interceptor
-     :id :purge-undos
-     :after (fn [ctx]
-              (when (undo/undos?) (undo/clear-undos!))
-              ctx)))
-
-  (defn ->purge-redos []
-    (->interceptor
-     :id :purge-redos
-     :after (fn [ctx]
-              (when (undo/redos?) (undo/clear-redos!))
-              ctx)))
 
   ;; General events
 
@@ -70,13 +55,13 @@
 
   (reg-event-db :update-factory [(undoable) (path :world :factories)]
                 (fn [xs [_ {:keys [id] :as x}]] (assoc xs id x)))
-  
+
   (reg-event-db :update-item    [(undoable) (path :world :items)]
                 (fn [xs [_ {:keys [id] :as x}]] (assoc xs id x)))
-  
+
   (reg-event-db :update-machine [(undoable) (path :world :macines)]
                 (fn [xs [_ {:keys [id] :as x}]] (assoc xs id x)))
-  
+
   (reg-event-db :update-recipe  [(undoable) (path :world :recipes)]
                 (fn [xs [_ {:keys [id] :as x}]] (assoc xs id x)))
 
@@ -101,7 +86,7 @@
                          [:soft-denied-recipes WITHOUT-XS])]
                        [:recipes WITHOUT-XS-KEY])]
                      w))))
-  
+
   (reg-event-db :delete-machines  [(undoable) (path :world)]
                 (fn [w [_ xs]]
                   (let [xs (set xs)
@@ -118,7 +103,7 @@
                        [:recipes s/MAP-VALS :machines WITHOUT-XS]
                        [:machines WITHOUT-XS-KEY])]
                      w))))
-  
+
   (reg-event-db :delete-items [(undoable) (path :world)]
                 (fn [w [_ xs]]
                   (let [xs (set xs)
@@ -145,14 +130,12 @@
 
   (reg-event-db :world-reset
                 [(undoable)
-                 (db/->world-validator)
-                 (db/->migrate-database)]
+                 (->world-validator)]
                 (fn [db [_ w]] (assoc db :world (make World w))))
 
   (reg-event-db :load-world-from-json
                 [(undoable)
-                 (db/->world-validator)
-                 (db/->migrate-database)]
+                 (->world-validator)]
                 (fn [db [_ x]] (->> x
                                     (json->clj)
                                     (json-decode World)
@@ -160,8 +143,7 @@
 
   (reg-event-db :load-world-from-edn
                 [(undoable)
-                 (db/->world-validator)
-                 (db/->migrate-database)]
+                 (->world-validator)]
                 (fn [db [_ x]] (->> x
                                     (edn->clj)
                                     (edn-decode World)
@@ -183,8 +165,7 @@
   (reg-event-fx
    :world-load
    [(inject-cofx :localstorage :world)
-    (db/->world-validator)
-    (db/->migrate-database)]
+    (->world-validator)]
    (fn [{{world :world} :localstorage db :db}]
      {:db (assoc db :world (edn-decode World world))}))
 
@@ -204,8 +185,7 @@
 
   (reg-event-fx
    :config-load
-   [(inject-cofx :localstorage :config)
-    (db/->migrate-config)]
+   [(inject-cofx :localstorage :config)]
    (fn [{{config :config} :localstorage db :db}]
      {:db (assoc db :config (edn-decode Config config))}))
 

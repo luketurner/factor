@@ -1,4 +1,4 @@
-(ns factor.view
+(ns factor.view.app
   (:require [re-frame.core :refer [subscribe]]
             [factor.styles :as styles]
             [garden.core :refer [css]]
@@ -45,7 +45,7 @@
        :settings [settings/page])]))
 
 (defn footer []
-  [c/navbar 
+  [c/navbar
    [c/navbar-group-left "Copyright 2021 Luke Turner"]
    [c/navbar-group-right
     [c/anchor-button {:class :bp3-minimal
