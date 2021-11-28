@@ -11,6 +11,19 @@
             [factor.util :as util]
             [re-frame.core :refer [subscribe]]))
 
+(defn recipe-index
+  "Given a seq of recipes, returns a map with two keys: :input and :output.
+   The :input key contains a map of item ids to sets of recipe ids, where all the
+   recipes have the given item as an input. The :output key works similarly."
+  [recipes]
+  (reduce
+   (fn [m x]
+     (-> m
+         (update :output (partial merge-with concat) (map-vals #(identity #{(:id x)}) (:output x)))
+         (update :input  (partial merge-with concat) (map-vals #(identity #{(:id x)}) (:input  x)))))
+   {:input {} :output {}}
+   recipes))
+
 (defn all-edges
   "Returns a seq of tuples of form [lid rid  edge], where
    lid and rid are node IDs, and edge is a qmap representing

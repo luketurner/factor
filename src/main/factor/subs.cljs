@@ -1,12 +1,11 @@
 (ns factor.subs
   (:require [re-frame.core :refer [reg-sub reg-sub-raw subscribe]]
-            [factor.db :as db]
             [reagent.ratom :refer [reaction]]
             [medley.core :refer [map-vals]]
-            [factor.world :as world]
             [factor.pgraph :as pgraph]
             [factor.util :refer [clj->json clj->edn]]
             [factor.schema :as schema]))
+
 
 (defn reg-all []
 
@@ -79,7 +78,7 @@
   (reg-sub :factory-count :<- [:factory-seq] (fn [m] (count m)))
   (reg-sub :machine-count :<- [:machine-seq] (fn [m] (count m)))
 
-  (reg-sub :recipe-index :<- [:recipe-seq] (fn [xs] (world/recipe-index xs)))
+  (reg-sub :recipe-index :<- [:recipe-seq] (fn [xs] (pgraph/recipe-index xs)))
   (reg-sub :recipe-input-index :<- [:recipe-index] (fn [m] (get m :input)))
   (reg-sub :recipe-output-index :<- [:recipe-index] (fn [m] (get m :output)))
 

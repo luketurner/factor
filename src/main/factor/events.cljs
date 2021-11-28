@@ -1,12 +1,13 @@
 (ns factor.events
   "Defines all the events used by Factor."
   (:require [re-frame.core :refer [inject-cofx reg-event-db reg-event-fx path ->interceptor]]
-            [factor.world :as w]
             [factor.db :as db]
             [day8.re-frame.undo :as undo :refer [undoable]]
+            [com.rpl.specter :as s]
             [factor.schema :refer [make edn-decode edn-encode json-decode Config Factory Item Recipe Machine World AppDb]]
             [factor.util :refer [json->clj edn->clj new-uuid]]))
 
+(def TERM-NONE (s/path (s/terminal-val s/NONE)))
 
 (defn reg-all []
 
@@ -44,12 +45,12 @@
                                        (make Factory)))))))
 
   (reg-event-db :create-item [(undoable) (path :world :items)]
-                (fn [items [_ item]] 
-                 (let [id (new-uuid)]
-                   (->> item
-                        (merge {:created-at (.now js/Date) :id id})
-                        (make Item)
-                        (assoc items id)))))
+                (fn [items [_ item]]
+                  (let [id (new-uuid)]
+                    (->> item
+                         (merge {:created-at (.now js/Date) :id id})
+                         (make Item)
+                         (assoc items id)))))
 
   (reg-event-db :create-recipe [(undoable) (path :world :recipes)]
                 (fn [recipes [_ recipe]]
@@ -58,24 +59,89 @@
                          (merge {:created-at (.now js/Date) :id id})
                          (make Recipe)
                          (assoc recipes id)))))
+
+  (reg-event-db :create-machine [(undoable) (path :world :machines)]
+                (fn [machines [_ machine]]
+                  (let [id (new-uuid)]
+                    (->> machine
+                         (merge {:created-at (.now js/Date) :id id})
+                         (make Machine)
+                         (assoc machines id)))))
+
+  (reg-event-db :update-factory [(undoable) (path :world :factories)]
+                (fn [xs [_ {:keys [id] :as x}]] (assoc xs id x)))
   
-    (reg-event-db :create-machine [(undoable) (path :world :machines)]
-                  (fn [machines [_ machine]]
-                    (let [id (new-uuid)]
-                      (->> machine
-                           (merge {:created-at (.now js/Date) :id id})
-                           (make Machine)
-                           (assoc machines id)))))
+  (reg-event-db :update-item    [(undoable) (path :world :items)]
+                (fn [xs [_ {:keys [id] :as x}]] (assoc xs id x)))
+  
+  (reg-event-db :update-machine [(undoable) (path :world :macines)]
+                (fn [xs [_ {:keys [id] :as x}]] (assoc xs id x)))
+  
+  (reg-event-db :update-recipe  [(undoable) (path :world :recipes)]
+                (fn [xs [_ {:keys [id] :as x}]] (assoc xs id x)))
 
-  (reg-event-db :update-factory [(undoable) (path :world)] (fn [world [_ factory]] (w/update-factory world factory)))
-  (reg-event-db :update-item    [(undoable) (path :world)] (fn [world [_ item]]    (w/update-item    world item)))
-  (reg-event-db :update-machine [(undoable) (path :world)] (fn [world [_ machine]] (w/update-machine world machine)))
-  (reg-event-db :update-recipe  [(undoable) (path :world)] (fn [world [_ recipe]]  (w/update-recipe  world recipe)))
+  (reg-event-db :delete-factories [(undoable) (path :world)]
+                (fn [w [_ xs]]
+                  (s/setval [:factories s/ALL (s/selected? s/FIRST xs)]
+                            s/NONE
+                            w)))
 
-  (reg-event-db :delete-factories [(undoable) (path :world)] (fn [world [_ xs]] (reduce w/remove-factory-by-id world xs)))
-  (reg-event-db :delete-recipes   [(undoable) (path :world)] (fn [world [_ xs]] (reduce w/remove-recipe-by-id  world xs)))
-  (reg-event-db :delete-machines  [(undoable) (path :world)] (fn [world [_ xs]] (reduce w/remove-machine-by-id world xs)))
-  (reg-event-db :delete-items     [(undoable) (path :world)] (fn [world [_ xs]] (reduce w/remove-item-by-id    world xs)))
+  (reg-event-db :delete-recipes [(undoable) (path :world)]
+                (fn [w [_ xs]]
+                  (let [xs (set xs)
+                        WITHOUT-XS (s/path s/ALL xs TERM-NONE)
+                        WITHOUT-XS-KEY (s/path s/ALL (s/selected? s/FIRST xs) TERM-NONE)]
+                    (s/multi-transform
+                     [(s/multi-path
+                       [:factories s/MAP-VALS :filter
+                        (s/multi-path
+                         [:hard-allowed-recipes WITHOUT-XS]
+                         [:soft-allowed-recipes WITHOUT-XS]
+                         [:hard-denied-recipes WITHOUT-XS]
+                         [:soft-denied-recipes WITHOUT-XS])]
+                       [:recipes WITHOUT-XS-KEY])]
+                     w))))
+  
+  (reg-event-db :delete-machines  [(undoable) (path :world)]
+                (fn [w [_ xs]]
+                  (let [xs (set xs)
+                        WITHOUT-XS (s/path s/ALL xs TERM-NONE)
+                        WITHOUT-XS-KEY (s/path s/ALL (s/selected? s/FIRST xs) TERM-NONE)]
+                    (s/multi-transform
+                     [(s/multi-path
+                       [:factories s/MAP-VALS :filter
+                        (s/multi-path
+                         [:hard-allowed-machines WITHOUT-XS]
+                         [:soft-allowed-machines WITHOUT-XS]
+                         [:hard-denied-machines WITHOUT-XS]
+                         [:soft-denied-machines WITHOUT-XS])]
+                       [:recipes s/MAP-VALS :machines WITHOUT-XS]
+                       [:machines WITHOUT-XS-KEY])]
+                     w))))
+  
+  (reg-event-db :delete-items [(undoable) (path :world)]
+                (fn [w [_ xs]]
+                  (let [xs (set xs)
+                        WITHOUT-XS (s/path s/ALL xs TERM-NONE)
+                        WITHOUT-XS-KEY (s/path s/ALL (s/selected? s/FIRST xs) TERM-NONE)]
+                    (s/multi-transform
+                     [(s/multi-path
+                       [:factories s/MAP-VALS
+                        (s/multi-path
+                         [:desired-output WITHOUT-XS]
+                         [:filter
+                          (s/multi-path
+                           [:hard-allowed-items WITHOUT-XS]
+                           [:soft-allowed-items WITHOUT-XS]
+                           [:hard-denied-items WITHOUT-XS]
+                           [:soft-denied-items WITHOUT-XS])])]
+                       [:recipes s/MAP-VALS
+                        (s/multi-path
+                         [:input WITHOUT-XS-KEY]
+                         [:output WITHOUT-XS-KEY]
+                         [:catalysts WITHOUT-XS-KEY])]
+                       [:items WITHOUT-XS-KEY])]
+                     w))))
 
   (reg-event-db :world-reset
                 [(undoable)

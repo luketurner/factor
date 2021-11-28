@@ -1,6 +1,5 @@
 (ns factor.pgraph-test
-  (:require [factor.world :as world]
-            [factor.schema :as sc]
+  (:require [factor.schema :as sc]
             [cljs.test :refer [deftest is]]
             [factor.pgraph :as pgraph]))
 
@@ -80,7 +79,7 @@
 (defn build-test-pg
   [desired-output filter]
   (let [{:keys [machines recipes]} test-world
-        recipe-index (world/recipe-index (vals recipes))]
+        recipe-index (pgraph/recipe-index (vals recipes))]
    (pgraph/pgraph {:get-recipes-with-output #(map recipes (get-in recipe-index [:output %]))
                    :get-machine #(get machines %)
                    :desired-output desired-output

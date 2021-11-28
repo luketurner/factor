@@ -3,7 +3,6 @@
   (:require [re-frame.core :refer [->interceptor dispatch-sync get-effect assoc-effect]]
             [malli.core :refer [validate explain decode encode]]
             [factor.util :refer [add-fx]]
-            [factor.world :as w]
             [com.rpl.specter :as s]
             [malli.transform :as mt]
             [factor.schema :as schema]))
