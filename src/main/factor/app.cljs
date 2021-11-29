@@ -5,7 +5,7 @@
             [factor.fx :as fx]
             [factor.subs :as subs]
             [factor.events :as events]
-            [factor.interceptors :refer [->world-validator ->world-saver ->config-saver]]
+            [factor.interceptors :refer [->world-saver ->config-saver]]
             [factor.view.app :refer [app]]))
 
 (goog-define DEV false)
@@ -16,7 +16,6 @@
   (subs/reg-all)
   (events/reg-all)
   (fx/reg-all)
-  (when DEV (reg-global-interceptor (->world-validator)))
   (reg-global-interceptor (->world-saver))
   (reg-global-interceptor (->config-saver)))
 

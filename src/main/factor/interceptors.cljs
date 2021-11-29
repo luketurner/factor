@@ -5,19 +5,6 @@
             [factor.schema :refer [World]]
             [day8.re-frame.undo :as undo]))
 
-(defn ->world-validator []
-  (->interceptor
-   :id :world-validator
-   :after (fn [ctx]
-            (let [world (-> ctx (get-effect :db) (get :world))]
-              (if (or (not world)
-                      (validate World world))
-                ctx
-                (let [reason (explain World world)]
-                  (-> ctx
-                      (assoc-effect :db nil)
-                      (add-fx [:toast (str "validate failed: " (pr-str reason))]))))))))
-
 (defn ->world-saver []
   (->interceptor
    :id :world-saver
