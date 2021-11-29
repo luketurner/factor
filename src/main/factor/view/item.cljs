@@ -31,9 +31,7 @@
 
 (defn navbar []
   (with-let [create-item    #(dispatch [:create-item])
-             delete-items   #(do
-                               (dispatch [:delete-items %])
-                               (dispatch [:select-objects []]))
+             delete-items   #(dispatch [:delete-items %])
              delete-items-factory (callback-factory-factory delete-items)]
     (let [selected-items @(subscribe [:selected-objects])
           num-selected   (count selected-items)]

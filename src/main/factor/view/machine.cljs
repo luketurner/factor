@@ -42,9 +42,7 @@
 
 (defn navbar []
   (with-let [create-machine #(dispatch [:create-machine])
-             delete-machines   #(do
-                                  (dispatch [:delete-machines %])
-                                  (dispatch [:select-objects []]))
+             delete-machines   #(dispatch [:delete-machines %])
              delete-machines-factory (callback-factory-factory delete-machines)]
     (let [selected-machines @(subscribe [:selected-objects])
           num-selected (count selected-machines)]

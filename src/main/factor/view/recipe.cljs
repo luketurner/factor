@@ -38,9 +38,7 @@
 
 (defn navbar []
   (with-let [create-recipe  #(dispatch [:create-recipe])
-             delete-recipes #(do
-                               (dispatch [:delete-recipes %])
-                               (dispatch [:select-objects []]))
+             delete-recipes #(dispatch [:delete-recipes %])
              delete-recipes-factory (callback-factory-factory delete-recipes)]
     (let [selected-recipes   @(subscribe [:selected-objects])
           num-selected        (count selected-recipes)]

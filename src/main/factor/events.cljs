@@ -73,16 +73,19 @@
 
   (reg-event-db :delete-factories [(undoable)]
                 (fn [w [_ xs]]
-                  (s/setval [nav/WORLD (nav/map-factories xs)] s/NONE w)))
+                  (s/setval (s/multi-path
+                             [nav/UI nav/SELECTED-OBJECTS s/ALL xs]
+                             [nav/WORLD (nav/map-factories xs)]) s/NONE w)))
 
   (reg-event-db :delete-recipes [(undoable)]
                 (fn [w [_ xs]]
                   (let [xs (set xs)]
                     (s/setval
-                     [nav/WORLD
-                      (s/multi-path
-                       [nav/MAP-FACTORIES nav/FACTORY->RECIPES xs]
-                       (nav/map-recipes xs))]
+                     (s/multi-path
+                      [nav/UI nav/SELECTED-OBJECTS s/ALL xs]
+                      [nav/WORLD (s/multi-path
+                                  [nav/MAP-FACTORIES nav/FACTORY->RECIPES xs]
+                                  (nav/map-recipes xs))])
                      s/NONE
                      w))))
 
@@ -90,11 +93,12 @@
                 (fn [w [_ xs]]
                   (let [xs (set xs)]
                     (s/setval
-                     [nav/WORLD
-                      (s/multi-path
-                       [nav/MAP-FACTORIES nav/FACTORY->MACHINES xs]
-                       [nav/MAP-RECIPES nav/RECIPE->MACHINES xs]
-                       (nav/map-machines xs))]
+                     (s/multi-path
+                      [nav/UI nav/SELECTED-OBJECTS s/ALL xs]
+                      [nav/WORLD (s/multi-path
+                                  [nav/MAP-FACTORIES nav/FACTORY->MACHINES xs]
+                                  [nav/MAP-RECIPES nav/RECIPE->MACHINES xs]
+                                  (nav/map-machines xs))])
                      s/NONE
                      w))))
 
@@ -102,11 +106,12 @@
                 (fn [w [_ xs]]
                   (let [xs (set xs)]
                     (s/setval
-                     [nav/WORLD
-                      (s/multi-path
-                       [nav/MAP-FACTORIES nav/FACTORY->ITEMS xs]
-                       [nav/MAP-RECIPES nav/RECIPE->ITEMS xs]
-                       (nav/map-items xs))]
+                     (s/multi-path
+                      [nav/UI nav/SELECTED-OBJECTS s/ALL xs]
+                      [nav/WORLD (s/multi-path
+                                  [nav/MAP-FACTORIES nav/FACTORY->ITEMS xs]
+                                  [nav/MAP-RECIPES nav/RECIPE->ITEMS xs]
+                                  (nav/map-items xs))])
                      s/NONE
                      w))))
 
