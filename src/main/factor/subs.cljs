@@ -1,95 +1,100 @@
 (ns factor.subs
+  "Registers all of Factor's re-frame subscriptions when the (reg-all) function is called.
+   reg-all should be called before rendering the app, and called again after hot-reloading."
   (:require [re-frame.core :refer [reg-sub reg-sub-raw subscribe]]
             [reagent.ratom :refer [reaction]]
-            [medley.core :refer [map-vals]]
             [factor.pgraph :as pgraph]
             [factor.util :refer [clj->json clj->edn]]
-            [com.rpl.specter :as s]
+            [com.rpl.specter :as s :refer [select select-any transform setval]]
             [factor.navs :as nav]
-            [factor.schema :as schema]))
+            [factor.schema :refer [json-encode World edn-encode]]))
 
 
 (defn reg-all []
 
   ;; Extractors
 
-  ; only use this if you really need the whole world (e.g. exporting/saving)
-  (reg-sub :world-data (fn [db _] (get db :world)))
-
-  (reg-sub :factory (fn [db [_ id]] (get-in db [:world :factories id])))
-  (reg-sub :item (fn [db [_ id]] (get-in db [:world :items id])))
-  (reg-sub :machine (fn [db [_ id]] (get-in db [:world :machines id])))
-  (reg-sub :recipe (fn [db [_ id]] (get-in db [:world :recipes id])))
-
-  (reg-sub :factories (fn [db] (get-in db [:world :factories])))
-  (reg-sub :items (fn [db] (get-in db [:world :items])))
-  (reg-sub :machines (fn [db] (get-in db [:world :machines])))
-  (reg-sub :recipes (fn [db] (get-in db [:world :recipes])))
-
-  (reg-sub :selected-objects (fn [db] (s/select-any [nav/UI nav/SELECTED-OBJECTS] db)))
-  (reg-sub :selected-page (fn [db] (s/select-any [nav/UI nav/SELECTED-PAGE] db)))
-
-  (reg-sub :config (fn [db] (get db :config)))
+  (reg-sub :world  (fn [db _] (s/select-any nav/WORLD  db)))
+  (reg-sub :ui     (fn [db _] (s/select-any nav/UI     db)))
+  (reg-sub :config (fn [db _] (s/select-any nav/CONFIG db)))
 
   ;; Materialized views
 
-  (reg-sub :world-as-json
-           :<- [:world-data]
-           (fn [w] (->> w
-                        (schema/json-encode schema/World)
-                        (clj->json))))
+  (reg-sub :selected-objects :<- [:ui] (fn [ui] (select-any [nav/SELECTED-OBJECTS] ui)))
+  (reg-sub :selected-page    :<- [:ui] (fn [ui] (select-any [nav/SELECTED-PAGE] ui)))
 
-  (reg-sub :world-as-edn
-           :<- [:world-data]
-           (fn [w] (->> w
-                        (schema/edn-encode schema/World)
-                        (clj->edn))))
+  (reg-sub :open-factory-raw :<- [:config] (fn [config] (select-any [nav/OPEN-FACTORY] config)))
 
   (reg-sub :open-factory
-           (fn [] [(subscribe [:config]) (subscribe [:factory-id-set])])
-           (fn [[{:keys [open-factory]} ids]] (when (contains? ids open-factory) open-factory)))
-  (reg-sub :unit         :<- [:config] (fn [c [_ k]] (get-in c [:unit k])))
+           :<- [:open-factory-raw]
+           :<- [:factory-id-set]
+           (fn [[id ids]] (when (contains? ids id) id)))
 
-  (reg-sub :factory-name (fn [[_ id]] (subscribe [:factory id])) (fn [x] (get x :name)))
-  (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (get x :desired-output)))
+  (reg-sub :units :<- [:config] (fn [config] (select-any [nav/UNIT] config)))
 
-  (reg-sub :recipe-input (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (get x :input)))
-  (reg-sub :recipe-output (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (get x :output)))
-  (reg-sub :recipe-catalysts (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (get x :catalysts)))
-  (reg-sub :recipe-machines (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (get x :machines)))
-  (reg-sub :recipe-duration (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (get x :duration)))
+  (reg-sub :unit :<- [:units] (fn [units [_ u]] (select-any u units)))
 
-  (reg-sub :machine-seq :<- [:machines] (fn [m] (into [] (vals m))))
-  (reg-sub :factory-seq :<- [:factories] (fn [m] (into [] (vals m))))
-  (reg-sub :recipe-seq :<- [:recipes] (fn [m] (into [] (vals m))))
-  (reg-sub :item-seq :<- [:items] (fn [m] (into [] (vals m))))
+  (reg-sub :factories :<- [:world] (fn [w] (select-any nav/FACTORIES w)))
+  (reg-sub :items     :<- [:world] (fn [w] (select-any nav/ITEMS     w)))
+  (reg-sub :machines  :<- [:world] (fn [w] (select-any nav/MACHINES  w)))
+  (reg-sub :recipes   :<- [:world] (fn [w] (select-any nav/RECIPES   w)))
 
-  (reg-sub :machine-ids :<- [:machines] (fn [m] (into [] (keys m))))
-  (reg-sub :factory-ids :<- [:factories] (fn [m] (into [] (keys m))))
-  (reg-sub :recipe-ids :<- [:recipes] (fn [m] (into [] (keys m))))
-  (reg-sub :item-ids :<- [:items] (fn [m] (into [] (keys m))))
+  (reg-sub :factory :<- [:factories] (fn [xs [_ id]] (select-any id xs)))
+  (reg-sub :machine :<- [:machines]  (fn [xs [_ id]] (select-any id xs)))
+  (reg-sub :item    :<- [:items]     (fn [xs [_ id]] (select-any id xs)))
+  (reg-sub :recipe  :<- [:recipes]   (fn [xs [_ id]] (select-any id xs)))
+
+  (reg-sub :world-as-json :<- [:world] (fn [w] (->> w (json-encode World) (clj->json))))
+  (reg-sub :world-as-edn  :<- [:world] (fn [w] (->> w (edn-encode  World) (clj->edn))))
+
+  ;; (reg-sub :open-factory
+  ;;          (fn [] [(subscribe [:config]) (subscribe [:factory-id-set])])
+  ;;          (fn [[{:keys [open-factory]} ids]] (when (contains? ids open-factory) open-factory)))
+  ;; (reg-sub :unit         :<- [:config] (fn [c [_ k]] (get-in c [:unit k])))
+
+  (reg-sub :factory-name           (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/NAME x)))
+  (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/DESIRED-OUTPUT x)))
+
+  (reg-sub :recipe-input     (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/INPUT     x)))
+  (reg-sub :recipe-output    (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/OUTPUT    x)))
+  (reg-sub :recipe-catalysts (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/CATALYSTS x)))
+  (reg-sub :recipe-machines  (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/MACHINES  x)))
+  (reg-sub :recipe-duration  (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/DURATION  x)))
+
+  (reg-sub :machine-seq :<- [:machines]  (fn [m] (select s/MAP-VALS m)))
+  (reg-sub :factory-seq :<- [:factories] (fn [m] (select s/MAP-VALS m)))
+  (reg-sub :recipe-seq  :<- [:recipes]   (fn [m] (select s/MAP-VALS m)))
+  (reg-sub :item-seq    :<- [:items]     (fn [m] (select s/MAP-VALS m)))
+
+  (reg-sub :machine-ids :<- [:machines]  (fn [m] (select s/MAP-KEYS m)))
+  (reg-sub :factory-ids :<- [:factories] (fn [m] (select s/MAP-KEYS m)))
+  (reg-sub :recipe-ids  :<- [:recipes]   (fn [m] (select s/MAP-KEYS m)))
+  (reg-sub :item-ids    :<- [:items]     (fn [m] (select s/MAP-KEYS m)))
 
   (reg-sub :factory-id-set :<- [:factory-ids] (fn [xs] (into #{} xs)))
+  (reg-sub :machine-id-set :<- [:machine-ids] (fn [xs] (into #{} xs)))
+  (reg-sub :recipe-id-set  :<- [:recipe-ids]  (fn [xs] (into #{} xs)))
+  (reg-sub :item-id-set    :<- [:item-ids]    (fn [xs] (into #{} xs)))
 
-  (reg-sub :item-ids->names :<- [:items] (fn [m] (map-vals :name m)))
-  (reg-sub :recipe-ids->names :<- [:recipes] (fn [m] (map-vals :name m)))
-  (reg-sub :machine-ids->names :<- [:machines] (fn [m] (map-vals :name m)))
-  (reg-sub :factory-ids->names :<- [:factories] (fn [m] (map-vals :name m)))
+  (reg-sub :item-ids->names    :<- [:items]     (fn [m] (transform [s/MAP-VALS] :name m)))
+  (reg-sub :recipe-ids->names  :<- [:recipes]   (fn [m] (transform [s/MAP-VALS] :name m)))
+  (reg-sub :machine-ids->names :<- [:machines]  (fn [m] (transform [s/MAP-VALS] :name m)))
+  (reg-sub :factory-ids->names :<- [:factories] (fn [m] (transform [s/MAP-VALS] :name m)))
 
-  (reg-sub :item-count :<- [:item-seq] (fn [m] (count m)))
-  (reg-sub :recipe-count :<- [:recipe-seq] (fn [m] (count m)))
+  (reg-sub :item-count    :<- [:item-seq]    (fn [m] (count m)))
+  (reg-sub :recipe-count  :<- [:recipe-seq]  (fn [m] (count m)))
   (reg-sub :factory-count :<- [:factory-seq] (fn [m] (count m)))
   (reg-sub :machine-count :<- [:machine-seq] (fn [m] (count m)))
 
-  (reg-sub :recipe-index :<- [:recipe-seq] (fn [xs] (pgraph/recipe-index xs)))
-  (reg-sub :recipe-input-index :<- [:recipe-index] (fn [m] (get m :input)))
-  (reg-sub :recipe-output-index :<- [:recipe-index] (fn [m] (get m :output)))
+  (reg-sub :recipe-index        :<- [:recipe-seq]   (fn [xs] (pgraph/recipe-index xs)))
+  (reg-sub :recipe-input-index  :<- [:recipe-index] (fn [m] (select-any :input m)))
+  (reg-sub :recipe-output-index :<- [:recipe-index] (fn [m] (select-any :output m)))
 
   ; These subs exclude fields that don't matter for pgraph processing.
   ; This way, if e.g. a factory name changes, the whole pgraph doesn't recalculate.
-  (reg-sub :factory-for-pgraph (fn [[_ id]] (subscribe [:factory id])) (fn [x] (dissoc x :name :id)))
-  (reg-sub :machine-for-pgraph (fn [[_ id]] (subscribe [:machine id])) (fn [x] (dissoc x :name)))
-  (reg-sub :recipe-for-pgraph (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (dissoc x :name)))
+  (reg-sub :factory-for-pgraph (fn [[_ id]] (subscribe [:factory id])) (fn [x] (setval [(s/multi-path :name :id)] s/NONE x)))
+  (reg-sub :machine-for-pgraph (fn [[_ id]] (subscribe [:machine id])) (fn [x] (setval :name s/NONE x)))
+  (reg-sub :recipe-for-pgraph  (fn [[_ id]] (subscribe [:recipe id]))  (fn [x] (setval :name s/NONE x)))
 
   ; The :recipes-with-output sub accepts an item ID as a parameter, uses the recipe-index to
   ; look up all recipes that provide that item as output, and returns a set of recipe objects (NOT ids)
