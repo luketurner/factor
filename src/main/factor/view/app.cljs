@@ -24,7 +24,7 @@
     [c/nav-link :settings :settings "Settings"]]])
 
 (defn secondary-navbar []
-  (let [x @(subscribe [:ui [:selected-page]])]
+  (let [x @(subscribe [:selected-page])]
     (case x
       :home [home/navbar]
       :factories [factory/navbar]
@@ -34,7 +34,7 @@
       :settings [settings/navbar])))
 
 (defn main-content []
-  (let [x @(subscribe [:ui [:selected-page]])]
+  (let [x @(subscribe [:selected-page])]
     [:main
      (case x
        :home [home/page]

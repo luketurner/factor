@@ -87,15 +87,9 @@
 
 (def Ui 
  [:map {:closed true}
-  [:selected-page
-   {:default :home}
+  [:selected-page {:default :home}
    [:enum :home :factories :items :machines :recipes :settings]]
-  [:item-page [:map {:closed true}
-               [:selected [:vector Id]]]]
-  [:machine-page [:map {:closed true}
-                  [:selected [:vector Id]]]]
-  [:recipe-page [:map {:closed true}
-                 [:selected [:vector Id]]]]])
+  [:selected-objects [:vector Id]]])
 
 (def AppDb
   [:map {:closed true}

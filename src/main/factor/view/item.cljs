@@ -16,7 +16,7 @@
 
 (defn item-grid [items]
   (with-let [update-item #(dispatch [:update-item (:data %)])
-             update-selection #(dispatch [:ui [:item-page :selected] %])
+             update-selection #(dispatch [:select-objects %])
              on-grid-ready #(update-selection [])
              on-selection-changed #(-> % (get-selected-ids) (update-selection))]
     [c/grid {:row-data items
@@ -33,9 +33,9 @@
   (with-let [create-item    #(dispatch [:create-item])
              delete-items   #(do
                                (dispatch [:delete-items %])
-                               (dispatch [:ui [:item-page :selected] []]))
+                               (dispatch [:select-objects []]))
              delete-items-factory (callback-factory-factory delete-items)]
-    (let [selected-items @(subscribe [:ui [:item-page :selected]])
+    (let [selected-items @(subscribe [:selected-objects])
           num-selected   (count selected-items)]
       [c/navbar
        [c/navbar-group-left

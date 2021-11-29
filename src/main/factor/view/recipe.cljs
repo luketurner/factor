@@ -17,7 +17,7 @@
 
 (defn recipe-grid []
   (with-let [update-recipe #(dispatch [:update-recipe (:data %)])
-             update-selection #(dispatch [:ui [:recipe-page :selected] %])
+             update-selection #(dispatch [:select-objects %])
              on-grid-ready #(update-selection [])
              on-selection-changed #(-> % (get-selected-ids) (update-selection))]
     (let [all-recipes @(subscribe [:recipe-seq])
@@ -40,9 +40,9 @@
   (with-let [create-recipe  #(dispatch [:create-recipe])
              delete-recipes #(do
                                (dispatch [:delete-recipes %])
-                               (dispatch [:ui [:recipe-page :selected] []]))
+                               (dispatch [:select-objects []]))
              delete-recipes-factory (callback-factory-factory delete-recipes)]
-    (let [selected-recipes   @(subscribe [:ui [:recipe-page :selected]])
+    (let [selected-recipes   @(subscribe [:selected-objects])
           num-selected        (count selected-recipes)]
       [c/navbar
        [c/navbar-group-left
@@ -102,7 +102,7 @@
                [duration-editor id]]]])
 
 (defn recipe-page-editor []
-  (let [selected-recipes @(subscribe [:ui [:recipe-page :selected]])]
+  (let [selected-recipes @(subscribe [:selected-objects])]
     [:div.data-table-editor
      (case (count selected-recipes)
        0 [c/non-ideal-state {:icon :data-lineage

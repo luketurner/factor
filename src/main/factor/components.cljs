@@ -262,7 +262,7 @@
   [page icon text]
   (with-let [on-click #(dispatch [:select-page %])
              on-click-factory (callback-factory-factory on-click)]
-    (let [selected-page @(subscribe [:ui [:selected-page]])]
+    (let [selected-page @(subscribe [:selected-page])]
       [button {:class :bp3-minimal
                :on-click (on-click-factory page)
                :icon icon

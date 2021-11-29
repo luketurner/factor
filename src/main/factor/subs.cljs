@@ -4,6 +4,8 @@
             [medley.core :refer [map-vals]]
             [factor.pgraph :as pgraph]
             [factor.util :refer [clj->json clj->edn]]
+            [com.rpl.specter :as s]
+            [factor.navs :as nav]
             [factor.schema :as schema]))
 
 
@@ -24,7 +26,8 @@
   (reg-sub :machines (fn [db] (get-in db [:world :machines])))
   (reg-sub :recipes (fn [db] (get-in db [:world :recipes])))
 
-  (reg-sub :ui (fn [db [_ path]] (get-in db (into [:ui] path))))
+  (reg-sub :selected-objects (fn [db] (s/select-any [nav/UI nav/SELECTED-OBJECTS] db)))
+  (reg-sub :selected-page (fn [db] (s/select-any [nav/UI nav/SELECTED-PAGE] db)))
 
   (reg-sub :config (fn [db] (get db :config)))
 

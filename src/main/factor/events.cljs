@@ -192,7 +192,10 @@
   ;; Not undoable
 
   ; Note: This event purges the undo/redo history when it runs so the user can't undo/redo things from the old page
-  (reg-event-db :select-page [(->purge-undos) (->purge-redos)] (fn [db [_ page]] (s/setval [nav/UI nav/SELECTED-PAGE] page db)))
-
-  (reg-event-db :ui (fn [db [_ path val]] (assoc-in db (into [:ui] path) val))))
+  (reg-event-db :select-page [(->purge-undos) (->purge-redos)]
+                (fn [db [_ page]] (s/multi-transform [nav/UI (s/multi-path [nav/SELECTED-PAGE (s/terminal-val page)]
+                                                                           [nav/SELECTED-OBJECTS (s/terminal-val [])])] db)))
+  
+  (reg-event-db :select-objects
+                (fn [db [_ xs]] (s/setval [nav/UI nav/SELECTED-OBJECTS] xs db))))
 

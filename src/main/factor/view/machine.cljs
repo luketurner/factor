@@ -18,7 +18,7 @@
 
 (defn machine-grid [machines]
   (with-let [update-machine #(dispatch [:update-machine (:data %)])
-             update-selection #(dispatch [:ui [:machine-page :selected] %])
+             update-selection #(dispatch [:select-objects %])
              on-grid-ready #(update-selection [])
              on-selection-changed #(-> % (get-selected-ids) (update-selection))]
     (let [power-unit @(subscribe [:unit :power])
@@ -44,9 +44,9 @@
   (with-let [create-machine #(dispatch [:create-machine])
              delete-machines   #(do
                                   (dispatch [:delete-machines %])
-                                  (dispatch [:ui [:machine-page :selected] []]))
+                                  (dispatch [:select-objects []]))
              delete-machines-factory (callback-factory-factory delete-machines)]
-    (let [selected-machines @(subscribe [:ui [:machine-page :selected]])
+    (let [selected-machines @(subscribe [:selected-objects])
           num-selected (count selected-machines)]
       [c/navbar
        [c/navbar-group-left

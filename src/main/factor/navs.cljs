@@ -123,3 +123,4 @@
 ; navigators on ui
 
 (def SELECTED-PAGE (path :selected-page))
+(def SELECTED-OBJECTS (path :selected-objects))
