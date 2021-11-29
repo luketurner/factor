@@ -20,8 +20,8 @@
 
   ;; Materialized views
 
-  (reg-sub :selected-objects :<- [:ui] (fn [ui] (select-any [nav/SELECTED-OBJECTS] ui)))
-  (reg-sub :selected-page    :<- [:ui] (fn [ui] (select-any [nav/SELECTED-PAGE] ui)))
+  (reg-sub :selected-objects :<- [:ui] (fn [ui] (select     [nav/SELECTED-OBJECTS] ui)))
+  (reg-sub :selected-page    :<- [:ui] (fn [ui] (select-any [nav/SELECTED-PAGE]    ui)))
 
   (reg-sub :open-factory-raw :<- [:config] (fn [config] (select-any [nav/OPEN-FACTORY] config)))
 
@@ -30,14 +30,13 @@
            :<- [:factory-id-set]
            (fn [[id ids]] (when (contains? ids id) id)))
 
-  (reg-sub :units :<- [:config] (fn [config] (select-any [nav/UNIT] config)))
+  (reg-sub :units :<- [:config] (fn [config]      (select-any [nav/UNIT] config)))
+  (reg-sub :unit  :<- [:units]  (fn [units [_ u]] (select-any u          units)))
 
-  (reg-sub :unit :<- [:units] (fn [units [_ u]] (select-any u units)))
-
-  (reg-sub :factories :<- [:world] (fn [w] (select-any nav/FACTORIES w)))
-  (reg-sub :items     :<- [:world] (fn [w] (select-any nav/ITEMS     w)))
-  (reg-sub :machines  :<- [:world] (fn [w] (select-any nav/MACHINES  w)))
-  (reg-sub :recipes   :<- [:world] (fn [w] (select-any nav/RECIPES   w)))
+  (reg-sub :factories :<- [:world] (fn [w] (select-any nav/FACTORIES-MAP w)))
+  (reg-sub :items     :<- [:world] (fn [w] (select-any nav/ITEMS-MAP     w)))
+  (reg-sub :machines  :<- [:world] (fn [w] (select-any nav/MACHINES-MAP  w)))
+  (reg-sub :recipes   :<- [:world] (fn [w] (select-any nav/RECIPES-MAP   w)))
 
   (reg-sub :factory :<- [:factories] (fn [xs [_ id]] (select-any id xs)))
   (reg-sub :machine :<- [:machines]  (fn [xs [_ id]] (select-any id xs)))
@@ -53,13 +52,13 @@
   ;; (reg-sub :unit         :<- [:config] (fn [c [_ k]] (get-in c [:unit k])))
 
   (reg-sub :factory-name           (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/NAME x)))
-  (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/DESIRED-OUTPUT x)))
+  (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/DESIRED-OUTPUT-QM x)))
 
-  (reg-sub :recipe-input     (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/INPUT     x)))
-  (reg-sub :recipe-output    (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/OUTPUT    x)))
-  (reg-sub :recipe-catalysts (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/CATALYSTS x)))
-  (reg-sub :recipe-machines  (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/MACHINES  x)))
-  (reg-sub :recipe-duration  (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/DURATION  x)))
+  (reg-sub :recipe-input     (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/INPUT-QM            x)))
+  (reg-sub :recipe-output    (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/OUTPUT-QM           x)))
+  (reg-sub :recipe-catalysts (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/CATALYSTS-QM        x)))
+  (reg-sub :recipe-machines  (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/RECIPE-MACHINE-LIST x)))
+  (reg-sub :recipe-duration  (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/DURATION            x)))
 
   (reg-sub :machine-seq :<- [:machines]  (fn [m] (select s/MAP-VALS m)))
   (reg-sub :factory-seq :<- [:factories] (fn [m] (select s/MAP-VALS m)))
@@ -92,9 +91,9 @@
 
   ; These subs exclude fields that don't matter for pgraph processing.
   ; This way, if e.g. a factory name changes, the whole pgraph doesn't recalculate.
-  (reg-sub :factory-for-pgraph (fn [[_ id]] (subscribe [:factory id])) (fn [x] (setval [(s/multi-path :name :id)] s/NONE x)))
-  (reg-sub :machine-for-pgraph (fn [[_ id]] (subscribe [:machine id])) (fn [x] (setval :name s/NONE x)))
-  (reg-sub :recipe-for-pgraph  (fn [[_ id]] (subscribe [:recipe id]))  (fn [x] (setval :name s/NONE x)))
+  (reg-sub :factory-for-pgraph (fn [[_ id]] (subscribe [:factory id])) (fn [x] (setval [(s/multi-path nav/NAME nav/ID)] s/NONE x)))
+  (reg-sub :machine-for-pgraph (fn [[_ id]] (subscribe [:machine id])) (fn [x] (setval nav/NAME s/NONE x)))
+  (reg-sub :recipe-for-pgraph  (fn [[_ id]] (subscribe [:recipe id]))  (fn [x] (setval nav/NAME s/NONE x)))
 
   ; The :recipes-with-output sub accepts an item ID as a parameter, uses the recipe-index to
   ; look up all recipes that provide that item as output, and returns a set of recipe objects (NOT ids)

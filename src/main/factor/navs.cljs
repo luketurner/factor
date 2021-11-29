@@ -1,5 +1,19 @@
 (ns factor.navs
-  "Defines custom Specter navigators that can be used when writing subs/events/etc."
+  "Defines custom Specter navigators that can be used when writing subs/events/etc.
+   
+   Navigator follow specific naming conventions:
+   
+   - Should be a noun indicating the thing being navigated to.
+   - If singular (e.g. CONFIG), the navigator should navigate to a single value
+     - Usually, if terminating a path with a singular navigator, you should use select-any instead of select
+   - If plural (e.g. FACTORIES), the navigator should navigate to multiple (0, 1, or many) values
+     - Such navigators DO NOT need an ALL after them to unpack the values
+   - If navigating TO a data structure like a vec/map/etc that is added to the end of the navigator
+     - e.g. FACTORY-MAP navigates to a map of factories, MACHINE-LIST navigates to a list of machines.
+     - Other prefixes: QM for a quantitymap
+   
+   Navigators with a singular name (e.g. CONFIG) navigate to a singular value.
+   Navigators with a plural name (e.g. FACTORIES) navigate to multiple values."
   (:require [com.rpl.specter :as s :refer [path]]
             [malli.core :as m]
             [factor.schema :as sc]))
@@ -20,12 +34,13 @@
 
 ; navigators on DB
 
-(def WORLD (path :world))
 (def CONFIG (path :config))
-(def UI (path :ui))
+(def WORLD  (path :world))
+(def UI     (path :ui))
 
 (def VALID-CONFIG (path CONFIG (validate sc/Config)))
-(def VALID-WORLD (path WORLD (validate sc/World)))
+(def VALID-WORLD  (path WORLD (validate sc/World)))
+(def VALID-UI     (path UI (validate sc/Ui)))
 
 ; shorthand
 
@@ -33,94 +48,68 @@
 
 ; navigators on WORLD
 
-(def FACTORIES (path :factories))
-(def MACHINES (path :machines))
-(def RECIPES (path :recipes))
-(def ITEMS (path :items))
+(def FACTORIES-MAP (path :factories))
+(def MACHINES-MAP  (path :machines))
+(def RECIPES-MAP   (path :recipes))
+(def ITEMS-MAP     (path :items))
 
-(def MAP-FACTORIES (path FACTORIES s/MAP-VALS))
-(def MAP-RECIPES (path RECIPES s/MAP-VALS))
-(def MAP-ITEMS (path ITEMS s/MAP-VALS))
-(def MAP-MACHINES (path MACHINES s/MAP-VALS))
+(def FACTORIES (path FACTORIES-MAP s/MAP-VALS))
+(def RECIPES   (path RECIPES-MAP s/MAP-VALS))
+(def ITEMS     (path ITEMS-MAP s/MAP-VALS))
+(def MACHINES  (path MACHINES-MAP s/MAP-VALS))
 
-(def MAP-FACTORY-IDS (path FACTORIES s/MAP-KEYS))
-(def MAP-RECIPE-IDS (path RECIPES s/MAP-KEYS))
-(def MAP-ITEM-IDS (path ITEMS s/MAP-KEYS))
-(def MAP-MACHINE-IDS (path MACHINES s/MAP-KEYS))
+(def FACTORY-IDS (path FACTORIES-MAP s/MAP-KEYS))
+(def RECIPE-IDS  (path RECIPES-MAP s/MAP-KEYS))
+(def ITEM-IDS    (path ITEMS-MAP s/MAP-KEYS))
+(def MACHINE-IDS (path MACHINES-MAP s/MAP-KEYS))
 
-(defn map-factories [ids] (path FACTORIES (s/submap ids) s/MAP-VALS))
-(defn map-recipes [ids] (path RECIPES (s/submap ids) s/MAP-VALS))
-(defn map-items [ids] (path ITEMS (s/submap ids) s/MAP-VALS))
-(defn map-machines [ids] (path MACHINES (s/submap ids) s/MAP-VALS))
+(defn factories [ids] (path FACTORIES-MAP (s/submap ids) s/MAP-VALS))
+(defn recipes [ids]   (path RECIPES-MAP   (s/submap ids) s/MAP-VALS))
+(defn items [ids]     (path ITEMS-MAP     (s/submap ids) s/MAP-VALS))
+(defn machines [ids]  (path MACHINES-MAP  (s/submap ids) s/MAP-VALS))
 
-(defn valid-factory [id] (path FACTORIES id (validate sc/Factory)))
-(defn valid-recipe [id] (path RECIPES id (validate sc/Recipe)))
-(defn valid-machine [id] (path MACHINES id (validate sc/Machine)))
-(defn valid-item [id] (path ITEMS id (validate sc/Item)))
+(defn valid-factory [id] (path FACTORIES-MAP id (validate sc/Factory)))
+(defn valid-recipe [id]  (path RECIPES-MAP   id (validate sc/Recipe)))
+(defn valid-machine [id] (path MACHINES-MAP  id (validate sc/Machine)))
+(defn valid-item [id]    (path ITEMS-MAP     id (validate sc/Item)))
 
 ; navigators on factory/recipe/etc.
 
-(def NAME (path :name))
-(def DESIRED-OUTPUT (path :desired-output))
-(def FILTERS (path :filter))
-(def INPUT (path :input))
-(def OUTPUT (path :output))
-(def CATALYSTS (path :catalysts))
-(def DURATION (path :duration))
-(def POWER (path :power))
-(def SPEED (path :speed))
-(def RECIPE-MACHINES (path :machines))
+(def ID                   (path :id))
+(def NAME                 (path :name))
+(def DESIRED-OUTPUT-QM    (path :desired-output))
+(def FILTER               (path :filter))
+(def INPUT-QM             (path :input))
+(def OUTPUT-QM            (path :output))
+(def CATALYSTS-QM         (path :catalysts))
+(def DURATION             (path :duration))
+(def POWER                (path :power))
+(def SPEED                (path :speed))
+(def RECIPE-MACHINE-LIST  (path :machines))
 
-(def FILTERED-RECIPES (path FILTERS
-                            (s/multi-path
-                             [:hard-allowed-recipes]
-                             [:soft-allowed-recipes]
-                             [:hard-denied-recipes]
-                             [:soft-denied-recipes])
-                            s/ALL))
-(def FILTERED-ITEMS (path FILTERS
-                          (s/multi-path
-                           [:hard-allowed-items]
-                           [:soft-allowed-items]
-                           [:hard-denied-items]
-                           [:soft-denied-items])
-                          s/ALL))
-(def FILTERED-MACHINES (path FILTERS
-                             (s/multi-path
-                              [:hard-allowed-machines]
-                              [:soft-allowed-machines]
-                              [:hard-denied-machines]
-                              [:soft-denied-machines])
-                             s/ALL))
+(def DESIRED-OUTPUT-ITEMS (path DESIRED-OUTPUT-QM   s/MAP-KEYS))
+(def INPUT-ITEMS          (path INPUT-QM            s/MAP-KEYS))
+(def OUTPUT-ITEMS         (path OUTPUT-QM           s/MAP-KEYS))
+(def CATALYSTS-ITEMS      (path CATALYSTS-QM        s/MAP-KEYS))
+(def RECIPE-MACHINES      (path RECIPE-MACHINE-LIST s/ALL))
 
-(def FACTORY->ITEMS
-  (path
-   (s/multi-path
-    [DESIRED-OUTPUT s/MAP-KEYS]
-    [FILTERED-ITEMS])))
+(def FILTERED-RECIPES  (path (s/multi-path :hard-allowed-recipes  :soft-allowed-recipes  :hard-denied-recipes  :soft-denied-recipes)  s/ALL))
+(def FILTERED-ITEMS    (path (s/multi-path :hard-allowed-items    :soft-allowed-items    :hard-denied-items    :soft-denied-items)    s/ALL))
+(def FILTERED-MACHINES (path (s/multi-path :hard-allowed-machines :soft-allowed-machines :hard-denied-machines :soft-denied-machines) s/ALL))
 
-(def FACTORY->RECIPES
-  (path [FILTERED-RECIPES]))
-
-(def FACTORY->MACHINES
-  (path [FILTERED-MACHINES]))
-
-(def RECIPE->ITEMS
-  (path
-   (s/multi-path
-    [INPUT s/MAP-KEYS]
-    [OUTPUT s/MAP-KEYS]
-    [CATALYSTS s/MAP-KEYS])))
-
-(def RECIPE->MACHINES
-  (path [RECIPE-MACHINES s/ALL]))
+(def FACTORY->ITEMS    (path (s/multi-path DESIRED-OUTPUT-ITEMS [FILTER FILTERED-ITEMS])))
+(def FACTORY->RECIPES  (path FILTER FILTERED-RECIPES))
+(def FACTORY->MACHINES (path FILTER FILTERED-MACHINES))
+(def RECIPE->ITEMS     (path (s/multi-path INPUT-ITEMS OUTPUT-ITEMS CATALYSTS-ITEMS)))
+(def RECIPE->MACHINES  (path RECIPE-MACHINES))
 
 ; navigators on config
 
 (def OPEN-FACTORY (path :open-factory))
-(def UNIT (path :unit))
+(def UNIT         (path :unit))
 
 ; navigators on ui
 
-(def SELECTED-PAGE (path :selected-page))
-(def SELECTED-OBJECTS (path :selected-objects))
+(def SELECTED-PAGE        (path :selected-page))
+(def SELECTED-OBJECT-LIST (path :selected-objects))
+(def SELECTED-OBJECTS     (path SELECTED-OBJECT-LIST s/ALL))
