@@ -36,7 +36,7 @@
                         item (->> item
                                   (merge {:created-at (.now js/Date) :id id})
                                   (make Item))]
-                    (s/setval [nav/W (nav/valid-item id)] item db))))
+                    (s/setval [nav/WORLD (nav/valid-item id)] item db))))
 
   (reg-event-db :create-recipe [(undoable)]
                 (fn [db [_ recipe]]
@@ -44,7 +44,7 @@
                         recipe (->> recipe
                                     (merge {:created-at (.now js/Date) :id id})
                                     (make Recipe))]
-                    (s/setval [nav/W (nav/valid-recipe id)] recipe db))))
+                    (s/setval [nav/WORLD (nav/valid-recipe id)] recipe db))))
 
   (reg-event-db :create-machine [(undoable)]
                 (fn [db [_ machine]]
@@ -52,7 +52,7 @@
                         machine (->> machine
                                      (merge {:created-at (.now js/Date) :id id})
                                      (make Machine))]
-                    (s/setval [nav/W (nav/valid-machine id)] machine db))))
+                    (s/setval [nav/WORLD (nav/valid-machine id)] machine db))))
 
   (reg-event-db :update-factory [(undoable)]
                 (fn [db [_ {:keys [id] :as x}]]
@@ -73,7 +73,7 @@
   (reg-event-db :delete-factories [(undoable)]
                 (fn [w [_ xs]]
                   (s/setval (s/multi-path
-                             [nav/UI nav/SELECTED-OBJECTS xs]
+                             [nav/VALID-UI nav/SELECTED-OBJECTS xs]
                              [nav/WORLD (nav/factories xs)]) s/NONE w)))
 
   (reg-event-db :delete-recipes [(undoable)]
@@ -81,7 +81,7 @@
                   (let [xs (set xs)]
                     (s/setval
                      (s/multi-path
-                      [nav/UI nav/SELECTED-OBJECTS xs]
+                      [nav/VALID-UI nav/SELECTED-OBJECTS xs]
                       [nav/WORLD (s/multi-path
                                   [nav/FACTORIES nav/FACTORY->RECIPES xs]
                                   (nav/recipes xs))])
@@ -93,7 +93,7 @@
                   (let [xs (set xs)]
                     (s/setval
                      (s/multi-path
-                      [nav/UI nav/SELECTED-OBJECTS xs]
+                      [nav/VALID-UI nav/SELECTED-OBJECTS xs]
                       [nav/WORLD (s/multi-path
                                   [nav/FACTORIES nav/FACTORY->MACHINES xs]
                                   [nav/RECIPES nav/RECIPE->MACHINES xs]
@@ -106,7 +106,7 @@
                   (let [xs (set xs)]
                     (s/setval
                      (s/multi-path
-                      [nav/UI nav/SELECTED-OBJECTS xs]
+                      [nav/VALID-UI nav/SELECTED-OBJECTS xs]
                       [nav/WORLD (s/multi-path
                                   [nav/FACTORIES nav/FACTORY->ITEMS xs]
                                   [nav/RECIPES nav/RECIPE->ITEMS xs]
@@ -134,31 +134,31 @@
 
   (reg-event-db :update-factory-name [(undoable)]
               (fn [db [_ id v]]
-                (s/setval [nav/W (nav/valid-factory id) nav/NAME] v db)))
+                (s/setval [nav/WORLD (nav/valid-factory id) nav/NAME] v db)))
   
   (reg-event-db :update-factory-desired-output [(undoable)]
                 (fn [db [_ id v]]
-                  (s/setval [nav/W (nav/valid-factory id) nav/DESIRED-OUTPUT-QM] v db)))
+                  (s/setval [nav/WORLD (nav/valid-factory id) nav/DESIRED-OUTPUT-QM] v db)))
 
   (reg-event-db :update-recipe-input [(undoable)]
                 (fn [db [_ id v]]
-                  (s/setval [nav/W (nav/valid-recipe id) nav/INPUT-QM] v db)))
+                  (s/setval [nav/WORLD (nav/valid-recipe id) nav/INPUT-QM] v db)))
   
   (reg-event-db :update-recipe-output [(undoable)]
                 (fn [db [_ id v]]
-                  (s/setval [nav/W (nav/valid-recipe id) nav/OUTPUT-QM] v db)))
+                  (s/setval [nav/WORLD (nav/valid-recipe id) nav/OUTPUT-QM] v db)))
   
   (reg-event-db :update-recipe-catalysts [(undoable)]
                 (fn [db [_ id v]]
-                  (s/setval [nav/W (nav/valid-recipe id) nav/CATALYSTS-QM] v db)))
+                  (s/setval [nav/WORLD (nav/valid-recipe id) nav/CATALYSTS-QM] v db)))
   
   (reg-event-db :update-recipe-machines [(undoable)]
                 (fn [db [_ id v]]
-                  (s/setval [nav/W (nav/valid-recipe id) nav/RECIPE-MACHINE-LIST] v db)))
+                  (s/setval [nav/WORLD (nav/valid-recipe id) nav/RECIPE-MACHINE-LIST] v db)))
   
   (reg-event-db :update-recipe-duration [(undoable)]
                 (fn [db [_ id v]]
-                  (s/setval [nav/W (nav/valid-recipe id) nav/DURATION] v db)))
+                  (s/setval [nav/WORLD (nav/valid-recipe id) nav/DURATION] v db)))
 
 
   ;; World persistence events
@@ -197,9 +197,9 @@
 
   ; Note: This event purges the undo/redo history when it runs so the user can't undo/redo things from the old page
   (reg-event-db :select-page [(->purge-undos) (->purge-redos)]
-                (fn [db [_ page]] (s/multi-transform [nav/UI (s/multi-path [nav/SELECTED-PAGE (s/terminal-val page)]
+                (fn [db [_ page]] (s/multi-transform [nav/VALID-UI (s/multi-path [nav/SELECTED-PAGE (s/terminal-val page)]
                                                                            [nav/SELECTED-OBJECT-LIST (s/terminal-val [])])] db)))
   
   (reg-event-db :select-objects
-                (fn [db [_ xs]] (s/setval [nav/UI nav/SELECTED-OBJECT-LIST] xs db))))
+                (fn [db [_ xs]] (s/setval [nav/VALID-UI nav/SELECTED-OBJECT-LIST] xs db))))
 

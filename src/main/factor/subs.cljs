@@ -46,11 +46,6 @@
   (reg-sub :world-as-json :<- [:world] (fn [w] (->> w (json-encode World) (clj->json))))
   (reg-sub :world-as-edn  :<- [:world] (fn [w] (->> w (edn-encode  World) (clj->edn))))
 
-  ;; (reg-sub :open-factory
-  ;;          (fn [] [(subscribe [:config]) (subscribe [:factory-id-set])])
-  ;;          (fn [[{:keys [open-factory]} ids]] (when (contains? ids open-factory) open-factory)))
-  ;; (reg-sub :unit         :<- [:config] (fn [c [_ k]] (get-in c [:unit k])))
-
   (reg-sub :factory-name           (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/NAME x)))
   (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/DESIRED-OUTPUT-QM x)))
 
