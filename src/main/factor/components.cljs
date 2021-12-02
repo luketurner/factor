@@ -1,52 +1,58 @@
 (ns factor.components
   "Defines reusable components for use in views. Includes wrappers for Blueprint components."
+  (:require-macros [factor.components :refer [defcomponent defwrapper]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as reagent :refer [with-let]]
-            [factor.util :refer [c]]
             ["@blueprintjs/core" :as b]
             ["@blueprintjs/select" :as bs]
             ["ag-grid-react" :refer [AgGridReact]]
             [clojure.string :as string]
-            [factor.util :refer [ipairs try-fn delete-index move-index-ahead move-index-behind callback-factory-factory]]
+            [factor.util :refer [cl ipairs try-fn delete-index move-index-ahead move-index-behind callback-factory-factory]]
             [medley.core :refer [map-keys]]))
 
 ;; WRAPPER COMPONENTS
 ;; These components are simple wrappers around HTML/Blueprint elements.
 
-(defn alert [p & children] (into [(c b/Alert) p] children))
-(defn anchor-button [props & children] (into [(c b/AnchorButton) props] children))
-(defn button [props & children] (into [(c b/Button) props] children))
-(defn card [p & children] (into [(c b/Card) p] children))
-(defn card-lg [& children] (into [(c b/Card) {:class-name "w-20 m-1"}] children))
-(defn card-md [& children] (into [(c b/Card) {:class-name "w-16 m-1"}] children))
-(defn card-sm [& children] (into [(c b/Card) {:class-name "w-12 m-1"}] children))
-(defn collapsible [label & children] (into [:details [:summary label]] children))
-(defn control-group [props & children] (into [(c b/ControlGroup) props] children))
-(defn form-group [props & children] (into [(c b/FormGroup) props] children))
-(defn icon [p] [(c b/Icon) p])
-(defn input-group [props & children] (into [(c b/InputGroup) props] children))
-(defn menu-item [p & children] (into [(c b/MenuItem) p] children))
-(defn navbar [& children] (into [(c b/Navbar)] children))
-(defn navbar-divider [] [(c b/Navbar.Divider)])
-(defn navbar-group-left [& children] (into [(c b/Navbar.Group) {:align :left}] children))
-(defn navbar-group-right [& children] (into [(c b/Navbar.Group) {:align :right}] children))
-(defn navbar-heading [& children] (into [(c b/Navbar.Heading)] children))
-(defn non-ideal-state [p & children] (into [(c b/NonIdealState) p] children))
-(defn textarea [props] [(c b/TextArea) props])
-(defn tree [p] [(c b/Tree) p])
-(defn tree-node [p & children] (into [(c b/TreeNode) p] children))
+(defwrapper alert           (cl b/Alert))
+(defwrapper anchor-button   (cl b/AnchorButton))
+(defwrapper button          (cl b/Button))
+(defwrapper card            (cl b/Card))
+(defwrapper control-group   (cl b/ControlGroup))
+(defwrapper form-group      (cl b/FormGroup))
+(defwrapper icon            (cl b/Icon))
+(defwrapper input-group     (cl b/InputGroup))
+(defwrapper menu-item       (cl b/MenuItem))
+(defwrapper navbar          (cl b/Navbar))
+(defwrapper navbar-divider  (cl b/Navbar.Divider))
+(defwrapper navbar-group    (cl b/Navbar.Group))
+(defwrapper navbar-heading  (cl b/Navbar.Heading))
+(defwrapper non-ideal-state (cl b/NonIdealState))
+(defwrapper textarea        (cl b/TextArea))
+(defwrapper tree            (cl b/Tree))
+(defwrapper tree-node       (cl b/TreeNode))
+  
+; these wrappers are further encapsulated by other components
+; and usually shouldn't be used directly
+(defwrapper numeric-input-raw (cl b/NumericInput))
+(defwrapper grid-raw          (cl AgGridReact))
+(defwrapper suggest-raw       (cl bs/Suggest))
+(defwrapper select-raw        (cl bs/Select))
+
+;; SEMI-WRAPPERS
+;; These are wrappers that adjust the default props without adding their own rendering/logic/etc.
+
+(defwrapper card-lg            card         {:class-name "w-20 m-1"})
+(defwrapper card-md            card         {:class-name "w-16 m-1"})
+(defwrapper card-sm            card         {:class-name "w-12 m-1"})
+(defwrapper navbar-group-left  navbar-group {:align :left})
+(defwrapper navbar-group-right navbar-group {:align :right})
 
 ;; OTHER COMPONENTS
 ;; Non-wrapper components follow. Each should have a docstring explaining its purpose.
 
-(defn select-button
-  "A button intended to be used as the display element for a Select dropdown."
-  [text]
-  [button {:text text :right-icon :double-caret-vertical}])
-
-(defn select-enum
+(defcomponent select-enum
   "A wrapper around Blueprint's Select component, designed for selecting one of an enumerated set of possible values."
-  [possible-values initial-value on-change]
+  [{:keys [items on-item-select initial-value]} _]
   (with-let [query (reagent/atom "")
              reset-query #(reset! query %)
              item-renderer (fn [item opts]
@@ -56,18 +62,18 @@
                                                                :on-click on-click
                                                                :text item
                                                                :intent (when active? "primary")}])))]
-    [(c bs/Select) {:items possible-values
-                    :query @query
-                    :active-item initial-value
-                    :on-query-change reset-query
-                    :on-item-select on-change
-                    :item-renderer item-renderer}
-     [select-button initial-value]]))
+    [select-raw {:items items
+                 :query @query
+                 :active-item initial-value
+                 :on-query-change reset-query
+                 :on-item-select on-item-select
+                 :item-renderer item-renderer}
+     [button {:text initial-value :right-icon :double-caret-vertical}]]))
 
-(defn suggest
+(defcomponent suggest
   "A wrapper around Blueprint's Suggest component, designed for selecting one of the object types from the World.
    (e.g. if `type` is `:item`, it will suggest items.)"
-  [type value on-change]
+  [{:keys [type value on-item-select]} _]
   (with-let [render-input-value (fn [ids->names id]
                                   (or (ids->names id) ""))
              render-item (fn [ids->names id opts]
@@ -92,87 +98,97 @@
              no-results (reagent/as-element [menu-item {:disabled true :text "No matching results."}])]
     (let [type-name (name type)
           ids->names @(subscribe [(keyword (str type-name "-ids->names"))])]
-      [(c bs/Suggest) {:items (if (not-empty ids->names) (keys ids->names) [])
-                       :selected-item value
-                       :on-item-select on-change
-                       :no-results no-results
-                       :input-value-renderer (input-value-renderer ids->names)
-                       :item-renderer (item-renderer ids->names)
-                       :item-predicate (item-predicate ids->names)}])))
+      [suggest-raw {:items (if (not-empty ids->names) (keys ids->names) [])
+                    :selected-item value
+                    :on-item-select on-item-select
+                    :no-results no-results
+                    :input-value-renderer (input-value-renderer ids->names)
+                    :item-renderer (item-renderer ids->names)
+                    :item-predicate (item-predicate ids->names)}])))
 
-(defn numeric-input
+(defcomponent numeric-input
   "A numeric input with relatively narrow width, intended to fit integers less than 1000 compactly.
    Any provided `opts` will be passed through to the underlying NumericInput component."
-  [value on-change opts]
-  [(c b/NumericInput) (merge {:value value
-                              :async-control true
-                              :on-value-change on-change
-                              :style {:width "2.5rem"}}
-                             opts)])
+  [{:keys [value on-change min]} _]
+  [numeric-input-raw {:value value
+                      :async-control true
+                      :on-value-change on-change
+                      :style {:width "2.5rem"}
+                      :min min}])
 
-(defn suggest-numeric
+(defcomponent suggest-numeric
   "A control group used to input a numeric quantity combined with a reference to an object like an item or a machine.
    Used, for example, to select the number of each type of item that's required as input for a recipe."
-  [type [x n :as kvp] on-change]
+  [{:keys [type on-change] [x n :as value] :value} _]
   (with-let [change-fst (fn [[_ b] cb x] (cb [x b]))
              change-snd (fn [[a _] cb x] (cb [a x]))
              change-fst-factory (callback-factory-factory change-fst)
              change-snd-factory (callback-factory-factory change-snd)]
     [control-group
-     [numeric-input n (change-snd-factory kvp on-change) {:min 0}]
-     [suggest type  x (change-fst-factory kvp on-change)]]))
+     [numeric-input {:value n :on-change (change-snd-factory value on-change) :min 0}]
+     [suggest {:type type 
+               :value x
+               :on-item-select (change-fst-factory value on-change)}]]))
 
-(defn suggest-numeric-deletable
+(defcomponent suggest-numeric-deletable
   "Like suggest-numeric, but includes a delete button on the right of the control. The `on-delete` callback is called when
    the delete button is pressed."
-  [type kvp on-change on-delete]
+  [{:keys [type value on-change on-delete]} _]
   [control-group
-   [suggest-numeric type kvp on-change]
+   [suggest-numeric {:type type :value value :on-change on-change}]
    [button {:icon :delete :intent :danger :on-click on-delete}]])
 
-(defn suggest-numeric-addable
+(defcomponent suggest-numeric-addable
   "Like suggest-numeric, but includes an add (+) button on the right of the control. The `on-add` function is called when
    the add button is pressed."
-  [type kvp on-change on-add]
+  [{:keys [type value on-change on-add]} _]
   (with-let [on-add-cb (fn [cb v] (cb v))
              on-add-factory (callback-factory-factory on-add-cb)]
     [control-group
-     [suggest-numeric type kvp on-change]
-     [button {:icon :plus :intent :success :on-click (on-add-factory on-add kvp)}]]))
+     [suggest-numeric {:type type :value value :on-change on-change}]
+     [button {:icon :plus :intent :success :on-click (on-add-factory on-add value)}]]))
 
-(defn quantity-set-input-line
-  [type qs on-change [id _ :as kvp]]
+(defcomponent quantity-set-input-line
+  [{:keys [type qs on-change] [id _ :as value] :value} _]
   (with-let [update-cb (fn [qs cb oid [id num]] (-> qs (dissoc oid) (assoc id num) (cb)))
              update-cb-factory (callback-factory-factory update-cb)
              delete-cb (fn [qs cb id] (-> qs (dissoc id) (cb)))
              delete-cb-factory (callback-factory-factory delete-cb)]
-    [suggest-numeric-deletable type kvp
-     (update-cb-factory qs on-change id)
-     (delete-cb-factory qs on-change id)]))
+    [suggest-numeric-deletable {:type type
+                                :value value
+                                :on-change (update-cb-factory qs on-change id)
+                                :on-delete (delete-cb-factory qs on-change id)}]))
 
-(defn quantity-set-input-add-line
-  [type on-add]
+(defcomponent quantity-set-input-add-line
+  [{:keys [type on-add]} _]
   (with-let [new-quantity (reagent/atom [])
              update-new-quantity #(reset! new-quantity %)
              add-cb (fn [cb v]
                       (cb v)
                       (update-new-quantity []))
              add-cb-factory (callback-factory-factory add-cb)]
-    [suggest-numeric-addable type @new-quantity update-new-quantity (add-cb-factory on-add)]))
+    [suggest-numeric-addable {:type type
+                              :value @new-quantity
+                              :on-change update-new-quantity
+                              :on-add (add-cb-factory on-add)}]))
 
-(defn quantity-set-input
+(defcomponent quantity-set-input
   "A complex control for configuring the contents of a qmap. Each entry in the qmap is rendered as a line that's editable
    and deletable. There's also a line for adding new entries to the qmap. The `on-change` function is called with the full updated
    qmap whenever any updates are performed."
-  [type qs on-change]
+  [{:keys [type value on-change]} _]
   (with-let [add-cb (fn [qs cb [k v]] (cb (assoc qs k v)))
              add-cb-factory (callback-factory-factory add-cb)]
     (conj
-     (into [:<>] (for [kvp qs] [quantity-set-input-line type qs on-change kvp]))
-     [quantity-set-input-add-line type (add-cb-factory qs on-change)])))
+     (into [:<>] (for [kvp value] [quantity-set-input-line {:type type
+                                                            :value kvp
+                                                            :on-change on-change
+                                                            :qs value}]))
+     [quantity-set-input-add-line {:type type
+                                   :on-add (add-cb-factory value on-change)}])))
 
-(defn list-input-line
-  [type xs on-change x ix]
+(defcomponent list-input-line
+  [{:keys [type xs on-change x ix]} _]
   (with-let [update-cb (fn [xs cb ix x] (cb (assoc xs ix x)))
              update-cb-factory (callback-factory-factory update-cb)
              delete-cb (fn [xs cb ix] (cb (delete-index xs ix)))
@@ -184,11 +200,11 @@
     [control-group
      [button {:icon :chevron-up :on-click (move-up-cb-factory xs on-change ix) :disabled (= ix 0)}]
      [button {:icon :chevron-down :on-click (move-down-cb-factory xs on-change ix) :disabled (= ix (dec (count xs)))}]
-     [suggest type x (update-cb-factory xs on-change ix)]
+     [suggest {:type type :value x :on-item-select (update-cb-factory xs on-change ix)}]
      [button {:icon :delete :on-click (delete-cb-factory xs on-change ix)}]]))
 
-(defn list-input-add-line
-  [type on-add]
+(defcomponent list-input-add-line
+  [{:keys [type on-add]} _]
   (with-let [new-val (reagent/atom nil)
              update-new-val #(reset! new-val %)
              add-cb (fn [cb v]
@@ -196,32 +212,32 @@
                       (update-new-val nil))
              add-cb-factory (callback-factory-factory add-cb)]
     [control-group
-     [suggest type @new-val update-new-val]
+     [suggest {:type type :value @new-val :on-item-select update-new-val}]
      [button {:icon :plus :on-click (add-cb-factory on-add @new-val)}]]))
 
-(defn list-input
+(defcomponent list-input
   "A complex control for editing a list of objects (items, machines, etc.) Each entry in the list is rendered as a line that's editable
    and deletable. There's also a line for adding new entries to the list. Lines can be moved up and down. Duplicates are allowed.
    The `on-change` function is called with the full updated list whenever any updates are performed."
-  [type xs on-change]
-  (with-let [add-cb (fn [xs cb x] (cb (conj xs x)))
+  [{:keys [type value on-change]} _]
+  (with-let [add-cb (fn [value cb x] (cb (conj value x)))
              add-cb-factory (callback-factory-factory add-cb)]
     (conj
-     (into [:<>] (for [[x ix] (ipairs xs)]
-                   [list-input-line type xs on-change x ix]))
-     [list-input-add-line type (add-cb-factory xs on-change)])))
+     (into [:<>] (for [[x ix] (ipairs value)]
+                   [list-input-line {:type type :xs value :on-change on-change :x x :ix ix}]))
+     [list-input-add-line {:type type :on-add (add-cb-factory value on-change)}])))
 
-(defn input
+(defcomponent input
   "A wrapper for Blueprint's InputGroup component. All props are passed through to the underlying InputGroup.
    The only exception is the on-change prop, which is wrapped such that the value is already extracted from
    the InputGroup's React.SyntheticEvent before being passed to the `on-change` function."
-  [{:keys [on-change] :as props}]
+  [{:keys [on-change] :as props} _]
   (with-let [change-cb (fn [cb ev] (-> ev (.-target) (.-value) (cb)))
              change-cb-factory (callback-factory-factory change-cb)]
     (let [default-props {:async-control true}
           override-props {:on-change (change-cb-factory on-change)}
           props (merge default-props props override-props)]
-      [(c b/InputGroup) props])))
+      [(cl b/InputGroup) props])))
 
 (defn grid-cb->clj
   "Accepts an ag-grid style event (as would be passed to a grid callback) and returns a Clojureified version.
@@ -240,11 +256,11 @@
   [ev]
   (js/parseFloat (.-newValue ev)))
 
-(defn grid
+(defcomponent grid
   "Wrapper around ag-grid's Grid component. Sets a variety of default props for DRY-ness. All defaults can be
    overriden with `props`. Note that usually you want to specify at least the :on-row-value-changed prop. The
    `children` can contain column definitions, but it's usually simpler to use the :column-defs option in `props`."
-  [props & children]
+  [props children]
   (let [default-props  {:row-selection :multiple
                         :enter-moves-down true
                         :enter-moves-down-after-edit true
@@ -255,7 +271,7 @@
                         :on-selection-changed (grid-cb (:on-selection-changed props))}
         grid-props     (merge default-props props override-props)]
     [:div.ag-theme-alpine.full-screen
-     (into [(c AgGridReact) grid-props] children)]))
+     (into [grid-raw grid-props] children)]))
 
 (defn nav-link
   "A minimally styled button that, when clicked, will change the currently selected page."
@@ -292,6 +308,6 @@
   []
   (with-let [undo #(dispatch [:undo])
              redo #(dispatch [:redo])]
-        [control-group {}
-         [button {:class :bp3-minimal :disabled (not @(subscribe [:undos?])) :on-click undo :icon :undo :title "Undo"}]
-         [button {:class :bp3-minimal :disabled (not @(subscribe [:redos?])) :on-click redo :icon :redo :title "Redo"}]]))
+    [control-group
+     [button {:class :bp3-minimal :disabled (not @(subscribe [:undos?])) :on-click undo :icon :undo :title "Undo"}]
+     [button {:class :bp3-minimal :disabled (not @(subscribe [:redos?])) :on-click redo :icon :redo :title "Redo"}]]))

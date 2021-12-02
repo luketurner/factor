@@ -24,25 +24,23 @@
     [c/nav-link :settings :settings "Settings"]]])
 
 (defn secondary-navbar []
-  (let [x @(subscribe [:selected-page])]
-    (case x
-      :home [home/navbar]
-      :factories [factory/navbar]
-      :items [item/navbar]
-      :machines [machine/navbar]
-      :recipes [recipe/navbar]
-      :settings [settings/navbar])))
+  (case @(subscribe [:selected-page])
+    :home [home/navbar]
+    :factories [factory/navbar]
+    :items [item/navbar]
+    :machines [machine/navbar]
+    :recipes [recipe/navbar]
+    :settings [settings/navbar]))
 
 (defn main-content []
-  (let [x @(subscribe [:selected-page])]
-    [:main
-     (case x
-       :home [home/page]
-       :factories [factory/page]
-       :items [item/page]
-       :machines [machine/page]
-       :recipes [recipe/page]
-       :settings [settings/page])]))
+  [:main
+   (case @(subscribe [:selected-page])
+     :home [home/page]
+     :factories [factory/page]
+     :items [item/page]
+     :machines [machine/page]
+     :recipes [recipe/page]
+     :settings [settings/page])])
 
 (defn footer []
   [c/navbar

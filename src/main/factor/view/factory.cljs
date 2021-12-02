@@ -24,7 +24,7 @@
         [c/navbar-heading "Factories"]
         [c/undo-redo]
         [c/navbar-divider]
-        [c/suggest :factory selected select-factory]
+        [c/suggest {:type :factory :value selected :on-change select-factory}]
 
         [c/alerting-button
          {:text "Delete"
@@ -125,7 +125,9 @@
   (with-let [dispatch-update (fn [id n] (dispatch-sync [:update-factory-desired-output id n]))
              updater (callback-factory-factory dispatch-update)]
     (let [value @(subscribe [:factory-desired-output id])]
-      [c/quantity-set-input :item value (updater id)])))
+      [c/quantity-set-input {:type :item
+                             :value value
+                             :on-change (updater id)}])))
 
 (defn factory-id-editor
   [id]

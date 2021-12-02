@@ -24,7 +24,7 @@
             (let [ev (get-coeffect context :event)]
               (add-fx context [:dispatch (ev-fn ev)])))))
 
-(defn c
+(defn cl
   "Shorthand for reagent.core/adapt-react-class"
   [x]
   (adapt-react-class x))

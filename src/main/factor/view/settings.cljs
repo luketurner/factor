@@ -40,17 +40,23 @@
 (defn item-rate-unit-editor
   []
   (with-let [on-change #(dispatch [:set-unit :item-rate %])]
-    [c/select-enum #{"items/sec" "items/min"} (or @(subscribe [:unit :item-rate]) "items/sec") on-change]))
+    [c/select-enum {:items #{"items/sec" "items/min"}
+                    :initial-value (or @(subscribe [:unit :item-rate]) "items/sec")
+                    :on-item-select on-change}]))
 
 (defn power-unit-editor
   []
   (with-let [on-change #(dispatch [:set-unit :power %])]
-    [c/select-enum #{"W"} (or @(subscribe [:unit :power]) "W") on-change]))
+    [c/select-enum {:items #{"W"}
+                    :initial-value (or @(subscribe [:unit :power]) "W")
+                    :on-item-select on-change}]))
 
 (defn energy-unit-editor
   []
   (with-let [on-change #(dispatch [:set-unit :energy %])]
-    [c/select-enum #{"J"} (or @(subscribe [:unit :energy]) "J") on-change]))
+    [c/select-enum {:items #{"J"}
+                    :initial-value (or @(subscribe [:unit :energy]) "J")
+                    :on-item-select on-change}]))
 
 (defn world-exporter
   []

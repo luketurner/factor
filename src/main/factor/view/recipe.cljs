@@ -60,30 +60,39 @@
   [id]
   (with-let [update-cb (fn [id v] (dispatch [:update-recipe-input id v]))
              update-cb-factory (callback-factory-factory update-cb)]
-    [c/quantity-set-input :item @(subscribe [:recipe-input id]) (update-cb-factory id)]))
+    [c/quantity-set-input {:type :item
+                           :value @(subscribe [:recipe-input id])
+                           :on-change (update-cb-factory id)}]))
 
 (defn output-editor
   [id]
   (with-let [update-cb (fn [id v] (dispatch [:update-recipe-output id v]))
              update-cb-factory (callback-factory-factory update-cb)]
-    [c/quantity-set-input :item @(subscribe [:recipe-output id]) (update-cb-factory id)]))
+    [c/quantity-set-input {:type :item
+                           :value @(subscribe [:recipe-output id])
+                           :on-change (update-cb-factory id)}]))
 
 (defn catalysts-editor [id]
   (with-let [update-cb (fn [id v] (dispatch [:update-recipe-catalysts id v]))
              update-cb-factory (callback-factory-factory update-cb)]
-    [c/quantity-set-input :item @(subscribe [:recipe-catalysts id]) (update-cb-factory id)]))
+    [c/quantity-set-input {:type :item 
+                           :value @(subscribe [:recipe-catalysts id])
+                           :on-change (update-cb-factory id)}]))
 
 (defn machine-list-editor
   [id]
   (with-let [update-cb (fn [id v] (dispatch [:update-recipe-machines id v]))
              update-cb-factory (callback-factory-factory update-cb)]
-    [c/list-input :machine @(subscribe [:recipe-machines id]) (update-cb-factory id)]))
+    [c/list-input {:type :machine
+                   :value @(subscribe [:recipe-machines id])
+                   :on-change (update-cb-factory id)}]))
 
 (defn duration-editor
   [id]
   (with-let [update-cb (fn [id v] (dispatch [:update-recipe-duration id v]))
              update-cb-factory (callback-factory-factory update-cb)]
-    [c/numeric-input @(subscribe [:recipe-duration id]) (update-cb-factory id)]))
+    [c/numeric-input {:value @(subscribe [:recipe-duration id])
+                      :on-change (update-cb-factory id)}]))
 
 (defn duration-editor-label
   [c]
