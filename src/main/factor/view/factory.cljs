@@ -6,29 +6,47 @@
             [factor.qmap :as qmap]
             [factor.util :refer [callback-factory-factory]]))
 
-(defn navbar []
-  (with-let [select-factory #(dispatch [:open-factory %])
-             create-factory #(dispatch [:create-factory])
-             delete-factory #(dispatch [:delete-factories [%]])
+(defn delete-open-factory-button
+  []
+  (with-let [delete-factory #(dispatch [:delete-factories [%]])
              delete-cb-factory (callback-factory-factory delete-factory)]
-    (let [selected @(subscribe [:open-factory])]
-      [c/navbar
-       [c/navbar-group-left
-        [c/navbar-heading "Factories"]
-        [c/undo-redo]
-        [c/navbar-divider]
-        [c/suggest {:type :factory :value selected :on-item-select select-factory}]
+    (let [selected-factory @(subscribe [:open-factory])]
+      [c/alerting-button
+       {:text "Delete"
+        :class :bp3-minimal
+        :icon :delete
+        :intent :danger}
+       {:on-confirm (delete-cb-factory selected-factory)
+        :intent :danger
+        :confirm-button-text "Delete It!"}
+       [:p "This will permanently delete this factory! (Your items/machines/recipes will stick around.)"]])))
 
-        [c/alerting-button
-         {:text "Delete"
-          :class :bp3-minimal
-          :icon :delete
-          :intent :danger}
-         {:on-confirm (delete-cb-factory selected)
-          :intent :danger
-          :confirm-button-text "Delete It!"}
-         [:p "This will permanently delete this factory! (Your items/machines/recipes will stick around.)"]]
-        [c/button {:class :bp3-minimal :intent :success :on-click create-factory :icon :plus :text "New"}]]])))
+(defn select-open-factory-input
+  []
+  (with-let [select-factory #(dispatch [:open-factory %])]
+    [c/suggest {:type :factory
+                :value @(subscribe [:open-factory])
+                :on-item-select select-factory}]))
+
+(defn create-factory-button
+ []
+ (with-let [create-factory #(dispatch [:create-factory])]
+   [c/button {:class :bp3-minimal
+              :intent :success
+              :on-click create-factory
+              :icon :plus
+              :text "New"}]))
+
+(defn navbar []
+  [c/navbar
+   [c/navbar-group-left
+    [c/navbar-heading "Factories"]
+    [select-open-factory-input]
+    [delete-open-factory-button]
+    [create-factory-button]
+    [c/navbar-divider]
+    [c/undo-redo]
+    [c/navbar-divider]]])
 
 
 (defn get-item-name [id] (:name @(subscribe [:item id])))
