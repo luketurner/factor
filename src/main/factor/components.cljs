@@ -35,7 +35,6 @@
 ; and usually shouldn't be used directly
 (defwrapper numeric-input-raw (cl b/NumericInput))
 (defwrapper grid-raw          (cl AgGridReact))
-(defwrapper suggest-raw       (cl bs/Suggest))
 (defwrapper select-raw        (cl bs/Select))
 
 ;; SEMI-WRAPPERS
@@ -98,13 +97,13 @@
              no-results (reagent/as-element [menu-item {:disabled true :text "No matching results."}])]
     (let [type-name (name type)
           ids->names @(subscribe [(keyword (str type-name "-ids->names"))])]
-      [suggest-raw {:items (if (not-empty ids->names) (keys ids->names) [])
-                    :selected-item value
-                    :on-item-select on-item-select
-                    :no-results no-results
-                    :input-value-renderer (input-value-renderer ids->names)
-                    :item-renderer (item-renderer ids->names)
-                    :item-predicate (item-predicate ids->names)}])))
+      [(cl bs/Suggest) {:items (if (not-empty ids->names) (keys ids->names) [])
+                        :selected-item value
+                        :on-item-select on-item-select
+                        :no-results no-results
+                        :input-value-renderer (input-value-renderer ids->names)
+                        :item-renderer (item-renderer ids->names)
+                        :item-predicate (item-predicate ids->names)}])))
 
 (defcomponent numeric-input
   "A numeric input with relatively narrow width, intended to fit integers less than 1000 compactly.
