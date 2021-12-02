@@ -1,14 +1,16 @@
 (ns factor.interceptors
   (:require [re-frame.core :refer [->interceptor get-effect get-coeffect]]
             [factor.util :refer [add-fx]]
+            [com.rpl.specter :refer [select-any]]
+            [factor.navs :as nav]
             [day8.re-frame.undo :as undo]))
 
 (defn ->world-saver []
   (->interceptor
    :id :world-saver
    :after (fn [ctx]
-            (let [{old-world :world} (get-coeffect ctx :db)
-                  {new-world :world} (get-effect   ctx :db)]
+            (let [old-world (select-any nav/WORLD (get-coeffect ctx :db))
+                  new-world (select-any nav/WORLD (get-effect   ctx :db))]
               (if (and new-world (not= new-world old-world))
                 (add-fx ctx [:dispatch [:world-save new-world]])
                 ctx)))))
@@ -17,8 +19,8 @@
   (->interceptor
    :id :config-saver
    :after (fn [ctx]
-            (let [{old-config :config} (get-coeffect ctx :db)
-                  {new-config :config} (get-effect   ctx :db)]
+            (let [old-config (select-any nav/CONFIG (get-coeffect ctx :db))
+                  new-config (select-any nav/CONFIG (get-effect   ctx :db))]
               (if (and new-config (not= new-config old-config))
                 (add-fx ctx [:dispatch [:config-save new-config]])
                 ctx)))))

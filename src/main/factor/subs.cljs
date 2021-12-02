@@ -70,10 +70,10 @@
   (reg-sub :recipe-id-set  :<- [:recipe-ids]  (fn [xs] (into #{} xs)))
   (reg-sub :item-id-set    :<- [:item-ids]    (fn [xs] (into #{} xs)))
 
-  (reg-sub :item-ids->names    :<- [:items]     (fn [m] (transform [s/MAP-VALS] :name m)))
-  (reg-sub :recipe-ids->names  :<- [:recipes]   (fn [m] (transform [s/MAP-VALS] :name m)))
-  (reg-sub :machine-ids->names :<- [:machines]  (fn [m] (transform [s/MAP-VALS] :name m)))
-  (reg-sub :factory-ids->names :<- [:factories] (fn [m] (transform [s/MAP-VALS] :name m)))
+  (reg-sub :item-ids->names    :<- [:items]     (fn [m] (transform [s/MAP-VALS] #(select-any nav/NAME %) m)))
+  (reg-sub :recipe-ids->names  :<- [:recipes]   (fn [m] (transform [s/MAP-VALS] #(select-any nav/NAME %) m)))
+  (reg-sub :machine-ids->names :<- [:machines]  (fn [m] (transform [s/MAP-VALS] #(select-any nav/NAME %) m)))
+  (reg-sub :factory-ids->names :<- [:factories] (fn [m] (transform [s/MAP-VALS] #(select-any nav/NAME %) m)))
 
   (reg-sub :item-count    :<- [:item-seq]    (fn [m] (count m)))
   (reg-sub :recipe-count  :<- [:recipe-seq]  (fn [m] (count m)))
