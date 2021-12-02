@@ -72,9 +72,20 @@
 
   (reg-event-db :delete-factories [(undoable)]
                 (fn [w [_ xs]]
-                  (s/setval (s/multi-path
-                             [nav/VALID-UI nav/SELECTED-OBJECTS xs]
-                             [nav/WORLD (nav/factories xs)]) s/NONE w)))
+                  (let [xs (set xs)]
+                    (s/multi-transform
+                     (s/multi-path
+                      [nav/VALID-WORLD (nav/factories xs) (s/terminal-val s/NONE)]
+                      ; the below path benefit from some explaining. Basically, if
+                      ; the open factory was deleted, we want to open another,
+                      ; not-deleted factory if possible. The (collect-one) navigator
+                      ; collects the ID of another factory to open. The (s/terminal identity)
+                      ; line will then set the value of the navigated path to that collected value.
+                      ; Because multi-path transforms are run in order, the deleted
+                      ; factories have already been removed from FACTORIES-MAP when this runs.
+                      [(s/collect-one nav/WORLD nav/FACTORIES-MAP s/FIRST s/FIRST)
+                       nav/VALID-CONFIG nav/OPEN-FACTORY xs (s/terminal identity)])
+                     w))))
 
   (reg-event-db :delete-recipes [(undoable)]
                 (fn [w [_ xs]]

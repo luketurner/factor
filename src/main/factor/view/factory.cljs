@@ -6,18 +6,11 @@
             [factor.qmap :as qmap]
             [factor.util :refer [callback-factory-factory]]))
 
-(defn create-and-select-factory []
-  (dispatch [:create-factory]))
-
-(defn delete-and-unselect-factory [id]
-  (let [factory-ids     @(subscribe [:factory-ids])
-        other-factory-id (some #(when (not= % id) %) factory-ids)]
-    (dispatch [:delete-factories [id]])
-    (dispatch [:open-factory other-factory-id])))
-
 (defn navbar []
   (with-let [select-factory #(dispatch [:open-factory %])
-             delete-cb-factory (callback-factory-factory delete-and-unselect-factory)]
+             create-factory #(dispatch [:create-factory])
+             delete-factory #(dispatch [:delete-factories [%]])
+             delete-cb-factory (callback-factory-factory delete-factory)]
     (let [selected @(subscribe [:open-factory])]
       [c/navbar
        [c/navbar-group-left
@@ -35,7 +28,7 @@
           :intent :danger
           :confirm-button-text "Delete It!"}
          [:p "This will permanently delete this factory! (Your items/machines/recipes will stick around.)"]]
-        [c/button {:class :bp3-minimal :intent :success :on-click create-and-select-factory :icon :plus :text "New"}]]])))
+        [c/button {:class :bp3-minimal :intent :success :on-click create-factory :icon :plus :text "New"}]]])))
 
 
 (defn get-item-name [id] (:name @(subscribe [:item id])))
@@ -169,9 +162,10 @@
 
 (defn no-factories
   []
-  (with-let [action (as-element [c/button {:text "Create Factory"
+  (with-let [create-factory #(dispatch [:create-factory])
+             action (as-element [c/button {:text "Create Factory"
                                            :intent :success
-                                           :on-click create-and-select-factory}])]
+                                           :on-click create-factory}])]
     [c/non-ideal-state {:icon :office
                         :title "No factories!"
                         :description "Create a factory to get started."
