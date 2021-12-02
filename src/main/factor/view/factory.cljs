@@ -24,7 +24,7 @@
         [c/navbar-heading "Factories"]
         [c/undo-redo]
         [c/navbar-divider]
-        [c/suggest {:type :factory :value selected :on-change select-factory}]
+        [c/suggest {:type :factory :value selected :on-item-select select-factory}]
 
         [c/alerting-button
          {:text "Delete"
