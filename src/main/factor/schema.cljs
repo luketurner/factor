@@ -89,6 +89,7 @@
  [:map {:closed true}
   [:selected-page {:default :home}
    [:enum :home :factories :items :machines :recipes :settings]]
+  [:open-factory-pane {:default :pgraph} [:enum :pgraph :filters :debug]] 
   [:selected-objects [:vector Id]]])
 
 (def AppDb

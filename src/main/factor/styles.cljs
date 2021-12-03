@@ -21,4 +21,8 @@
    [:.w-18 {:width "18rem"}]
    [:.w-20 {:width "20rem"}]
    [:.m-1 {:margin "1rem"}]
-   [:.bp3-non-ideal-state {:height "max-content"}]])
+   [:.bp3-non-ideal-state {:height "max-content"}]
+   [:.pgraph-pane {:display "flex" :flex-flow "row nowrap" :height "100%"}]
+   [:.pgraph-pane-left {:padding "1rem" :width "18rem" :display "flex" :flex-flow "column nowrap" :align-items "stretch"}]
+   [(s/> :.pgraph-pane-left :.bp3-form-group) {:margin-bottom "2rem"}]
+[:.pgraph-pane-right {:padding "1rem" :flex-grow 2}]])

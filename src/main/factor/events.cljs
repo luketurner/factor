@@ -211,6 +211,9 @@
                 (fn [db [_ page]] (s/multi-transform [nav/VALID-UI (s/multi-path [nav/SELECTED-PAGE (s/terminal-val page)]
                                                                            [nav/SELECTED-OBJECT-LIST (s/terminal-val [])])] db)))
   
+  (reg-event-db :open-factory-pane
+                (fn [db [_ pane]] (s/setval [nav/VALID-UI nav/OPEN-FACTORY-PANE] pane db)))
+
   (reg-event-db :select-objects
                 (fn [db [_ xs]] (s/setval [nav/VALID-UI nav/SELECTED-OBJECT-LIST] xs db))))
 

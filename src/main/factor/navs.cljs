@@ -106,5 +106,6 @@
 ;; navigators on ui
 
 (def SELECTED-PAGE        (path :selected-page))
+(def OPEN-FACTORY-PANE    (path :open-factory-pane))
 (def SELECTED-OBJECT-LIST (path :selected-objects))
 (def SELECTED-OBJECTS     (path SELECTED-OBJECT-LIST s/ALL))

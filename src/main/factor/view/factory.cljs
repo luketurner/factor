@@ -10,12 +10,13 @@
   []
   (with-let [delete-factory #(dispatch [:delete-factories [%]])
              delete-cb-factory (callback-factory-factory delete-factory)]
-    (let [selected-factory @(subscribe [:open-factory])]
+    (let [selected-factory @(subscribe [:open-factory-id])]
       [c/alerting-button
        {:text "Delete"
         :class :bp3-minimal
         :icon :delete
-        :intent :danger}
+        :intent :danger
+        :disabled (nil? selected-factory)}
        {:on-confirm (delete-cb-factory selected-factory)
         :intent :danger
         :confirm-button-text "Delete It!"}
@@ -25,7 +26,7 @@
   []
   (with-let [select-factory #(dispatch [:open-factory %])]
     [c/suggest {:type :factory
-                :value @(subscribe [:open-factory])
+                :value @(subscribe [:open-factory-id])
                 :on-item-select select-factory}]))
 
 (defn create-factory-button
@@ -37,6 +38,18 @@
               :icon :plus
               :text "New"}]))
 
+(defn pane-link
+  "A minimally styled button that, when clicked, will change the currently selected pane."
+  [pane icon text]
+  (with-let [on-click #(dispatch [:open-factory-pane %])
+             on-click-factory (callback-factory-factory on-click)]
+    (let [open-pane @(subscribe [:open-factory-pane])]
+      [c/button {:class :bp3-minimal
+                 :on-click (on-click-factory pane)
+                 :icon icon
+                 :text text
+                 :disabled (= open-pane pane)}])))
+
 (defn navbar []
   [c/navbar
    [c/navbar-group-left
@@ -46,7 +59,10 @@
     [create-factory-button]
     [c/navbar-divider]
     [c/undo-redo]
-    [c/navbar-divider]]])
+    [c/navbar-divider]
+    [pane-link :pgraph :diagram-tree "Production Graph"]
+    [pane-link :filters :filter-list "Filters"]
+    [pane-link :debug :array "Debug"]]])
 
 
 (defn get-item-name [id] (:name @(subscribe [:item id])))
@@ -58,7 +74,7 @@
   (let [seen? (seen-nodes node-id)
         {:keys [recipe] :as node} (pgraph/get-node pg node-id)
         tree-node-id (str node-id "-" parent-id)
-        {:keys [expanded selected disabled]} (get node-states tree-node-id)
+        {:keys [expanded selected disabled] :or {expanded true}} (get node-states tree-node-id)
         seen-nodes (conj seen-nodes node-id)
         child-node-for-edge (fn [[l _ _]]
                               (pgraph-tree-node pg node-states seen-nodes node-id l))
@@ -102,7 +118,9 @@
 (defn pgraph-tree
   [id]
   (if (empty? @(subscribe [:factory-desired-output id]))
-    [:p "Add desired output(s) to view production graph."]
+    [c/non-ideal-state {:icon :arrow-left
+                        :title "Factory is empty"
+                        :description "Add your desired output item(s) in the sidebar to the left."}]
     [pgraph-tree-inner id]))
 
 (defn node-list-inner
@@ -116,33 +134,37 @@
 (defn node-list
   [id]
   (if (empty? @(subscribe [:factory-desired-output id]))
-    [:p "Add desired output(s) to view production stages."]
+    [:ul [:li "None"]]
     [node-list-inner id]))
 
 (defn catalyst-list
-  [id]
-  (if-let [catalysts (pgraph/all-catalysts @(subscribe [:factory-pgraph id]))]
-    (into [:ul] (for [[k v] catalysts] [:li (str v "x " (get-item-name k))]))))
+  []
+  (let [catalysts (pgraph/all-catalysts @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))]
+    (if (not-empty catalysts)
+      (into [:ul] (for [[k v] catalysts] [:li (str v "x " (get-item-name k))]))
+      [:ul [:li "None"]])))
 
 (defn factory-name-editor
-  [id]
+  []
   (with-let [dispatch-update (fn [id n] (dispatch-sync [:update-factory-name id n]))
              updater (callback-factory-factory dispatch-update)]
-    (let [name @(subscribe [:factory-name id])]
+    (let [id @(subscribe [:open-factory-id])
+          name @(subscribe [:factory-name id])]
       [c/input {:value name :on-change (updater id)}])))
 
 (defn factory-desired-output-editor
-  [id]
+  []
   (with-let [dispatch-update (fn [id n] (dispatch-sync [:update-factory-desired-output id n]))
              updater (callback-factory-factory dispatch-update)]
-    (let [value @(subscribe [:factory-desired-output id])]
+    (let [id @(subscribe [:open-factory-id])
+          value @(subscribe [:factory-desired-output id])]
       [c/quantity-set-input {:type :item
                              :value value
                              :on-change (updater id)}])))
 
 (defn factory-id-editor
-  [id]
-  [c/input {:value id :disabled true}])
+  []
+  [c/input {:value @(subscribe [:open-factory-id]) :disabled true}])
 
 (defn item-list-entry
   [id n]
@@ -150,33 +172,35 @@
 
 (defn item-list-for-qmap
   [m]
-  (into [:ul] (for [[x n] m] [item-list-entry x n])))
+  (if (not-empty m)
+    (into [:ul] (for [[x n] m] [item-list-entry x n]))
+    [:ul [:li "None"]]))
 
 (defn factory-raw-data
-  [id]
-  [c/textarea {:value (pr-str @(subscribe [:factory id]))
+  []
+  [c/textarea {:value (pr-str @(subscribe [:factory @(subscribe [:open-factory-id])]))
                :read-only true
                :style {:width "100%" :height "150px"}}])
 
 (defn pgraph-raw-data
-  [id]
-  [c/textarea {:value (pr-str @(subscribe [:factory-pgraph id]))
+  []
+  [c/textarea {:value (pr-str @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))
                :read-only true
                :style {:width "100%" :height "150px"}}])
 
 (defn pgraph-dot-data
-  [id]
-  [c/textarea {:value (pgraph/pg->dot @(subscribe [:factory-pgraph id]))
+  []
+  [c/textarea {:value (pgraph/pg->dot @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))
                :read-only true
                :style {:width "100%" :height "150px"}}])
 
 (defn factory-excess-outputs
-  [id]
-  [item-list-for-qmap (pgraph/excess-output @(subscribe [:factory-pgraph id]))])
+  []
+  [item-list-for-qmap (pgraph/excess-output @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))])
 
 (defn factory-missing-inputs
-  [id]
-  [item-list-for-qmap (pgraph/missing-input @(subscribe [:factory-pgraph id]))])
+  []
+  [item-list-for-qmap (pgraph/missing-input @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))])
 
 (defn no-factories
   []
@@ -189,21 +213,53 @@
                         :description "Create a factory to get started."
                         :action action}]))
 
+(defn pgraph-pane []
+  (let [item-rate-unit @(subscribe [:unit :item-rate])
+        id @(subscribe [:open-factory-id])]
+    [:div.card-stack
+     [c/card-lg
+      [c/form-group {:label "ID"} [factory-id-editor id]]
+      [c/form-group {:label "Name"} [factory-name-editor id]]]
+     [c/card-lg [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")")} [factory-desired-output-editor id]]]
+     [c/card-lg [c/form-group {:label (str "Excess Outputs (" item-rate-unit ")")} [factory-excess-outputs id]]]
+     [c/card-lg [c/form-group {:label (str "Needed Inputs (" item-rate-unit ")")} [factory-missing-inputs id]]]
+     [c/card-lg [c/form-group {:label (str "Catalysts (" item-rate-unit ")")} [catalyst-list id]]]
+     [c/card-lg [c/form-group {:label (str "Production Graph (" item-rate-unit ")")} [pgraph-tree id]]]
+     [c/card-lg [c/form-group {:label (str "Production Stages (" item-rate-unit ")")} [node-list id]]]
+     [c/card-lg
+      [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"} [pgraph-dot-data id]]
+      [c/form-group {:label "Raw Data - Production Graph"} [pgraph-raw-data id]]
+      [c/form-group {:label "Raw Data - Factory Object"} [factory-raw-data id]]]]
+    [:div.pgraph-pane
+     [:div.pgraph-pane-left
+      [c/form-group {:label "Name"} [factory-name-editor id]]
+      [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")")} [factory-desired-output-editor id]]
+      [c/form-group {:label (str "Excess Outputs (" item-rate-unit ")")} [factory-excess-outputs id]]
+      [c/form-group {:label (str "Required Inputs (" item-rate-unit ")")} [factory-missing-inputs id]]
+      [c/form-group {:label (str "Required Catalysts (" item-rate-unit ")")} [catalyst-list id]]
+      [c/form-group {:label (str "Crafting Stages")} [node-list id]]]
+     [c/divider]
+     [:div.pgraph-pane-right
+      [c/callout {:title "Production Graph" :style {:margin-bottom "1rem"}}
+       [c/icon {:icon :office :color "#5c7080"}] " Desired Output :: "
+       [c/icon {:icon :data-lineage :color "#5c7080"}] " Crafting Stage :: "
+       [c/icon {:icon :cube :color "#5c7080"}] " Required Input :: "
+       [c/icon {:icon :lab-test :color "#5c7080"}] " Required Catalyst"]
+      [pgraph-tree id]]]))
+
+(defn filter-pane [] [:h1 "wip"])
+
+(defn debug-pane []
+ [:div.card-stack
+  [c/card-lg
+   [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"} [pgraph-dot-data]]
+   [c/form-group {:label "Raw Data - Production Graph"} [pgraph-raw-data]]
+   [c/form-group {:label "Raw Data - Factory Object"} [factory-raw-data]]]])
+
 (defn page []
-  (if-let [id @(subscribe [:open-factory])]
-    (let [item-rate-unit @(subscribe [:unit :item-rate])]
-      [:div.card-stack
-       [c/card-lg
-        [c/form-group {:label "ID"} [factory-id-editor id]]
-        [c/form-group {:label "Name"} [factory-name-editor id]]]
-       [c/card-lg [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")")} [factory-desired-output-editor id]]]
-       [c/card-lg [c/form-group {:label (str "Excess Outputs (" item-rate-unit ")")} [factory-excess-outputs id]]]
-       [c/card-lg [c/form-group {:label (str "Needed Inputs (" item-rate-unit ")")} [factory-missing-inputs id]]]
-       [c/card-lg [c/form-group {:label (str "Catalysts (" item-rate-unit ")")} [catalyst-list id]]]
-       [c/card-lg [c/form-group {:label (str "Production Graph (" item-rate-unit ")")} [pgraph-tree id]]]
-       [c/card-lg [c/form-group {:label (str "Production Stages (" item-rate-unit ")")} [node-list id]]]
-       [c/card-lg
-        [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"} [pgraph-dot-data id]]
-        [c/form-group {:label "Raw Data - Production Graph"} [pgraph-raw-data id]]
-        [c/form-group {:label "Raw Data - Factory Object"} [factory-raw-data id]]]])
-    [no-factories]))
+ (if @(subscribe [:open-factory-id])
+   (case @(subscribe [:open-factory-pane])
+     :pgraph [pgraph-pane]
+     :filters [filter-pane]
+     :debug [debug-pane])
+   [no-factories]))

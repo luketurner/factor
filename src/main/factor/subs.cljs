@@ -20,12 +20,13 @@
 
   ;; Materialized views
 
-  (reg-sub :selected-objects :<- [:ui] (fn [ui] (select     [nav/SELECTED-OBJECTS] ui)))
-  (reg-sub :selected-page    :<- [:ui] (fn [ui] (select-any [nav/SELECTED-PAGE]    ui)))
+  (reg-sub :selected-objects  :<- [:ui] (fn [ui] (select     [nav/SELECTED-OBJECTS]  ui)))
+  (reg-sub :selected-page     :<- [:ui] (fn [ui] (select-any [nav/SELECTED-PAGE]     ui)))
+  (reg-sub :open-factory-pane :<- [:ui] (fn [ui] (select-any [nav/OPEN-FACTORY-PANE] ui)))
 
   (reg-sub :open-factory-raw :<- [:config] (fn [config] (select-any [nav/OPEN-FACTORY] config)))
 
-  (reg-sub :open-factory
+  (reg-sub :open-factory-id
            :<- [:open-factory-raw]
            :<- [:factory-id-set]
            (fn [[id ids]] (when (contains? ids id) id)))
