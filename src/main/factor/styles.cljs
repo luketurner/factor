@@ -25,4 +25,5 @@
    [:.pgraph-pane {:display "flex" :flex-flow "row nowrap" :height "100%"}]
    [:.pgraph-pane-left {:padding "1rem" :width "18rem" :display "flex" :flex-flow "column nowrap" :align-items "stretch"}]
    [(s/> :.pgraph-pane-left :.bp3-form-group) {:margin-bottom "2rem"}]
+   [:.pgraph-pane-left [:ul {:list-style :none}]]
 [:.pgraph-pane-right {:padding "1rem" :flex-grow 2}]])
