@@ -216,23 +216,9 @@
 (defn pgraph-pane []
   (let [item-rate-unit @(subscribe [:unit :item-rate])
         id @(subscribe [:open-factory-id])]
-    [:div.card-stack
-     [c/card-lg
-      [c/form-group {:label "ID"} [factory-id-editor id]]
-      [c/form-group {:label "Name"} [factory-name-editor id]]]
-     [c/card-lg [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")")} [factory-desired-output-editor id]]]
-     [c/card-lg [c/form-group {:label (str "Excess Outputs (" item-rate-unit ")")} [factory-excess-outputs id]]]
-     [c/card-lg [c/form-group {:label (str "Needed Inputs (" item-rate-unit ")")} [factory-missing-inputs id]]]
-     [c/card-lg [c/form-group {:label (str "Catalysts (" item-rate-unit ")")} [catalyst-list id]]]
-     [c/card-lg [c/form-group {:label (str "Production Graph (" item-rate-unit ")")} [pgraph-tree id]]]
-     [c/card-lg [c/form-group {:label (str "Production Stages (" item-rate-unit ")")} [node-list id]]]
-     [c/card-lg
-      [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"} [pgraph-dot-data id]]
-      [c/form-group {:label "Raw Data - Production Graph"} [pgraph-raw-data id]]
-      [c/form-group {:label "Raw Data - Factory Object"} [factory-raw-data id]]]]
     [:div.pgraph-pane
      [:div.pgraph-pane-left
-      [c/form-group {:label "Name"} [factory-name-editor id]]
+      [c/form-group {:label "Factory Name"} [factory-name-editor id]]
       [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")")} [factory-desired-output-editor id]]
       [c/form-group {:label (str "Excess Outputs (" item-rate-unit ")")} [factory-excess-outputs id]]
       [c/form-group {:label (str "Required Inputs (" item-rate-unit ")")} [factory-missing-inputs id]]
@@ -252,6 +238,7 @@
 (defn debug-pane []
  [:div.card-stack
   [c/card-lg
+   [c/form-group {:label "ID"} [factory-id-editor]]
    [c/form-group {:label "Dot-Formatted Production Graph (WARNING: Data is not sanitized. Don't use with untrusted worlds!)"} [pgraph-dot-data]]
    [c/form-group {:label "Raw Data - Production Graph"} [pgraph-raw-data]]
    [c/form-group {:label "Raw Data - Factory Object"} [factory-raw-data]]]])
