@@ -49,6 +49,9 @@
 
   (reg-sub :factory-name           (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/NAME x)))
   (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/DESIRED-OUTPUT-QM x)))
+  (reg-sub :factory-filters        (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/FILTER x)))
+
+  (reg-sub :factory-filter         (fn [[_ id _]] (subscribe [:factory-filters id])) (fn [x [_ _ k]] (select-any k x)))
 
   (reg-sub :recipe-input     (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/INPUT-QM            x)))
   (reg-sub :recipe-output    (fn [[_ id]] (subscribe [:recipe id])) (fn [x] (select-any nav/OUTPUT-QM           x)))

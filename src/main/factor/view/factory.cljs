@@ -1,6 +1,7 @@
 (ns factor.view.factory
   (:require [factor.components :as c]
             [factor.pgraph :as pgraph]
+            [factor.navs :as nav]
             [re-frame.core :refer [dispatch subscribe dispatch-sync]]
             [reagent.core :refer [as-element with-let]]
             [factor.qmap :as qmap]
@@ -233,7 +234,41 @@
        [c/icon {:icon :lab-test :color "#5c7080"}] " Required Catalyst"]
       [pgraph-tree id]]]))
 
-(defn filter-pane [] [:h1 "wip"])
+(defn filter-editor [type filter-key]
+  (with-let [update-fn (fn [id k v] (dispatch [:update-factory-filter id k v]))
+             update-factory (callback-factory-factory update-fn)]
+    (let [id @(subscribe [:open-factory-id])
+          filter-set @(subscribe [:factory-filter id filter-key])]
+      [c/set-input {:type type
+                    :value filter-set
+                    :on-change (update-factory id filter-key)}])))
+
+(defn filter-pane []
+  [:div.filter-pane
+   [c/callout {:title "Item/Machine/Recipe Filters" :style {:margin "1rem 1rem 0 1rem" :max-width "1024px"}}
+    [:p
+     "Use the following lists to exclude items/machines/recipes from being used when generating Production Graphs for this factory. "
+     "Deny-lists exclude the items/machines/recipes on the list, and allow-lists (if set) exclude the items/machines/recipes NOT on the list. "
+     "The " [:em "soft"] " versions can be used to express a preference to use items/machines/recipes over others, if possible."]
+    [:p "For example, if you don't have some recipes researched yet, add them to Denied Recipes to avoid using them."]
+    [:p "Or, if you would prefer to use Machine A over Machines B and C whenever possible, "
+     "add Machine A to Allowed Machines (Soft)."]
+    [:p "These settings are specific to this factory."]]
+   [:div.filter-row
+    [c/form-group {:label "Allowed Items" :class "filter-editor"} [filter-editor :item nav/HARD-ALLOWED-ITEMS]]
+    [c/form-group {:label "Allowed Items (Soft)" :class "filter-editor"} [filter-editor :item nav/SOFT-ALLOWED-ITEMS]]
+    [c/form-group {:label "Denied Items" :class "filter-editor"} [filter-editor :item nav/HARD-DENIED-ITEMS]]
+    [c/form-group {:label "Denied Items (Soft)" :class "filter-editor"} [filter-editor :item nav/SOFT-DENIED-ITEMS]]]
+   [:div.filter-row
+    [c/form-group {:label "Allowed Machines" :class "filter-editor"} [filter-editor :machine nav/HARD-ALLOWED-MACHINES]]
+    [c/form-group {:label "Allowed Machines (Soft)" :class "filter-editor"} [filter-editor :machine nav/SOFT-ALLOWED-MACHINES]]
+    [c/form-group {:label "Denied Machines" :class "filter-editor"} [filter-editor :machine nav/HARD-DENIED-MACHINES]]
+    [c/form-group {:label "Denied Machines (Soft)" :class "filter-editor"} [filter-editor :machine nav/SOFT-DENIED-MACHINES]]]
+   [:div.filter-row
+    [c/form-group {:label "Allowed Recipes" :class "filter-editor"} [filter-editor :recipe nav/HARD-ALLOWED-RECIPES]]
+    [c/form-group {:label "Allowed Recipes (Soft)" :class "filter-editor"} [filter-editor :recipe nav/SOFT-ALLOWED-RECIPES]]
+    [c/form-group {:label "Denied Recipes" :class "filter-editor"} [filter-editor :recipe nav/HARD-DENIED-RECIPES]]
+    [c/form-group {:label "Denied Recipes (Soft)" :class "filter-editor"} [filter-editor :recipe nav/SOFT-DENIED-RECIPES]]]])
 
 (defn debug-pane []
  [:div.card-stack

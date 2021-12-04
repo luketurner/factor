@@ -150,6 +150,10 @@
   (reg-event-db :update-factory-desired-output [(undoable)]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-factory id) nav/DESIRED-OUTPUT-QM] v db)))
+  
+  (reg-event-db :update-factory-filter [(undoable)]
+                (fn [db [_ id k v]]
+                  (s/setval [nav/WORLD (nav/valid-factory id) nav/FILTER k] v db)))
 
   (reg-event-db :update-recipe-input [(undoable)]
                 (fn [db [_ id v]]

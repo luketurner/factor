@@ -228,6 +228,40 @@
                    [list-input-line {:type type :xs value :on-change on-change :x x :ix ix}]))
      [list-input-add-line {:type type :on-add (add-cb-factory value on-change)}])))
 
+(defcomponent set-input-add-line
+  [{:keys [type on-add]} _]
+  (with-let [new-val (reagent/atom nil)
+             update-new-val #(reset! new-val %)
+             add-cb (fn [cb v]
+                      (cb v)
+                      (update-new-val nil))
+             add-cb-factory (callback-factory-factory add-cb)]
+    [control-group
+     [suggest {:type type :value @new-val :on-item-select update-new-val}]
+     [button {:icon :plus :on-click (add-cb-factory on-add @new-val)}]]))
+
+(defcomponent set-input-line
+  [{:keys [type xs on-change x]} _]
+  (with-let [update-cb (fn [xs cb ox x] (cb (conj (disj xs ox) x)))
+             update-cb-factory (callback-factory-factory update-cb)
+             delete-cb (fn [xs cb x] (cb (disj xs x)))
+             delete-cb-factory (callback-factory-factory delete-cb)]
+    [control-group
+     [suggest {:type type :value x :on-item-select (update-cb-factory xs on-change x)}]
+     [button {:icon :delete :on-click (delete-cb-factory xs on-change x)}]]))
+
+(defcomponent set-input
+  "A complex control for editing a set of objects (items, machines, etc.) Each entry in the set is rendered as a line that's editable
+   and deletable. There's also a line for adding new entries to the set. Duplicates are not allowed.
+   The `on-change` function is called with the full updated list whenever any updates are performed."
+  [{:keys [type value on-change]} _]
+  (with-let [add-cb (fn [value cb x] (when-not (contains? value x) (cb (conj value x))))
+             add-cb-factory (callback-factory-factory add-cb)]
+    (conj
+     (into [:<>] (for [[x ix] (ipairs value)]
+                   [set-input-line {:type type :xs value :on-change on-change :x x :ix ix}]))
+     [set-input-add-line {:type type :on-add (add-cb-factory value on-change)}])))
+
 (defcomponent input
   "A wrapper for Blueprint's InputGroup component. All props are passed through to the underlying InputGroup.
    The only exception is the on-change prop, which is wrapped such that the value is already extracted from
