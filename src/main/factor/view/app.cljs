@@ -56,8 +56,9 @@
 (defn app []
   [:<>
    [:style (apply css styles/css-rules)]
-   [:div.app-container
-    [primary-navbar]
-    [secondary-navbar]
-    [main-content]
-    [footer]]])
+   [c/hotkeys-provider
+    [:div.app-container
+     [primary-navbar]
+     [secondary-navbar]
+     [main-content]
+     [footer]]]])
