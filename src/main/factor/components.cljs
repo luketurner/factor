@@ -42,6 +42,7 @@
 ; and usually shouldn't be used directly
 (defwrapper numeric-input-raw (cl b/NumericInput))
 (defwrapper grid-raw          (cl AgGridReact))
+(defwrapper popover-raw       (cl b/Popover))
 (defwrapper select-raw        (cl bs/Select))
 (defwrapper omnibar-raw       (cl bs/Omnibar))
 
@@ -96,6 +97,57 @@
                      :item-predicate item-predicate
                      :item-renderer item-renderer
                      :input-props input-props}]])))
+
+
+(defcomponent hotkey-label
+  "This component accepts a char prop (which should be a single character) and a string.
+   It returns a Hiccup form representing the same string, but with the first instance of the char
+   underlined (technically, it has the .hotkey class applied to it). 
+   Used for indicating hotkeys in label text."
+  [{:keys [char]} [string-content]]
+  (if-not key string-content
+          (let [[_ head v tail] (re-find (re-pattern (str "(?i)^(.*?)(" char ")(.*?)$")) string-content)]
+            [:<> head [:span.hotkey v] tail])))
+
+(defcomponent popover
+  "Wraps the Blueprint popover with considerable degree of conventions. Fully controls popover state internally.
+   Caller expected to pass exactly one child Hiccup form, which represents the content of the popover.
+   
+   A minimal button is rendered, which the user can click to open/close the popover. Appearance/behavior of the
+   button is controlled with the `label` and `icon` props.
+   
+   If the `hotkey` prop is specified, the value of the prop is used as a global hotkey to open/close the popover.
+   You should also specify a `desc` to describe the action, so it can appear in the hotkey help menu properly.
+   If the `label` prop contains the final character of the hotkey, that character will be underlined automatically
+   as a mneumonic signal to the user."
+  [{:keys [label icon desc hotkey]} [content]]
+  (with-let [open?        (reagent/atom false)
+             set-open!    #(reset! open? %)
+             toggle-open! #(swap! open? not)
+             open-menu!   #(reset! open? true)]
+    [popover-raw {:is-open @open?
+                  :on-interaction set-open!
+                  :position "bottom-left"
+                  :minimal true
+                  :interaction-kind "click"}
+     [hotkeys-target {:hotkeys (if-not hotkey []
+                                 [{:combo hotkey
+                                   :label desc
+                                   :onKeyDown open-menu!
+                                   :onKeyUp #(println "foo")
+                                   :preventDefault true
+                                   :stopPropagation true
+                                   :global true}])}
+      [button {:on-click toggle-open!
+               :icon icon
+               :minimal true} 
+      [hotkey-label {:char (last hotkey)} label]]]
+     content]))
+
+(defcomponent popup-menu
+  [p c]
+  [popover p
+   (into [menu] c)])
 
 (defcomponent select-enum
   "A wrapper around Blueprint's Select component, designed for selecting one of an enumerated set of possible values."

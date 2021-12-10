@@ -29,4 +29,5 @@
    [:.filter-editor {:margin "2rem"}]
    [:.filter-pane {:display "flex" :flex-flow "column nowrap"}]
    [:.filter-row {:display "flex" :flex-flow "row wrap"}]
+   [:.hotkey {:text-decoration :underline}]
    [:.pgraph-pane-right {:padding "1rem" :flex-grow 2}]])
