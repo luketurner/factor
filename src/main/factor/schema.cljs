@@ -90,7 +90,10 @@
   [:selected-page {:default :home}
    [:enum :home :factories :items :machines :recipes :settings]]
   [:open-factory-pane {:default :pgraph} [:enum :pgraph :filters :debug]] 
-  [:selected-objects [:vector Id]]])
+  [:selected-objects [:vector Id]]
+  [:omnibar-state [:map {:closed true}
+                   [:mode {:default :closed} [:enum :closed :command-palette]]
+                   [:query :string]]]])
 
 (def AppDb
   [:map {:closed true}

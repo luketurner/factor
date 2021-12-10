@@ -144,13 +144,13 @@
                                     #(s/setval [nav/VALID-WORLD] % db))))
 
   (reg-event-db :update-factory-name [(undoable)]
-              (fn [db [_ id v]]
-                (s/setval [nav/WORLD (nav/valid-factory id) nav/NAME] v db)))
-  
+                (fn [db [_ id v]]
+                  (s/setval [nav/WORLD (nav/valid-factory id) nav/NAME] v db)))
+
   (reg-event-db :update-factory-desired-output [(undoable)]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-factory id) nav/DESIRED-OUTPUT-QM] v db)))
-  
+
   (reg-event-db :update-factory-filter [(undoable)]
                 (fn [db [_ id k v]]
                   (s/setval [nav/WORLD (nav/valid-factory id) nav/FILTER k] v db)))
@@ -158,19 +158,19 @@
   (reg-event-db :update-recipe-input [(undoable)]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/INPUT-QM] v db)))
-  
+
   (reg-event-db :update-recipe-output [(undoable)]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/OUTPUT-QM] v db)))
-  
+
   (reg-event-db :update-recipe-catalysts [(undoable)]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/CATALYSTS-QM] v db)))
-  
+
   (reg-event-db :update-recipe-machines [(undoable)]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/RECIPE-MACHINE-LIST] v db)))
-  
+
   (reg-event-db :update-recipe-duration [(undoable)]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/DURATION] v db)))
@@ -213,8 +213,15 @@
   ; Note: This event purges the undo/redo history when it runs so the user can't undo/redo things from the old page
   (reg-event-db :select-page [(->purge-undos) (->purge-redos)]
                 (fn [db [_ page]] (s/multi-transform [nav/VALID-UI (s/multi-path [nav/SELECTED-PAGE (s/terminal-val page)]
-                                                                           [nav/SELECTED-OBJECT-LIST (s/terminal-val [])])] db)))
-  
+                                                                                 [nav/SELECTED-OBJECT-LIST (s/terminal-val [])])] db)))
+
+  (reg-event-db :update-omnibar-query (fn [db [_ v]] (s/setval [nav/VALID-UI nav/OMNIBAR-QUERY] v db)))
+  (reg-event-db :open-command-palette (fn [db] (s/multi-transform [nav/VALID-UI nav/OMNIBAR-STATE
+                                                                   (s/multi-path [nav/MODE (s/terminal-val :command-palette)]
+                                                                                 [nav/QUERY (s/terminal-val "")])]
+                                                                  db)))
+  (reg-event-db :close-omnibar (fn [db] (s/setval [nav/VALID-UI nav/OMNIBAR-MODE] :closed db)))
+
   (reg-event-db :open-factory-pane
                 (fn [db [_ pane]] (s/setval [nav/VALID-UI nav/OPEN-FACTORY-PANE] pane db)))
 

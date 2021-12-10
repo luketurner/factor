@@ -24,6 +24,8 @@
   (reg-sub :selected-page     :<- [:ui] (fn [ui] (select-any [nav/SELECTED-PAGE]     ui)))
   (reg-sub :open-factory-pane :<- [:ui] (fn [ui] (select-any [nav/OPEN-FACTORY-PANE] ui)))
 
+  (reg-sub :omnibar-state :<- [:ui] (fn [ui] (select-any [nav/OMNIBAR-STATE] ui)))
+
   (reg-sub :open-factory-raw :<- [:config] (fn [config] (select-any [nav/OPEN-FACTORY] config)))
 
   (reg-sub :open-factory-id

@@ -122,3 +122,11 @@
 (def OPEN-FACTORY-PANE    (path :open-factory-pane))
 (def SELECTED-OBJECT-LIST (path :selected-objects))
 (def SELECTED-OBJECTS     (path SELECTED-OBJECT-LIST s/ALL))
+
+(def OMNIBAR-STATE (path :omnibar-state))
+
+(def MODE (path :mode))
+(def QUERY (path :query))
+
+(def OMNIBAR-MODE  (path OMNIBAR-STATE MODE))
+(def OMNIBAR-QUERY (path OMNIBAR-STATE QUERY))

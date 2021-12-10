@@ -57,6 +57,7 @@
   [:<>
    [:style (apply css styles/css-rules)]
    [c/hotkeys-provider
+    [c/omnibar]
     [:div.app-container
      [primary-navbar]
      [secondary-navbar]
