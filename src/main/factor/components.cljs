@@ -58,7 +58,12 @@
 ;; OTHER COMPONENTS
 ;; Non-wrapper components follow. Each should have a docstring explaining its purpose.
 
-(defcomponent omnibar [p c]
+(defcomponent omnibar
+  "A fully managed omnibar component. This component doesn't have any hidden state:
+   All omnibar state (query, open state, etc.) is stored in the app-db. This is a 
+   singleton component in the sense that you only need one [omnibar] somewhere in your
+   app to enable omnibar functionality."
+  [p c]
   (with-let [open-command-palette #(dispatch [:open-command-palette])
              close-omnibar #(dispatch [:close-omnibar])
              update-query #(dispatch-sync [:update-omnibar-query %])
