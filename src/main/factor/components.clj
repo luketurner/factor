@@ -23,13 +23,13 @@
    `(defn ~name
       [& props-or-children#]
       (let [{props-maps# true ~children false} (group-by map? props-or-children#)
-            ~props (apply merge props-maps#)]
+            ~props (apply merge {} props-maps#)]
         ~body)))
   ([name doc [props children] body]
    `(defn ~name ~doc
       [& props-or-children#]
-      (let [{ props-maps# true ~children false } (group-by map? props-or-children#)
-            ~props (apply merge props-maps#)]
+      (let [{props-maps# true ~children false} (group-by map? props-or-children#)
+            ~props (apply merge {} props-maps#)]
         ~body))))
 
 (defmacro defwrapper
