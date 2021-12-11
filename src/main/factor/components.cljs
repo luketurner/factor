@@ -7,6 +7,7 @@
             ["@blueprintjs/select" :as bs]
             ["ag-grid-react" :refer [AgGridReact]]
             [clojure.string :as string]
+            [com.rpl.specter :as s]
             [factor.cmds :as cmds]
             [factor.util :refer [cl ipairs try-fn delete-index move-index-ahead move-index-behind callback-factory-factory]]
             [medley.core :refer [map-keys]]))
@@ -64,45 +65,55 @@
    singleton component in the sense that you only need one [omnibar] somewhere in your
    app to enable omnibar functionality."
   [p c]
-  (with-let [open-command-palette #(dispatch [:open-command-palette])
+  (with-let [all-cmds cmds/all-cmds
+             get-cmd #(get all-cmds (keyword %))
+             open-command-palette #(dispatch [:open-command-palette])
              close-omnibar #(dispatch [:close-omnibar])
              update-query #(dispatch-sync [:update-omnibar-query %])
-             on-item-select (fn [itm] (let [[_ {ev "ev"}] (js->clj itm)]
-                                        (dispatch ev)))
-             item-predicate (fn [q itm _ exact-match?]
-                              (let [[_ {name "name"}] (js->clj itm)]
+             on-item-select (fn [id] (let [{:keys [ev]} (get-cmd id)]
+                                       (close-omnibar)
+                                       (when ev (dispatch ev))))
+             item-predicate (fn [q id _ exact-match?]
+                              (let [{:keys [name] :or {name ""}} (get-cmd id)]
                                 (if exact-match? (= q name)
                                     (string/includes? (string/lower-case name) (string/lower-case q)))))
-             item-renderer (fn [itm opts]
+             item-renderer (fn [id opts]
                              (let [on-click (.-handleClick opts)
                                    active? (.-active (.-modifiers opts))
                                    disabled? (.-disabled (.-modifiers opts))
                                    matches? (.-matchesPredicate (.-modifiers opts))
-                                   [id cmd] (js->clj itm)]
+                                   {:keys [name global-hotkey]} (get-cmd id)]
                                (as-element [menu-item {:key id
-                                                       :text (get cmd "name")
+                                                       :text name
+                                                       :label global-hotkey
                                                        :on-click on-click
                                                        :disabled disabled?
                                                        :intent (when active? "primary")}])))
              input-props {:placeholder "Command Palette"
-                          :left-element (as-element [icon {:icon :chevron-right}])}]
+                          :left-icon :chevron-right}]
     (let [{:keys [mode query]} @(subscribe [:omnibar-state])]
-      [hotkeys-target {:hotkeys [{:combo "/"
-                                  :label "Open command palette"
-                                  :global true
-                                  :onKeyDown open-command-palette
-                                  :stopPropagation true
-                                  :preventDefault true}]}
-       [omnibar-raw {:is-open (not= mode :closed)
-                     :on-close close-omnibar
-                     :items (into [] cmds/all-cmds)
-                     :query query
-                     :on-query-change update-query
-                     :on-item-select on-item-select
-                     :item-predicate item-predicate
-                     :item-renderer item-renderer
-                     :input-props input-props}]])))
+      [omnibar-raw {:is-open (not= mode :closed)
+                    :on-close close-omnibar
+                    :items (into [] (keys all-cmds))
+                    :query query
+                    :on-query-change update-query
+                    :on-item-select on-item-select
+                    :item-predicate item-predicate
+                    :item-renderer item-renderer
+                    :input-props input-props}])))
 
+(defcomponent global-hotkeys
+  "Include once, somewhere in the React tree, to capture application-wide global hotkeys."
+  [p c]
+  (with-let [cmd->hk (fn [cmd] {:combo (:global-hotkey cmd)
+                                :label (:name cmd)
+                                :global true
+                                :onKeyDown #(dispatch (:ev cmd))
+                                :stopPropagation true
+                                :preventDefault true})
+             hks (s/select [s/MAP-VALS (s/pred :global-hotkey) (s/view cmd->hk)] cmds/all-cmds)]
+    ; note -- HotkeysTarget2 API requires children to be specified even if all hks are global. Hence the dummy child [:<>].
+    [hotkeys-target {:hotkeys hks} [:<>]]))
 
 (defcomponent hotkey-label
   "This component accepts a char prop (which should be a single character) and a string.

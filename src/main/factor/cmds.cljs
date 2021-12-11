@@ -7,12 +7,15 @@
    When a command is invoked, a corresponding event is dispatched.")
 
 (def all-cmds
-  {:new-factory {:name "New factory"
+  {:open-command-palette {:name "Open command palette"
+                          :global-hotkey "/"
+                          :ev [:open-command-palette]}
+   :new-factory {:name "New factory"
                  :hotkey "f"
-                 :ev [:create-factory]}
+                 :ev [:create-factory-command]}
    :open-factory {:name "Open factory"
                   :hotkey "o"
-                  :ev [:open-factory]}
+                  :ev [:select-and-open-factory]}
    :delete-factory {:name "Delete factory"
                     :hotkey "d"
                     :ev [:delete-factory]}
