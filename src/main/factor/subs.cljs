@@ -25,6 +25,7 @@
   (reg-sub :open-factory-pane :<- [:ui] (fn [ui] (select-any [nav/OPEN-FACTORY-PANE] ui)))
 
   (reg-sub :omnibar-state :<- [:ui] (fn [ui] (select-any [nav/OMNIBAR-STATE] ui)))
+  (reg-sub :omnibar-mode  :<- [:omnibar-state] (fn [ui] (select-any [nav/MODE] ui)))
 
   (reg-sub :open-factory-raw :<- [:config] (fn [config] (select-any [nav/OPEN-FACTORY] config)))
 

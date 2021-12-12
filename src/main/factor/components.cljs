@@ -59,48 +59,143 @@
 ;; OTHER COMPONENTS
 ;; Non-wrapper components follow. Each should have a docstring explaining its purpose.
 
+;; (defcomponent command-palette-omnibar
+;;   "A fully managed omnibar component. This component doesn't have any hidden state:
+;;    All omnibar state (query, open state, etc.) is stored in the app-db. This is a 
+;;    singleton component in the sense that you only need one [omnibar] somewhere in your
+;;    app to enable omnibar functionality."
+;;   [p c]
+;;   (with-let [all-cmds cmds/all-cmds
+;;              get-cmd #(get all-cmds (keyword %))
+;;              close-omnibar #(dispatch [:close-omnibar])
+;;              update-query #(dispatch-sync [:update-omnibar-query %])
+;;              on-item-select (fn [id] (let [{:keys [ev]} (get-cmd id)]
+;;                                        (close-omnibar)
+;;                                        (when ev (dispatch ev))))
+;;              item-predicate (fn [q id _ exact-match?]
+;;                               (let [{:keys [name] :or {name ""}} (get-cmd id)]
+;;                                 (if exact-match? (= q name)
+;;                                     (string/includes? (string/lower-case name) (string/lower-case q)))))
+;;              item-renderer (fn [id opts]
+;;                              (let [on-click (.-handleClick opts)
+;;                                    active? (.-active (.-modifiers opts))
+;;                                    disabled? (.-disabled (.-modifiers opts))
+;;                                    matches? (.-matchesPredicate (.-modifiers opts))
+;;                                    {:keys [name global-hotkey]} (get-cmd id)]
+;;                                (as-element [menu-item {:key id
+;;                                                        :text name
+;;                                                        :label global-hotkey
+;;                                                        :on-click on-click
+;;                                                        :disabled disabled?
+;;                                                        :intent (when active? "primary")}])))
+;;              input-props {:placeholder "Command Palette"
+;;                           :left-icon :chevron-right}]
+;;     (let [{:keys [query]} @(subscribe [:omnibar-state])]
+;;       [omnibar-raw {:is-open true
+;;                     :on-close close-omnibar
+;;                     :items (into [] (keys all-cmds))
+;;                     :query query
+;;                     :on-query-change update-query
+;;                     :on-item-select on-item-select
+;;                     :item-predicate item-predicate
+;;                     :item-renderer item-renderer
+;;                     :input-props input-props}])))
+
 (defcomponent omnibar
-  "A fully managed omnibar component. This component doesn't have any hidden state:
-   All omnibar state (query, open state, etc.) is stored in the app-db. This is a 
-   singleton component in the sense that you only need one [omnibar] somewhere in your
-   app to enable omnibar functionality."
-  [p c]
-  (with-let [all-cmds cmds/all-cmds
-             get-cmd #(get all-cmds (keyword %))
-             open-command-palette #(dispatch [:open-command-palette])
-             close-omnibar #(dispatch [:close-omnibar])
+  "General omnibar component. Manages open/closed and query state using the app-db.
+   
+   Note: This component is used for implementing new omnibar modes. To actually render an omnibar in the app,
+   use the global-omnibar component somewhere in the React tree."
+  [{:keys [mode items on-item-select item-predicate item-renderer item-getter placeholder left-icon]
+    :or {item-getter identity}} _]
+  (with-let [close-omnibar #(dispatch [:close-omnibar])
              update-query #(dispatch-sync [:update-omnibar-query %])
-             on-item-select (fn [id] (let [{:keys [ev]} (get-cmd id)]
-                                       (close-omnibar)
-                                       (when ev (dispatch ev))))
-             item-predicate (fn [q id _ exact-match?]
-                              (let [{:keys [name] :or {name ""}} (get-cmd id)]
-                                (if exact-match? (= q name)
-                                    (string/includes? (string/lower-case name) (string/lower-case q)))))
-             item-renderer (fn [id opts]
-                             (let [on-click (.-handleClick opts)
-                                   active? (.-active (.-modifiers opts))
-                                   disabled? (.-disabled (.-modifiers opts))
-                                   matches? (.-matchesPredicate (.-modifiers opts))
-                                   {:keys [name global-hotkey]} (get-cmd id)]
-                               (as-element [menu-item {:key id
-                                                       :text name
-                                                       :label global-hotkey
-                                                       :on-click on-click
-                                                       :disabled disabled?
-                                                       :intent (when active? "primary")}])))
-             input-props {:placeholder "Command Palette"
-                          :left-icon :chevron-right}]
-    (let [{:keys [mode query]} @(subscribe [:omnibar-state])]
-      [omnibar-raw {:is-open (not= mode :closed)
+             on-item-select-impl (fn [on-item-select item-getter item]
+                                   (close-omnibar)
+                                   (on-item-select (item-getter item)))
+             item-renderer-impl (fn [item-renderer item-getter item opts]
+                                  (-> item
+                                      (item-getter)
+                                      (item-renderer {:on-click (.-handleClick opts)
+                                                      :is-active (.-active (.-modifiers opts))
+                                                      :is-disabled (.-disabled (.-modifiers opts))
+                                                      :is-match (.-matchesPredicate (.-modifiers opts))})
+                                      (as-element)))
+             item-predicate-impl (fn [item-predicate item-getter q item ix exact?]
+                                   (item-predicate q (item-getter item) ix exact?))
+             input-props {:placeholder placeholder
+                          :left-icon left-icon}]
+    (let [{:keys [query] current-mode :mode} @(subscribe [:omnibar-state])]
+      [omnibar-raw {:is-open (= current-mode mode)
                     :on-close close-omnibar
-                    :items (into [] (keys all-cmds))
+                    :items items
                     :query query
                     :on-query-change update-query
-                    :on-item-select on-item-select
-                    :item-predicate item-predicate
-                    :item-renderer item-renderer
+                    :on-item-select (reagent/partial on-item-select-impl on-item-select item-getter)
+                    :item-predicate (reagent/partial item-predicate-impl item-predicate item-getter)
+                    :item-renderer (reagent/partial item-renderer-impl item-renderer item-getter)
                     :input-props input-props}])))
+
+(defcomponent command-palette-omnibar
+  "Omnibar mode for executing commands, like the command palette in VS Code, Sublime Text, etc."
+  [p c]
+  (with-let [get-cmd #(assoc (get cmds/all-cmds (keyword %)) :id %)
+             on-item-select (fn [{:keys [ev]}] (when ev (dispatch ev)))
+             item-predicate (fn [q {:keys [name] :or {name ""}} _ exact-match?]
+                                (if exact-match? (= q name)
+                                    (string/includes? (string/lower-case name) (string/lower-case q))))
+             item-renderer (fn [{:keys [id global-hotkey name]} {:keys [on-click is-disabled is-active]}]
+                             [menu-item {:key id
+                                         :text name
+                                         :label global-hotkey
+                                         :on-click on-click
+                                         :disabled is-disabled
+                                         :intent (when is-active "primary")}])]
+    [omnibar {:items (into [] (keys cmds/all-cmds))
+              :item-getter get-cmd
+              :mode :command-palette
+              :on-item-select on-item-select
+              :item-predicate item-predicate
+              :item-renderer item-renderer
+              :placeholder "Command Palette"
+              :left-icon :chevron-right}]))
+
+(defcomponent factory-select-omnibar
+  "General omnibar for selecting a factory."
+  [{:keys [on-item-select mode]} _]
+  (with-let [get-factory (fn [id] @(subscribe [:factory id]))
+             item-predicate (fn [q {:keys [name] :or {name ""}} _ exact-match?]
+                                (if exact-match? (= q name)
+                                    (string/includes? (string/lower-case name) (string/lower-case q))))
+             item-renderer (fn [{:keys [id name]} {:keys [on-click is-disabled is-active]}]
+                             [menu-item {:key id
+                                         :text name
+                                         :label (subs id 0 3)
+                                         :on-click on-click
+                                         :disabled is-disabled
+                                         :intent (when is-active "primary")}])]
+    [omnibar {:items @(subscribe [:factory-ids])
+              :item-getter get-factory
+              :mode mode
+              :on-item-select on-item-select
+              :item-predicate item-predicate
+              :item-renderer item-renderer
+              :placeholder "Select factory..."
+              :left-icon :office}]))
+
+(defcomponent open-factory-omnibar
+  [_ _]
+  (with-let [open-factory #(dispatch [:open-factory (:id %)])]
+    [factory-select-omnibar {:mode :open-factory
+                             :on-item-select open-factory}]))
+
+(defcomponent global-omnibar
+  [p c]
+  (let [mode @(subscribe [:omnibar-mode])]
+    (case mode
+      :command-palette [command-palette-omnibar]
+      :open-factory [open-factory-omnibar]
+      :closed nil)))
 
 (defcomponent global-hotkeys
   "Include once, somewhere in the React tree, to capture application-wide global hotkeys."

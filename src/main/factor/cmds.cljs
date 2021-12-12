@@ -15,7 +15,7 @@
                  :ev [:create-factory-command]}
    :open-factory {:name "Open factory"
                   :hotkey "o"
-                  :ev [:select-and-open-factory]}
+                  :ev [:omnibar-open-factory]}
    :delete-factory {:name "Delete factory"
                     :hotkey "d"
                     :ev [:delete-factory]}

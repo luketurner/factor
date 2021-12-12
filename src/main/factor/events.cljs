@@ -226,5 +226,18 @@
                 (fn [db [_ pane]] (s/setval [nav/VALID-UI nav/OPEN-FACTORY-PANE] pane db)))
 
   (reg-event-db :select-objects
-                (fn [db [_ xs]] (s/setval [nav/VALID-UI nav/SELECTED-OBJECT-LIST] xs db))))
+                (fn [db [_ xs]] (s/setval [nav/VALID-UI nav/SELECTED-OBJECT-LIST] xs db)))
+  
+  ;; Command events
+  ;; Sometimes undoable
+
+  (reg-event-db :omnibar-open-factory
+                (fn [db] (s/multi-transform
+                          [nav/VALID-UI nav/OMNIBAR-STATE
+                           (s/multi-path
+                            [nav/MODE (s/terminal-val :open-factory)]
+                            [nav/QUERY (s/terminal-val "")])]
+                          db)))
+  
+  )
 
