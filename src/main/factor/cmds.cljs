@@ -12,13 +12,13 @@
                           :ev [:open-command-palette]}
    :new-factory {:name "New factory"
                  :hotkey "f"
-                 :ev [:create-factory-command]}
+                 :ev [:omnibar-create-factory]}
    :open-factory {:name "Open factory"
                   :hotkey "o"
                   :ev [:omnibar-open-factory]}
    :delete-factory {:name "Delete factory"
                     :hotkey "d"
-                    :ev [:delete-factory]}
+                    :ev [:omnibar-delete-factory]}
    :edit-filters {:name "Edit filters"
                   :hotkey "F"
                   :ev [:edit-filters]}
@@ -38,14 +38,13 @@
                      :hotkey "z"
                      :ev [:open-debug-view]}
    :open-item-editor {:name "Open item editor"
-                     :hotkey "1"
-                     :ev [:open-item-editor]}
+                      :ev [:select-page :items]}
    :open-recipe-editor {:name "Open recipe editor"
-                     :hotkey "2"
-                     :ev [:open-recipe-editor]}
+                        :ev [:select-page :recipes]}
    :open-machine-editor {:name "Open machine editor"
-                     :hotkey "3"
-                     :ev [:open-machine-editor]}
+                         :ev [:select-page :machines]}
+   :open-factory-editor {:name "Open factory editor"
+                         :ev [:select-page :factories]}
    :import-world {:name "Import world"
                      :hotkey "z"
                      :ev [:import-world]}

@@ -92,7 +92,9 @@
   [:open-factory-pane {:default :pgraph} [:enum :pgraph :filters :debug]] 
   [:selected-objects [:vector Id]]
   [:omnibar-state [:map {:closed true}
-                   [:mode {:default :closed} [:enum :closed :command-palette :open-factory]]
+                   [:mode {:default :closed}
+                    [:enum :closed :command-palette
+                     :open-factory :create-factory :delete-factory]]
                    [:query :string]]]])
 
 (def AppDb

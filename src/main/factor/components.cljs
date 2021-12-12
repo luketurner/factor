@@ -122,9 +122,7 @@
                                                       :is-match (.-matchesPredicate (.-modifiers opts))})
                                       (as-element)))
              item-predicate-impl (fn [item-predicate item-getter q item ix exact?]
-                                   (item-predicate q (item-getter item) ix exact?))
-             input-props {:placeholder placeholder
-                          :left-icon left-icon}]
+                                   (item-predicate q (item-getter item) ix exact?))]
     (let [{:keys [query] current-mode :mode} @(subscribe [:omnibar-state])]
       [omnibar-raw {:is-open (= current-mode mode)
                     :on-close close-omnibar
@@ -134,7 +132,31 @@
                     :on-item-select (reagent/partial on-item-select-impl on-item-select item-getter)
                     :item-predicate (reagent/partial item-predicate-impl item-predicate item-getter)
                     :item-renderer (reagent/partial item-renderer-impl item-renderer item-getter)
-                    :input-props input-props}])))
+                    :input-props {:placeholder placeholder
+                                  :left-icon left-icon}}])))
+
+(defcomponent input-omnibar
+  "Omnibar component specifically for cases where there are no items, the omnibar is being used as a glorified input.
+   In this case there is no on-item-select, but an on-submit that gets called when the user presses Enter.
+   
+   Note: This component is used for implementing new omnibar modes. To actually render an omnibar in the app,
+   use the global-omnibar component somewhere in the React tree."
+  [{:keys [mode on-submit placeholder left-icon]} _]
+  (with-let [close-omnibar #(dispatch [:close-omnibar])
+             update-query #(dispatch-sync [:update-omnibar-query %])
+             on-item-select (fn [on-submit q]
+                              (close-omnibar)
+                              (on-submit q))]
+    (let [{:keys [query] current-mode :mode} @(subscribe [:omnibar-state])]
+      [omnibar-raw {:is-open (= current-mode mode)
+                    :on-close close-omnibar
+                    :items []
+                    :query query
+                    :on-query-change update-query
+                    :on-item-select (reagent/partial on-item-select on-submit)
+                    :create-new-item-from-query identity
+                    :input-props {:placeholder placeholder
+                                  :left-icon left-icon}}])))
 
 (defcomponent command-palette-omnibar
   "Omnibar mode for executing commands, like the command palette in VS Code, Sublime Text, etc."
@@ -185,9 +207,23 @@
 
 (defcomponent open-factory-omnibar
   [_ _]
-  (with-let [open-factory #(dispatch [:open-factory (:id %)])]
+  (with-let [open-factory #(do
+                             (dispatch-sync [:open-factory (:id %)])
+                             (dispatch-sync [:select-page :factories]))]
     [factory-select-omnibar {:mode :open-factory
                              :on-item-select open-factory}]))
+
+(defcomponent delete-factory-omnibar
+  [_ _]
+  (with-let [delete-factory #(dispatch [:delete-factories [(:id %)]])]
+    [factory-select-omnibar {:mode :delete-factory
+                             :on-item-select delete-factory}]))
+
+(defcomponent create-factory-omnibar
+  [_ _]
+  (with-let [create-factory #(dispatch [:create-factory {:name %}])]
+    [input-omnibar {:mode :create-factory
+                    :on-submit create-factory}]))
 
 (defcomponent global-omnibar
   [p c]
@@ -195,6 +231,8 @@
     (case mode
       :command-palette [command-palette-omnibar]
       :open-factory [open-factory-omnibar]
+      :create-factory [create-factory-omnibar]
+      :delete-factory [delete-factory-omnibar]
       :closed nil)))
 
 (defcomponent global-hotkeys

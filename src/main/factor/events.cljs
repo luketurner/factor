@@ -239,5 +239,21 @@
                             [nav/QUERY (s/terminal-val "")])]
                           db)))
   
+  (reg-event-db :omnibar-create-factory
+                (fn [db] (s/multi-transform
+                          [nav/VALID-UI nav/OMNIBAR-STATE
+                           (s/multi-path
+                            [nav/MODE (s/terminal-val :create-factory)]
+                            [nav/QUERY (s/terminal-val "")])]
+                          db)))
+  
+  (reg-event-db :omnibar-delete-factory
+                (fn [db] (s/multi-transform
+                          [nav/VALID-UI nav/OMNIBAR-STATE
+                           (s/multi-path
+                            [nav/MODE (s/terminal-val :delete-factory)]
+                            [nav/QUERY (s/terminal-val "")])]
+                          db)))
+  
   )
 
