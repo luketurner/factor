@@ -21,18 +21,10 @@
   ;; Materialized views
 
   (reg-sub :selected-objects  :<- [:ui] (fn [ui] (select     [nav/SELECTED-OBJECTS]  ui)))
-  (reg-sub :selected-page     :<- [:ui] (fn [ui] (select-any [nav/SELECTED-PAGE]     ui)))
-  (reg-sub :open-factory-pane :<- [:ui] (fn [ui] (select-any [nav/OPEN-FACTORY-PANE] ui)))
+  (reg-sub :page-route        :<- [:ui] (fn [ui] (select-any [nav/PAGE-ROUTE]     ui)))
 
   (reg-sub :omnibar-state :<- [:ui] (fn [ui] (select-any [nav/OMNIBAR-STATE] ui)))
   (reg-sub :omnibar-mode  :<- [:omnibar-state] (fn [ui] (select-any [nav/MODE] ui)))
-
-  (reg-sub :open-factory-raw :<- [:config] (fn [config] (select-any [nav/OPEN-FACTORY] config)))
-
-  (reg-sub :open-factory-id
-           :<- [:open-factory-raw]
-           :<- [:factory-id-set]
-           (fn [[id ids]] (when (contains? ids id) id)))
 
   (reg-sub :units :<- [:config] (fn [config]      (select-any [nav/UNIT] config)))
   (reg-sub :unit  :<- [:units]  (fn [units [_ u]] (select-any u          units)))
@@ -50,6 +42,7 @@
   (reg-sub :world-as-json :<- [:world] (fn [w] (->> w (json-encode World) (clj->json))))
   (reg-sub :world-as-edn  :<- [:world] (fn [w] (->> w (edn-encode  World) (clj->edn))))
 
+  (reg-sub :factory-exists?        (fn [[_ id]] (subscribe [:factory id])) (fn [x] (some? x)))
   (reg-sub :factory-name           (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/NAME x)))
   (reg-sub :factory-desired-output (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/DESIRED-OUTPUT-QM x)))
   (reg-sub :factory-filters        (fn [[_ id]] (subscribe [:factory id])) (fn [x] (select-any nav/FILTER x)))

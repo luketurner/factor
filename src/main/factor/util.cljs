@@ -1,6 +1,9 @@
 (ns factor.util
   (:require [re-frame.core :refer [get-coeffect get-effect ->interceptor assoc-effect]]
             [reagent.core :refer [adapt-react-class]]
+            [clojure.string :as string]
+            [factor.schema :as schema :refer [json-decode]]
+            [com.rpl.specter :as s]
             [clojure.edn :as edn]))
 
 (defn new-uuid
@@ -107,3 +110,20 @@
 (defn json->clj [x] (-> x (js/JSON.parse) (js->clj)))
 (defn edn->clj [x] (edn/read-string x))
 (defn clj->edn [x] (pr-str x))
+
+(defn as-url [s] (new js/URL s))
+(defn fragment [url] (.-hash url))
+
+(defn url->route
+  [url]
+  (-> url
+      (as-url)
+      (fragment)
+      (subs 1)
+      (string/split "/")
+      (->> (filter not-empty))
+      (->> (json-decode schema/PageRoute))))
+
+(defn route->url
+  [route]
+  (str "/" (string/join "/" (s/transform [(s/filterer keyword?) s/ALL] name route))))

@@ -1,6 +1,6 @@
 (ns factor.interceptors
   (:require [re-frame.core :refer [->interceptor get-effect get-coeffect]]
-            [factor.util :refer [add-fx]]
+            [factor.util :refer [add-fx route->url]]
             [com.rpl.specter :refer [select-any]]
             [factor.navs :as nav]
             [day8.re-frame.undo :as undo]))
@@ -23,6 +23,16 @@
                   new-config (select-any nav/CONFIG (get-effect   ctx :db))]
               (if (and new-config (not= new-config old-config))
                 (add-fx ctx [:dispatch [:config-save new-config]])
+                ctx)))))
+
+(defn ->fragment-updater []
+  (->interceptor
+   :id :fragment-updater
+   :after (fn [ctx]
+            (let [old-route (select-any [nav/UI nav/PAGE-ROUTE] (get-coeffect ctx :db))
+                  new-route (select-any [nav/UI nav/PAGE-ROUTE] (get-effect   ctx :db))]
+              (if (and new-route (not= new-route old-route))
+                (add-fx ctx [:fragment (route->url new-route)])
                 ctx)))))
 
 ;; Custom interceptors that provide functions similar to [:purge-redos] event.

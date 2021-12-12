@@ -113,15 +113,13 @@
 
 ;; navigators on config
 
-(def OPEN-FACTORY (path :open-factory))
 (def UNIT         (path :unit))
 
 ;; navigators on ui
 
-(def SELECTED-PAGE        (path :selected-page))
-(def OPEN-FACTORY-PANE    (path :open-factory-pane))
 (def SELECTED-OBJECT-LIST (path :selected-objects))
 (def SELECTED-OBJECTS     (path SELECTED-OBJECT-LIST s/ALL))
+(def PAGE-ROUTE           (path :page-route))
 
 (def OMNIBAR-STATE (path :omnibar-state))
 

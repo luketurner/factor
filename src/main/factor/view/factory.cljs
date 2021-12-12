@@ -7,18 +7,22 @@
             [factor.qmap :as qmap]
             [factor.util :refer [callback-factory-factory]]))
 
+(defn open-factory-id
+  []
+  (second @(subscribe [:page-route])))
+
 (defn delete-open-factory-button
   []
   (with-let [delete-factory #(dispatch [:delete-factories [%]])
              delete-cb-factory (callback-factory-factory delete-factory)]
-    (let [selected-factory @(subscribe [:open-factory-id])]
+    (let [id (open-factory-id)]
       [c/alerting-button
        {:text "Delete"
         :class :bp3-minimal
         :icon :delete
         :intent :danger
-        :disabled (nil? selected-factory)}
-       {:on-confirm (delete-cb-factory selected-factory)
+        :disabled (nil? id)}
+       {:on-confirm (delete-cb-factory id)
         :intent :danger
         :confirm-button-text "Delete It!"}
        [:p "This will permanently delete this factory! (Your items/machines/recipes will stick around.)"]])))
@@ -27,7 +31,7 @@
   []
   (with-let [select-factory #(dispatch [:open-factory %])]
     [c/suggest {:type :factory
-                :value @(subscribe [:open-factory-id])
+                :value (open-factory-id)
                 :on-item-select select-factory}]))
 
 (defn create-factory-button
@@ -39,17 +43,17 @@
               :icon :plus
               :text "New"}]))
 
-(defn pane-link
-  "A minimally styled button that, when clicked, will change the currently selected pane."
-  [pane icon text]
-  (with-let [on-click #(dispatch [:open-factory-pane %])
-             on-click-factory (callback-factory-factory on-click)]
-    (let [open-pane @(subscribe [:open-factory-pane])]
-      [c/button {:class :bp3-minimal
-                 :on-click (on-click-factory pane)
-                 :icon icon
-                 :text text
-                 :disabled (= open-pane pane)}])))
+;; (defn pane-link
+;;   "A minimally styled button that, when clicked, will change the currently selected pane."
+;;   [pane icon text]
+;;   (with-let [on-click #(dispatch [:open-factory-pane %])
+;;              on-click-factory (callback-factory-factory on-click)]
+;;     (let [open-pane @(subscribe [:open-factory-pane])]
+;;       [c/button {:class :bp3-minimal
+;;                  :on-click (on-click-factory pane)
+;;                  :icon icon
+;;                  :text text
+;;                  :disabled (= open-pane pane)}])))
 
 (defn navbar []
   [c/navbar
@@ -61,9 +65,10 @@
     [c/navbar-divider]
     [c/undo-redo]
     [c/navbar-divider]
-    [pane-link :pgraph :diagram-tree "Production Graph"]
-    [pane-link :filters :filter-list "Filters"]
-    [pane-link :debug :array "Debug"]]])
+    ;; [pane-link :pgraph :diagram-tree "Production Graph"]
+    ;; [pane-link :filters :filter-list "Filters"]
+    ;; [pane-link :debug :array "Debug"]
+    ]])
 
 
 (defn get-item-name [id] (:name @(subscribe [:item id])))
@@ -117,12 +122,13 @@
                :on-node-collapse on-collapse}])))
 
 (defn pgraph-tree
-  [id]
-  (if (empty? @(subscribe [:factory-desired-output id]))
+  []
+  (let [id (open-factory-id)]
+   (if (empty? @(subscribe [:factory-desired-output id]))
     [c/non-ideal-state {:icon :arrow-left
                         :title "Factory is empty"
                         :description "Add your desired output item(s) in the sidebar to the left."}]
-    [pgraph-tree-inner id]))
+    [pgraph-tree-inner id])))
 
 (defn node-list-inner
   [id]
@@ -133,14 +139,15 @@
                   [:li (str (get node :num-machines) "x " (:name @(subscribe [:recipe (get-in node [:recipe :id])])))]))))
 
 (defn node-list
-  [id]
-  (if (empty? @(subscribe [:factory-desired-output id]))
-    [:ul [:li "None"]]
-    [node-list-inner id]))
+  []
+  (let [id (open-factory-id)]
+    (if (empty? @(subscribe [:factory-desired-output id]))
+      [:ul [:li "None"]]
+      [node-list-inner id])))
 
 (defn catalyst-list
   []
-  (let [catalysts (pgraph/all-catalysts @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))]
+  (let [catalysts (pgraph/all-catalysts @(subscribe [:factory-pgraph (open-factory-id)]))]
     (if (not-empty catalysts)
       (into [:ul] (for [[k v] catalysts] [:li (str v "x " (get-item-name k))]))
       [:ul [:li "None"]])))
@@ -149,7 +156,7 @@
   []
   (with-let [dispatch-update (fn [id n] (dispatch-sync [:update-factory-name id n]))
              updater (callback-factory-factory dispatch-update)]
-    (let [id @(subscribe [:open-factory-id])
+    (let [id (open-factory-id)
           name @(subscribe [:factory-name id])]
       [c/input {:value name :on-change (updater id)}])))
 
@@ -157,7 +164,7 @@
   []
   (with-let [dispatch-update (fn [id n] (dispatch-sync [:update-factory-desired-output id n]))
              updater (callback-factory-factory dispatch-update)]
-    (let [id @(subscribe [:open-factory-id])
+    (let [id (open-factory-id)
           value @(subscribe [:factory-desired-output id])]
       [c/quantity-set-input {:type :item
                              :value value
@@ -165,7 +172,7 @@
 
 (defn factory-id-editor
   []
-  [c/input {:value @(subscribe [:open-factory-id]) :disabled true}])
+  [c/input {:value (open-factory-id) :disabled true}])
 
 (defn item-list-entry
   [id n]
@@ -179,52 +186,40 @@
 
 (defn factory-raw-data
   []
-  [c/textarea {:value (pr-str @(subscribe [:factory @(subscribe [:open-factory-id])]))
+  [c/textarea {:value (pr-str @(subscribe [:factory (open-factory-id)]))
                :read-only true
                :style {:width "100%" :height "150px"}}])
 
 (defn pgraph-raw-data
   []
-  [c/textarea {:value (pr-str @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))
+  [c/textarea {:value (pr-str @(subscribe [:factory-pgraph (open-factory-id)]))
                :read-only true
                :style {:width "100%" :height "150px"}}])
 
 (defn pgraph-dot-data
   []
-  [c/textarea {:value (pgraph/pg->dot @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))
+  [c/textarea {:value (pgraph/pg->dot @(subscribe [:factory-pgraph (open-factory-id)]))
                :read-only true
                :style {:width "100%" :height "150px"}}])
 
 (defn factory-excess-outputs
   []
-  [item-list-for-qmap (pgraph/excess-output @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))])
+  [item-list-for-qmap (pgraph/excess-output @(subscribe [:factory-pgraph (open-factory-id)]))])
 
 (defn factory-missing-inputs
   []
-  [item-list-for-qmap (pgraph/missing-input @(subscribe [:factory-pgraph @(subscribe [:open-factory-id])]))])
-
-(defn no-factories
-  []
-  (with-let [create-factory #(dispatch [:create-factory])
-             action (as-element [c/button {:text "Create Factory"
-                                           :intent :success
-                                           :on-click create-factory}])]
-    [c/non-ideal-state {:icon :office
-                        :title "No factories!"
-                        :description "Create a factory to get started."
-                        :action action}]))
+  [item-list-for-qmap (pgraph/missing-input @(subscribe [:factory-pgraph (open-factory-id)]))])
 
 (defn pgraph-pane []
-  (let [item-rate-unit @(subscribe [:unit :item-rate])
-        id @(subscribe [:open-factory-id])]
+  (let [item-rate-unit @(subscribe [:unit :item-rate])]
     [:div.pgraph-pane
      [:div.pgraph-pane-left
-      [c/form-group {:label "Factory Name"} [factory-name-editor id]]
-      [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")")} [factory-desired-output-editor id]]
-      [c/form-group {:label (str "Excess Outputs (" item-rate-unit ")")} [factory-excess-outputs id]]
-      [c/form-group {:label (str "Required Inputs (" item-rate-unit ")")} [factory-missing-inputs id]]
-      [c/form-group {:label (str "Required Catalysts (" item-rate-unit ")")} [catalyst-list id]]
-      [c/form-group {:label (str "Crafting Stages")} [node-list id]]]
+      [c/form-group {:label "Factory Name"} [factory-name-editor]]
+      [c/form-group {:label (str "Desired Outputs (" item-rate-unit ")")} [factory-desired-output-editor]]
+      [c/form-group {:label (str "Excess Outputs (" item-rate-unit ")")} [factory-excess-outputs]]
+      [c/form-group {:label (str "Required Inputs (" item-rate-unit ")")} [factory-missing-inputs]]
+      [c/form-group {:label (str "Required Catalysts (" item-rate-unit ")")} [catalyst-list]]
+      [c/form-group {:label (str "Crafting Stages")} [node-list]]]
      [c/divider]
      [:div.pgraph-pane-right
       [c/callout {:title "Production Graph" :style {:margin-bottom "1rem"}}
@@ -232,12 +227,12 @@
        [c/icon {:icon :data-lineage :color "#5c7080"}] " Crafting Stage :: "
        [c/icon {:icon :cube :color "#5c7080"}] " Required Input :: "
        [c/icon {:icon :lab-test :color "#5c7080"}] " Required Catalyst"]
-      [pgraph-tree id]]]))
+      [pgraph-tree]]]))
 
 (defn filter-editor [type filter-key]
   (with-let [update-fn (fn [id k v] (dispatch [:update-factory-filter id k v]))
              update-factory (callback-factory-factory update-fn)]
-    (let [id @(subscribe [:open-factory-id])
+    (let [[_ id] @(subscribe [:page-route])
           filter-set @(subscribe [:factory-filter id filter-key])]
       [c/set-input {:type type
                     :value filter-set
@@ -278,10 +273,21 @@
    [c/form-group {:label "Raw Data - Production Graph"} [pgraph-raw-data]]
    [c/form-group {:label "Raw Data - Factory Object"} [factory-raw-data]]]])
 
+(defn invalid-factory
+  []
+  (with-let [go-home #(dispatch [:update-route [:home]])
+             action (as-element [c/button {:text "Go Home"
+                                           :intent :success
+                                           :on-click go-home}])]
+    [c/non-ideal-state {:icon :office
+                        :title "Unknown factory"
+                        :description "Oops! This factory doesn't exist!"
+                        :action action}]))
+
 (defn page []
- (if @(subscribe [:open-factory-id])
-   (case @(subscribe [:open-factory-pane])
-     :pgraph [pgraph-pane]
+ (let [[_ id subpage] @(subscribe [:page-route])]
+  (if-not (and id @(subscribe [:factory-exists? id])) [invalid-factory]
+   (case subpage
      :filters [filter-pane]
-     :debug [debug-pane])
-   [no-factories]))
+     :debug [debug-pane]
+     [pgraph-pane]))))

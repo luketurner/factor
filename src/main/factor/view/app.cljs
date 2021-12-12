@@ -8,7 +8,9 @@
             [factor.view.recipe :as recipe]
             [factor.view.machine :as machine]
             [factor.view.factory :as factory]
-            [factor.view.home :as home]))
+            [factor.view.home :as home]
+            [factor.view.notfound :as notfound]
+            [cljs.core.match :refer [match]]))
 
 (defn primary-navbar []
   [c/navbar
@@ -24,23 +26,27 @@
     [c/nav-link :settings :settings "Settings"]]])
 
 (defn secondary-navbar []
-  (case @(subscribe [:selected-page])
-    :home [home/navbar]
-    :factories [factory/navbar]
-    :items [item/navbar]
-    :machines [machine/navbar]
-    :recipes [recipe/navbar]
-    :settings [settings/navbar]))
+  (match @(subscribe [:page-route])
+    [:home] [home/navbar]
+    [:factory _] [factory/navbar]
+    [:factory _ _] [factory/navbar]
+    [:items] [item/navbar]
+    [:machines] [machine/navbar]
+    [:recipes] [recipe/navbar]
+    [:settings] [settings/navbar]
+    [:notfound] [notfound/navbar]))
 
 (defn main-content []
   [:main
-   (case @(subscribe [:selected-page])
-     :home [home/page]
-     :factories [factory/page]
-     :items [item/page]
-     :machines [machine/page]
-     :recipes [recipe/page]
-     :settings [settings/page])])
+   (match @(subscribe [:page-route])
+     [:home] [home/page]
+     [:factory _] [factory/page]
+     [:factory _ _] [factory/page]
+     [:items] [item/page]
+     [:machines] [machine/page]
+     [:recipes] [recipe/page]
+     [:settings] [settings/page]
+     [:notfound] [notfound/page])])
 
 (defn footer []
   [c/navbar

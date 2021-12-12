@@ -45,5 +45,7 @@
    (fn [key-values]
      (doseq [[key value] key-values]
        (js/window.localStorage.setItem (name key) (pr-str value)))))
+  
+  (reg-fx :fragment (fn [str] (set! (.-hash js/location) str)))
 
   (reg-fx :toast (fn [data] (println data))))

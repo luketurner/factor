@@ -38,13 +38,13 @@
                      :hotkey "z"
                      :ev [:open-debug-view]}
    :open-item-editor {:name "Open item editor"
-                      :ev [:select-page :items]}
+                      :ev [:update-route [:items]]}
    :open-recipe-editor {:name "Open recipe editor"
-                        :ev [:select-page :recipes]}
+                        :ev [:update-route [:recipes]]}
    :open-machine-editor {:name "Open machine editor"
-                         :ev [:select-page :machines]}
+                         :ev [:update-route [:machines]]}
    :open-factory-editor {:name "Open factory editor"
-                         :ev [:select-page :factories]}
+                         :ev [:update-route [:factories]]}
    :import-world {:name "Import world"
                      :hotkey "z"
                      :ev [:import-world]}

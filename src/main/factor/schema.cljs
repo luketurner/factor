@@ -1,6 +1,7 @@
 (ns factor.schema
   (:require [malli.core :as m]
-            [malli.transform :as mt]))
+            [malli.transform :as mt]
+            [cljs.core.match :refer [match]]))
 
 ;; schemas
 
@@ -79,23 +80,32 @@
 
 (def Config
   [:map {:closed true}
-   [:open-factory {:default nil} [:maybe Id]]
    [:unit [:map {:closed true}
            [:item-rate {:default "items/sec"} [:enum "items/sec" "items/min"]]
            [:energy    {:default "J"}         [:enum "J"]]
            [:power     {:default "W"}         [:enum "W"]]]]])
 
+(def PageRoute
+  [:or {:default [:home]
+        :decode/json #(match %
+                       ([(:or "home" "items" "recipes" "machines" "settings")] :seq) [(keyword (first %))]
+                       (["factory" id] :seq)   [:factory id]
+                       (["factory" id x] :seq) [:factory id (keyword x)]
+                       :else [:notfound])}
+   [:tuple [:enum :notfound :home :items :machines :recipes :settings]]
+   [:tuple [:= :factory] Id]
+   [:tuple [:= :factory] Id [:enum :debug :filters]]])
+
 (def Ui 
  [:map {:closed true}
-  [:selected-page {:default :home}
-   [:enum :home :factories :items :machines :recipes :settings]]
-  [:open-factory-pane {:default :pgraph} [:enum :pgraph :filters :debug]] 
   [:selected-objects [:vector Id]]
-  [:omnibar-state [:map {:closed true}
-                   [:mode {:default :closed}
-                    [:enum :closed :command-palette
-                     :open-factory :create-factory :delete-factory]]
-                   [:query :string]]]])
+  [:page-route PageRoute]
+  [:omnibar-state
+   [:map {:closed true}
+    [:mode {:default :closed}
+     [:enum :closed :command-palette
+      :open-factory :create-factory :delete-factory]]
+    [:query :string]]]])
 
 (def AppDb
   [:map {:closed true}
@@ -106,13 +116,15 @@
 ;; transformers
 
 (def default-value-tranformer
-  (mt/default-value-transformer
-    {:defaults {:map-of (constantly {})
-                :map (constantly {})
-                :set (constantly #{})
-                :vector (constantly [])
-                :number (constantly 0)
-                :string (constantly "")}}))
+  (mt/transformer
+   (mt/default-value-transformer
+     {:defaults {:map-of (constantly {})
+                 :map (constantly {})
+                 :set (constantly #{})
+                 :vector (constantly [])
+                 :number (constantly 0)
+                 :string (constantly "")}})
+   (mt/strip-extra-keys-transformer)))
 
 (def json-transformer
   (mt/transformer

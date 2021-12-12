@@ -1,11 +1,12 @@
 (ns factor.app
   "Entry point for the application. Call `init` function to start."
   (:require [reagent.dom :as dom]
-            [re-frame.core :refer [reg-global-interceptor dispatch-sync]]
+            [re-frame.core :refer [reg-global-interceptor dispatch-sync dispatch]]
             [factor.fx :as fx]
             [factor.subs :as subs]
             [factor.events :as events]
             [factor.interceptors :refer [->world-saver ->config-saver]]
+            [factor.util :refer [url->route]]
             [factor.view.app :refer [app]]))
 
 (goog-define DEV false)
@@ -22,6 +23,10 @@
 (defn render []
   (dom/render [app] (js/document.getElementById "app")))
 
+(defn sync-page-route []
+  (.addEventListener js/window "hashchange" (fn [x] (dispatch [:update-route (url->route (.-newURL x))])))
+  (dispatch-sync [:update-route (url->route (.-href js/location))]))
+
 (defn init
   "Init function called on page load."
   []
@@ -29,6 +34,7 @@
   (dispatch-sync [:initialize-db])
   (dispatch-sync [:world-load])
   (dispatch-sync [:config-load])
+  (sync-page-route)
   (render))
 
 (defn after-load

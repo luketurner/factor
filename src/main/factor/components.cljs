@@ -207,9 +207,7 @@
 
 (defcomponent open-factory-omnibar
   [_ _]
-  (with-let [open-factory #(do
-                             (dispatch-sync [:open-factory (:id %)])
-                             (dispatch-sync [:select-page :factories]))]
+  (with-let [open-factory #(dispatch-sync [:update-route [:factory (:id %)]])]
     [factory-select-omnibar {:mode :open-factory
                              :on-item-select open-factory}]))
 
@@ -558,14 +556,14 @@
 (defn nav-link
   "A minimally styled button that, when clicked, will change the currently selected page."
   [page icon text]
-  (with-let [on-click #(dispatch [:select-page %])
+  (with-let [on-click #(dispatch [:update-route [%]])
              on-click-factory (callback-factory-factory on-click)]
-    (let [selected-page @(subscribe [:selected-page])]
+    (let [route @(subscribe [:page-route])]
       [button {:class :bp3-minimal
                :on-click (on-click-factory page)
                :icon icon
                :text text
-               :disabled (= selected-page page)}])))
+               :disabled (= route [page])}])))
 
 (defn alerting-button
   "A button that will pop up a confirmation dialog when clicked. Allows specifying two sets of props:

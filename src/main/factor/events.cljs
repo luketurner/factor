@@ -5,8 +5,8 @@
             [com.rpl.specter :as s]
             [factor.navs :as nav]
             [factor.schema :refer [make edn-decode edn-encode json-decode Config Factory Item Recipe Machine World AppDb]]
-            [factor.util :refer [json->clj edn->clj new-uuid]]
-            [factor.interceptors :refer [->purge-redos ->purge-undos]]))
+            [factor.util :refer [json->clj edn->clj new-uuid route->url]]
+            [factor.interceptors :refer [->purge-redos ->purge-undos ->fragment-updater]]))
 
 (defn reg-all []
 
@@ -26,7 +26,7 @@
                                      (make Factory))]
                     (s/multi-transform
                      [(s/multi-path
-                       [nav/CONFIG nav/OPEN-FACTORY (s/terminal-val id)]
+                       [nav/VALID-UI nav/PAGE-ROUTE (s/terminal-val [:factory id])]
                        [nav/WORLD (nav/valid-factory id) (s/terminal-val factory)])]
                      db))))
 
@@ -84,7 +84,7 @@
                       ; Because multi-path transforms are run in order, the deleted
                       ; factories have already been removed from FACTORIES-MAP when this runs.
                       [(s/collect-one nav/WORLD nav/FACTORIES-MAP s/FIRST s/FIRST)
-                       nav/VALID-CONFIG nav/OPEN-FACTORY xs (s/terminal identity)])
+                       nav/VALID-UI nav/PAGE-ROUTE (s/selected? [s/FIRST (s/pred= :factory)]) (s/nthpath 1) xs (s/terminal identity)])
                      w))))
 
   (reg-event-db :delete-recipes [(undoable)]
@@ -193,7 +193,6 @@
   ;; Config-mutating events
   ;; Not undoable (for now?)
 
-  (reg-event-db :open-factory (fn [db [_ id]] (s/setval [nav/VALID-CONFIG nav/OPEN-FACTORY] id db)))
   (reg-event-db :set-unit (fn [db [_ k v]] (s/setval [nav/VALID-CONFIG nav/UNIT k] v db)))
 
   ;; Config persistence events
@@ -210,10 +209,10 @@
   ;; UI mutation events
   ;; Not undoable
 
-  ; Note: This event purges the undo/redo history when it runs so the user can't undo/redo things from the old page
-  (reg-event-db :select-page [(->purge-undos) (->purge-redos)]
-                (fn [db [_ page]] (s/multi-transform [nav/VALID-UI (s/multi-path [nav/SELECTED-PAGE (s/terminal-val page)]
-                                                                                 [nav/SELECTED-OBJECT-LIST (s/terminal-val [])])] db)))
+  (reg-event-db :update-route
+                [(->fragment-updater)]
+                (fn [db [_ route]] (s/multi-transform [nav/VALID-UI (s/multi-path [nav/PAGE-ROUTE (s/terminal-val route)]
+                                                                                  [nav/SELECTED-OBJECT-LIST (s/terminal-val [])])] db)))
 
   (reg-event-db :update-omnibar-query (fn [db [_ v]] (s/setval [nav/VALID-UI nav/OMNIBAR-QUERY] v db)))
   (reg-event-db :open-command-palette (fn [db] (s/multi-transform [nav/VALID-UI nav/OMNIBAR-STATE
@@ -222,12 +221,9 @@
                                                                   db)))
   (reg-event-db :close-omnibar (fn [db] (s/setval [nav/VALID-UI nav/OMNIBAR-MODE] :closed db)))
 
-  (reg-event-db :open-factory-pane
-                (fn [db [_ pane]] (s/setval [nav/VALID-UI nav/OPEN-FACTORY-PANE] pane db)))
-
   (reg-event-db :select-objects
                 (fn [db [_ xs]] (s/setval [nav/VALID-UI nav/SELECTED-OBJECT-LIST] xs db)))
-  
+
   ;; Command events
   ;; Sometimes undoable
 
@@ -238,7 +234,7 @@
                             [nav/MODE (s/terminal-val :open-factory)]
                             [nav/QUERY (s/terminal-val "")])]
                           db)))
-  
+
   (reg-event-db :omnibar-create-factory
                 (fn [db] (s/multi-transform
                           [nav/VALID-UI nav/OMNIBAR-STATE
@@ -246,14 +242,12 @@
                             [nav/MODE (s/terminal-val :create-factory)]
                             [nav/QUERY (s/terminal-val "")])]
                           db)))
-  
+
   (reg-event-db :omnibar-delete-factory
                 (fn [db] (s/multi-transform
                           [nav/VALID-UI nav/OMNIBAR-STATE
                            (s/multi-path
                             [nav/MODE (s/terminal-val :delete-factory)]
                             [nav/QUERY (s/terminal-val "")])]
-                          db)))
-  
-  )
+                          db))))
 
