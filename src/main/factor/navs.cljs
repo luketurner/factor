@@ -120,6 +120,7 @@
 (def SELECTED-OBJECT-LIST (path :selected-objects))
 (def SELECTED-OBJECTS     (path SELECTED-OBJECT-LIST s/ALL))
 (def PAGE-ROUTE           (path :page-route))
+(def FOCUSED              (path :focused))
 
 (def OMNIBAR-STATE (path :omnibar-state))
 

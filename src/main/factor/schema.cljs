@@ -100,6 +100,7 @@
  [:map {:closed true}
   [:selected-objects [:vector Id]]
   [:page-route PageRoute]
+  [:focused {:default :none} [:or [:= :none] :string]]
   [:omnibar-state
    [:map {:closed true}
     [:mode {:default :closed}

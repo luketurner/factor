@@ -6,7 +6,7 @@
             [factor.navs :as nav]
             [factor.schema :refer [make edn-decode edn-encode json-decode Config Factory Item Recipe Machine World AppDb]]
             [factor.util :refer [json->clj edn->clj new-uuid route->url]]
-            [factor.interceptors :refer [->purge-redos ->purge-undos ->fragment-updater]]))
+            [factor.interceptors :refer [->purge-redos ->purge-undos ->fragment-updater ->focuser]]))
 
 (defn reg-all []
 
@@ -213,6 +213,10 @@
                 [(->fragment-updater)]
                 (fn [db [_ route]] (s/multi-transform [nav/VALID-UI (s/multi-path [nav/PAGE-ROUTE (s/terminal-val route)]
                                                                                   [nav/SELECTED-OBJECT-LIST (s/terminal-val [])])] db)))
+  
+  (reg-event-db :focus
+                [(->focuser)]
+                (fn [db [_ el-id]] (s/setval [nav/VALID-UI nav/FOCUSED] el-id db)))
 
   (reg-event-db :update-omnibar-query (fn [db [_ v]] (s/setval [nav/VALID-UI nav/OMNIBAR-QUERY] v db)))
   (reg-event-db :open-command-palette (fn [db] (s/multi-transform [nav/VALID-UI nav/OMNIBAR-STATE

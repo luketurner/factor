@@ -27,6 +27,14 @@
   (.addEventListener js/window "hashchange" (fn [x] (dispatch [:update-route (url->route (.-newURL x))])))
   (dispatch-sync [:update-route (url->route (.-href js/location))]))
 
+(defn sync-page-focus []
+  (.addEventListener
+   (js/document.getElementById "app")
+   "focus"
+   (fn [x] (let [id (.-id (.-target x))]
+             (when-not (empty? id)
+               (dispatch-sync [:focus id])))) true))
+
 (defn init
   "Init function called on page load."
   []
@@ -35,6 +43,7 @@
   (dispatch-sync [:world-load])
   (dispatch-sync [:config-load])
   (sync-page-route)
+  (sync-page-focus)
   (render))
 
 (defn after-load

@@ -35,6 +35,16 @@
                 (add-fx ctx [:fragment (route->url new-route)])
                 ctx)))))
 
+(defn ->focuser []
+  (->interceptor
+   :id :focuser
+   :after (fn [ctx]
+            (let [old-el-id (select-any [nav/UI nav/FOCUSED] (get-coeffect ctx :db))
+                  new-el-id (select-any [nav/UI nav/FOCUSED] (get-effect   ctx :db))]
+              (if (and new-el-id (not= old-el-id new-el-id))
+                (add-fx ctx [:focus-el new-el-id])
+                ctx)))))
+
 ;; Custom interceptors that provide functions similar to [:purge-redos] event.
 (defn ->purge-undos []
   (->interceptor

@@ -47,5 +47,6 @@
        (js/window.localStorage.setItem (name key) (pr-str value)))))
   
   (reg-fx :fragment (fn [str] (set! (.-hash js/location) str)))
+  (reg-fx :focus-el (fn [el-id] (-> el-id (js/document.getElementById) (.focus))))
 
   (reg-fx :toast (fn [data] (println data))))
