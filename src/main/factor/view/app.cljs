@@ -1,6 +1,6 @@
 (ns factor.view.app
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [reagent.core :as reagent]
+            [reagent.core :as reagent :refer [as-element]]
             [factor.styles :as styles]
             [garden.core :refer [css]]
             [factor.components :as c]
@@ -12,6 +12,7 @@
             [factor.view.factory :as factory]
             [factor.view.home :as home]
             [factor.view.notfound :as notfound]
+            [factor.schema :as schema :refer [json-encode]]
             [cljs.core.match :refer [match]]))
 
 (defn view-specific-tools []
@@ -45,16 +46,22 @@
      [:settings] [settings/page]
      [:notfound] [notfound/page])])
 
+(defn route-breadcrumbs []
+  (let [route (json-encode schema/PageRoute @(subscribe [:page-route]))]
+    [c/breadcrumbs {:items (for [r route] {:text r})}]))
+
 (defn footer []
   [c/navbar
-   [c/navbar-group-left "Copyright 2021 Luke Turner"]
+   [c/navbar-group-left
+    [route-breadcrumbs]]
    [c/navbar-group-right
     [c/anchor-button {:class :bp3-minimal
                       :href "https://git.sr.ht/~luketurner/factor"
                       :text "sourcehut"}]
     [c/anchor-button {:class :bp3-minimal
                       :href "https://github.com/luketurner/factor"
-                      :text "github"}]]])
+                      :text "github"}]
+    [:span {:style {:margin-left "0.5rem"}} "Copyright 2021 Luke Turner"]]])
 
 (defn app []
   [:<>

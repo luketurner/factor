@@ -17,6 +17,8 @@
 
 (defwrapper alert            (cl b/Alert))
 (defwrapper anchor-button    (cl b/AnchorButton))
+(defwrapper breadcrumbs      (cl b/Breadcrumbs))
+(defwrapper breadcrumb       (cl b/Breadcrumb))
 (defwrapper button           (cl b/Button))
 (defwrapper callout          (cl b/Callout))
 (defwrapper card             (cl b/Card))
