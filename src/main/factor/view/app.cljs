@@ -1,5 +1,6 @@
 (ns factor.view.app
-  (:require [re-frame.core :refer [subscribe]]
+  (:require [re-frame.core :refer [subscribe dispatch]]
+            [reagent.core :as reagent]
             [factor.styles :as styles]
             [garden.core :refer [css]]
             [factor.components :as c]
@@ -23,7 +24,7 @@
 (defn primary-navbar []
   [c/navbar
    [c/navbar-group-left
-    [c/navbar-heading [:strong "factor."]]
+    [c/navbar-heading [c/anchor-button {:class "bp3-minimal" :on-click (reagent/partial dispatch [:update-route [:home]])} [:strong "factor."]]]
     [c/navbar-divider]
     [menus/menus]
     [c/navbar-divider]
