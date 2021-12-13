@@ -16,10 +16,14 @@
 (defn open-factory-menu-item
   []
   (with-let [open-factory #(dispatch [:update-route [:factory %]])]
-    (let [ids->names @(subscribe [:factory-ids->names])]
+    (let [ids->names @(subscribe [:factory-ids->names])
+          current-id (open-factory-id)]
       (into [c/menu-item {:text "Open factory..."}]
             (for [[id name] ids->names]
-              [c/menu-item {:text name :label (subs id 0 3) :key id
+              [c/menu-item {:text name
+                            :label (subs id 0 3)
+                            :key id
+                            :disabled (= id current-id)
                             :on-click (reagent/partial open-factory id)}])))))
 
 (defn delete-factory-menu-item
