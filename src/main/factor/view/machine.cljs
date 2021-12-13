@@ -40,25 +40,22 @@
                              {:field :created-at
                               :headerName "Created"}]}])))
 
-(defn navbar []
+(defn tools []
   (with-let [create-machine #(dispatch [:create-machine])
              delete-machines   #(dispatch [:delete-machines %])
              delete-machines-factory (callback-factory-factory delete-machines)]
     (let [selected-machines @(subscribe [:selected-objects])
           num-selected (count selected-machines)]
-      [c/navbar
-       [c/navbar-group-left
-        [c/navbar-heading "Machine List"]
-        [c/undo-redo]
-        [c/button {:class :bp3-minimal :on-click create-machine :icon :plus :title "Add machine"}]
-        [c/navbar-divider]
-        (when (< 0 num-selected)
-          [:<>
-           [:div (selected-text num-selected)]
-           [c/button {:class :bp3-minimal
-                      :on-click (delete-machines-factory selected-machines)
-                      :icon :minus :text "Delete"
-                      :disabled (= num-selected 0)}]])]])))
+      [:<>
+       [c/button {:class :bp3-minimal :on-click create-machine :icon :plus :text "New machine" :intent :success}]
+       (when (< 0 num-selected)
+         [:<>
+          [c/navbar-divider]
+          [:div (selected-text num-selected)]
+          [c/button {:class :bp3-minimal
+                     :on-click (delete-machines-factory selected-machines)
+                     :icon :minus :text "Delete"
+                     :disabled (= num-selected 0)}]])])))
 
 (defn page []
   (let [all-machines @(subscribe [:machine-seq])]

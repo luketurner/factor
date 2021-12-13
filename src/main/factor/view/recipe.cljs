@@ -36,25 +36,22 @@
                              {:field :created-at
                               :headerName "Created"}]}])))
 
-(defn navbar []
+(defn tools []
   (with-let [create-recipe  #(dispatch [:create-recipe])
              delete-recipes #(dispatch [:delete-recipes %])
              delete-recipes-factory (callback-factory-factory delete-recipes)]
     (let [selected-recipes   @(subscribe [:selected-objects])
           num-selected        (count selected-recipes)]
-      [c/navbar
-       [c/navbar-group-left
-        [c/navbar-heading "Recipe List"]
-        [c/undo-redo]
-        [c/button {:class :bp3-minimal :on-click create-recipe :icon :plus :title "Add recipe"}]
-        [c/navbar-divider]
-        (when (< 0 num-selected)
-          [:<>
-           [:div (str "(" num-selected " recipes selected)")]
-           [c/button {:class :bp3-minimal
-                      :on-click (delete-recipes-factory selected-recipes)
-                      :icon :minus :text "Delete"
-                      :disabled (= num-selected 0)}]])]])))
+      [:<>
+       [c/button {:class :bp3-minimal :on-click create-recipe :icon :plus :text "New recipe" :intent :success}]
+       (when (< 0 num-selected)
+         [:<>
+          [c/navbar-divider]
+          [:div (str "(" num-selected " recipes selected)")]
+          [c/button {:class :bp3-minimal
+                     :on-click (delete-recipes-factory selected-recipes)
+                     :icon :minus :text "Delete"
+                     :disabled (= num-selected 0)}]])])))
 
 (defn input-editor
   [id]

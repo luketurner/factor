@@ -3,6 +3,7 @@
             [factor.styles :as styles]
             [garden.core :refer [css]]
             [factor.components :as c]
+            [factor.components.menus :as menus]
             [factor.view.settings :as settings]
             [factor.view.item :as item]
             [factor.view.recipe :as recipe]
@@ -12,29 +13,24 @@
             [factor.view.notfound :as notfound]
             [cljs.core.match :refer [match]]))
 
+(defn view-specific-tools []
+  (match @(subscribe [:page-route])
+    [:items] [item/tools]
+    [:machines] [machine/tools]
+    [:recipes] [recipe/tools]
+    :else [:<>]))
+
 (defn primary-navbar []
   [c/navbar
    [c/navbar-group-left
     [c/navbar-heading [:strong "factor."]]
-    [c/nav-link :home :home "Home"]
     [c/navbar-divider]
-    [c/nav-link :factories :office "Factories"]
-    [c/nav-link :items :cube "Items"]
-    [c/nav-link :machines :oil-field "Machines"]
-    [c/nav-link :recipes :data-lineage "Recipes"]
+    [menus/menus]
     [c/navbar-divider]
-    [c/nav-link :settings :settings "Settings"]]])
+    [c/undo-redo]
+    [c/navbar-divider]
+    [view-specific-tools]]])
 
-(defn secondary-navbar []
-  (match @(subscribe [:page-route])
-    [:home] [home/navbar]
-    [:factory _] [factory/navbar]
-    [:factory _ _] [factory/navbar]
-    [:items] [item/navbar]
-    [:machines] [machine/navbar]
-    [:recipes] [recipe/navbar]
-    [:settings] [settings/navbar]
-    [:notfound] [notfound/navbar]))
 
 (defn main-content []
   [:main
@@ -67,6 +63,5 @@
     [c/global-hotkeys]
     [:div.app-container
      [primary-navbar]
-     [secondary-navbar]
      [main-content]
      [footer]]]])

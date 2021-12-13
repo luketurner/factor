@@ -29,25 +29,22 @@
                            {:field :created-at
                             :headerName "Created"}]}]))
 
-(defn navbar []
+(defn tools []
   (with-let [create-item    #(dispatch [:create-item])
              delete-items   #(dispatch [:delete-items %])
              delete-items-factory (callback-factory-factory delete-items)]
     (let [selected-items @(subscribe [:selected-objects])
           num-selected   (count selected-items)]
-      [c/navbar
-       [c/navbar-group-left
-        [c/navbar-heading "Item List"]
-        [c/undo-redo]
-        [c/button {:class :bp3-minimal :on-click create-item :icon :plus :title "Add item"}]
-        [c/navbar-divider]
-        (when (< 0 num-selected)
-          [:<>
-           [:div (selected-text num-selected)]
-           [c/button {:class :bp3-minimal
-                      :on-click (delete-items-factory selected-items)
-                      :icon :minus :text "Delete"
-                      :disabled (= num-selected 0)}]])]])))
+      [:<>
+       [c/button {:class :bp3-minimal :on-click create-item :icon :plus :text "New item" :intent :success}]
+       (when (< 0 num-selected)
+         [:<>
+          [c/navbar-divider]
+          [:div (selected-text num-selected)]
+          [c/button {:class :bp3-minimal
+                     :on-click (delete-items-factory selected-items)
+                     :icon :minus :text "Delete"
+                     :disabled (= num-selected 0)}]])])))
 
 (defn page []
   (let [all-items @(subscribe [:item-seq])]
