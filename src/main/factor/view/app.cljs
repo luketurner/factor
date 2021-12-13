@@ -13,7 +13,8 @@
             [factor.view.home :as home]
             [factor.view.notfound :as notfound]
             [factor.schema :as schema :refer [json-encode]]
-            [cljs.core.match :refer [match]]))
+            [cljs.core.match :refer [match]]
+            [factor.view.help :as help]))
 
 (defn view-specific-tools []
   (match @(subscribe [:page-route])
@@ -44,6 +45,7 @@
      [:machines] [machine/page]
      [:recipes] [recipe/page]
      [:settings] [settings/page]
+     [:help] [help/page]
      [:notfound] [notfound/page])])
 
 (defn route-breadcrumbs []

@@ -88,11 +88,11 @@
 (def PageRoute
   [:or {:default [:home]
         :decode/json #(match %
-                       ([(:or "home" "items" "recipes" "machines" "settings")] :seq) [(keyword (first %))]
+                       ([(:or "home" "items" "recipes" "machines" "settings" "help")] :seq) [(keyword (first %))]
                        (["factory" id] :seq)   [:factory id]
                        (["factory" id x] :seq) [:factory id (keyword x)]
                        :else [:notfound])}
-   [:tuple [:enum :notfound :home :items :machines :recipes :settings]]
+   [:tuple [:enum :notfound :home :items :machines :recipes :settings :help]]
    [:tuple [:= :factory] Id]
    [:tuple [:= :factory] Id [:enum :debug :filters]]])
 

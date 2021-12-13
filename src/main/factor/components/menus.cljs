@@ -181,9 +181,24 @@
    [energy-menu-item]
    [power-menu-item]])
 
+(defn help-menu-item
+  []
+  [c/menu-item {:text "Open help..."
+                :icon :help
+                :disabled (= :help (first-route-piece))
+                :on-click (reagent/partial dispatch [:update-route [:help]])}])
+
+(defn help-menu []
+  [c/popup-menu {:label "Help..." :desc "Open help menu" :hotkey "h"}
+   [help-menu-item]
+   [c/menu-divider {:title "External Links"}]
+   [c/menu-item {:href "https://github.com/luketurner/factor" :target :_blank :text "Github" :icon :git-repo}]
+   [c/menu-item {:href "https://git.sr.ht/~luketurner/factor" :target :_blank :text "Sourcehut" :icon :git-repo}]])
+
 (defn menus []
   [:<>
    [factory-menu]
    [edit-menu]
    [world-menu]
-   [settings-menu]])
+   [settings-menu]
+   [help-menu]])
