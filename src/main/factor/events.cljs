@@ -18,7 +18,7 @@
   ;; Undoable
 
 
-  (reg-event-db :create-factory [(undoable)
+  (reg-event-db :create-factory [(undoable "New factory")
                                  (->fragment-updater)]
                 (fn [db [_ factory]]
                   (let [id (new-uuid)
@@ -31,7 +31,7 @@
                        [nav/WORLD (nav/valid-factory id) (s/terminal-val factory)])]
                      db))))
 
-  (reg-event-db :create-item [(undoable)]
+  (reg-event-db :create-item [(undoable "New item")]
                 (fn [db [_ item]]
                   (let [id (new-uuid)
                         item (->> item
@@ -39,7 +39,7 @@
                                   (make Item))]
                     (s/setval [nav/WORLD (nav/valid-item id)] item db))))
 
-  (reg-event-db :create-recipe [(undoable)]
+  (reg-event-db :create-recipe [(undoable "New recipe")]
                 (fn [db [_ recipe]]
                   (let [id (new-uuid)
                         recipe (->> recipe
@@ -47,7 +47,7 @@
                                     (make Recipe))]
                     (s/setval [nav/WORLD (nav/valid-recipe id)] recipe db))))
 
-  (reg-event-db :create-machine [(undoable)]
+  (reg-event-db :create-machine [(undoable "New machine")]
                 (fn [db [_ machine]]
                   (let [id (new-uuid)
                         machine (->> machine
@@ -55,23 +55,23 @@
                                      (make Machine))]
                     (s/setval [nav/WORLD (nav/valid-machine id)] machine db))))
 
-  (reg-event-db :update-factory [(undoable)]
+  (reg-event-db :update-factory [(undoable "Factory changed")]
                 (fn [db [_ {:keys [id] :as x}]]
                   (s/setval [nav/WORLD (nav/valid-factory id)] x db)))
 
-  (reg-event-db :update-item    [(undoable)]
+  (reg-event-db :update-item    [(undoable "Item changed")]
                 (fn [db [_ {:keys [id] :as x}]]
                   (s/setval [nav/WORLD (nav/valid-item id)] x db)))
 
-  (reg-event-db :update-machine [(undoable)]
+  (reg-event-db :update-machine [(undoable "Machine changed")]
                 (fn [db [_ {:keys [id] :as x}]]
                   (s/setval [nav/WORLD (nav/valid-machine id)] x db)))
 
-  (reg-event-db :update-recipe  [(undoable)]
+  (reg-event-db :update-recipe  [(undoable "Recipe changed")]
                 (fn [db [_ {:keys [id] :as x}]]
                   (s/setval [nav/WORLD (nav/valid-recipe id)] x db)))
 
-  (reg-event-db :delete-factories [(undoable)
+  (reg-event-db :delete-factories [(undoable "Delete factory")
                                    (->fragment-updater)]
                 (fn [w [_ xs]]
                   (let [xs (set xs)]
@@ -89,7 +89,7 @@
                        nav/VALID-UI nav/PAGE-ROUTE (s/selected? [s/FIRST (s/pred= :factory)]) (s/nthpath 1) xs (s/terminal identity)])
                      w))))
 
-  (reg-event-db :delete-recipes [(undoable)]
+  (reg-event-db :delete-recipes [(undoable "Delete recipes")]
                 (fn [w [_ xs]]
                   (let [xs (set xs)]
                     (s/setval
@@ -101,7 +101,7 @@
                      s/NONE
                      w))))
 
-  (reg-event-db :delete-machines [(undoable)]
+  (reg-event-db :delete-machines [(undoable "Delete machines")]
                 (fn [w [_ xs]]
                   (let [xs (set xs)]
                     (s/setval
@@ -114,7 +114,7 @@
                      s/NONE
                      w))))
 
-  (reg-event-db :delete-items [(undoable)]
+  (reg-event-db :delete-items [(undoable "Delete items")]
                 (fn [w [_ xs]]
                   (let [xs (set xs)]
                     (s/setval
@@ -128,52 +128,52 @@
                      w))))
 
   (reg-event-db :world-reset
-                [(undoable)]
+                [(undoable "Reset world")]
                 (fn [db [_ w]] (assoc db :world (make World w))))
 
   (reg-event-db :load-world-from-json
-                [(undoable)]
+                [(undoable "Load world")]
                 (fn [db [_ x]] (->> x
                                     (json->clj)
                                     (json-decode World)
                                     #(s/setval [nav/VALID-WORLD] % db))))
 
   (reg-event-db :load-world-from-edn
-                [(undoable)]
+                [(undoable "Load world")]
                 (fn [db [_ x]] (->> x
                                     (edn->clj)
                                     (edn-decode World)
                                     #(s/setval [nav/VALID-WORLD] % db))))
 
-  (reg-event-db :update-factory-name [(undoable)]
+  (reg-event-db :update-factory-name [(undoable "Change factory name")]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-factory id) nav/NAME] v db)))
 
-  (reg-event-db :update-factory-desired-output [(undoable)]
+  (reg-event-db :update-factory-desired-output [(undoable "Change factory desired output")]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-factory id) nav/DESIRED-OUTPUT-QM] v db)))
 
-  (reg-event-db :update-factory-filter [(undoable)]
+  (reg-event-db :update-factory-filter [(undoable "Change factory filter")]
                 (fn [db [_ id k v]]
                   (s/setval [nav/WORLD (nav/valid-factory id) nav/FILTER k] v db)))
 
-  (reg-event-db :update-recipe-input [(undoable)]
+  (reg-event-db :update-recipe-input [(undoable "Change recipe input")]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/INPUT-QM] v db)))
 
-  (reg-event-db :update-recipe-output [(undoable)]
+  (reg-event-db :update-recipe-output [(undoable "Change recipe output")]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/OUTPUT-QM] v db)))
 
-  (reg-event-db :update-recipe-catalysts [(undoable)]
+  (reg-event-db :update-recipe-catalysts [(undoable "Change recipe catalysts")]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/CATALYSTS-QM] v db)))
 
-  (reg-event-db :update-recipe-machines [(undoable)]
+  (reg-event-db :update-recipe-machines [(undoable "Change recipe machines")]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/RECIPE-MACHINE-LIST] v db)))
 
-  (reg-event-db :update-recipe-duration [(undoable)]
+  (reg-event-db :update-recipe-duration [(undoable "Change recipe duration")]
                 (fn [db [_ id v]]
                   (s/setval [nav/WORLD (nav/valid-recipe id) nav/DURATION] v db)))
 
