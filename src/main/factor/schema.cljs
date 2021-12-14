@@ -88,25 +88,26 @@
 (def PageRoute
   [:or {:default [:home]
         :decode/json #(match %
-                       ([(:or "home" "items" "recipes" "machines" "settings" "help")] :seq) [(keyword (first %))]
-                       (["factory" id] :seq)   [:factory id]
-                       (["factory" id x] :seq) [:factory id (keyword x)]
-                       :else [:notfound])}
+                        ([(:or "home" "items" "recipes" "machines" "settings" "help")] :seq) [(keyword (first %))]
+                        (["factory" id] :seq)   [:factory id]
+                        (["factory" id x] :seq) [:factory id (keyword x)]
+                        ([] :seq) [:home]
+                        :else [:notfound])}
    [:tuple [:enum :notfound :home :items :machines :recipes :settings :help]]
    [:tuple [:= :factory] Id]
    [:tuple [:= :factory] Id [:enum :debug :filters]]])
 
-(def Ui 
- [:map {:closed true}
-  [:selected-objects [:vector Id]]
-  [:page-route PageRoute]
-  [:focused {:default :none} [:or [:= :none] :string]]
-  [:omnibar-state
-   [:map {:closed true}
-    [:mode {:default :closed}
-     [:enum :closed :command-palette
-      :open-factory :create-factory :delete-factory]]
-    [:query :string]]]])
+(def Ui
+  [:map {:closed true}
+   [:selected-objects [:vector Id]]
+   [:page-route PageRoute]
+   [:focused {:default :none} [:or [:= :none] :string]]
+   [:omnibar-state
+    [:map {:closed true}
+     [:mode {:default :closed}
+      [:enum :closed :command-palette
+       :open-factory :create-factory :delete-factory]]
+     [:query :string]]]])
 
 (def AppDb
   [:map {:closed true}
