@@ -18,7 +18,8 @@
   ;; Undoable
 
 
-  (reg-event-db :create-factory [(undoable)]
+  (reg-event-db :create-factory [(undoable)
+                                 (->fragment-updater)]
                 (fn [db [_ factory]]
                   (let [id (new-uuid)
                         factory (->> factory
@@ -70,7 +71,8 @@
                 (fn [db [_ {:keys [id] :as x}]]
                   (s/setval [nav/WORLD (nav/valid-recipe id)] x db)))
 
-  (reg-event-db :delete-factories [(undoable)]
+  (reg-event-db :delete-factories [(undoable)
+                                   (->fragment-updater)]
                 (fn [w [_ xs]]
                   (let [xs (set xs)]
                     (s/multi-transform
