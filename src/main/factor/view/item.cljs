@@ -30,21 +30,15 @@
                             :headerName "Created"}]}]))
 
 (defn tools []
-  (with-let [create-item    #(dispatch [:create-item])
-             delete-items   #(dispatch [:delete-items %])
-             delete-items-factory (callback-factory-factory delete-items)]
-    (let [selected-items @(subscribe [:selected-objects])
-          num-selected   (count selected-items)]
-      [:<>
-       [c/button {:class :bp3-minimal :on-click create-item :icon :plus :text "New item" :intent :success}]
-       (when (< 0 num-selected)
-         [:<>
-          [c/navbar-divider]
-          [:div (selected-text num-selected)]
-          [c/button {:class :bp3-minimal
-                     :on-click (delete-items-factory selected-items)
-                     :icon :minus :text "Delete"
-                     :disabled (= num-selected 0)}]])])))
+  (let [selected-items @(subscribe [:selected-objects])
+        num-selected   (count selected-items)]
+    [:<>
+     [c/cmd-btn {:cmd :new-item :intent :success :minimal true}]
+     (when (< 0 num-selected)
+       [:<>
+        [c/navbar-divider]
+        [:div (selected-text num-selected)]
+        [c/cmd-btn {:cmd :delete-selected-items :minimal :true :intent :danger}]])]))
 
 (defn page []
   (let [all-items @(subscribe [:item-seq])]

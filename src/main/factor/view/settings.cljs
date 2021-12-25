@@ -1,10 +1,7 @@
 (ns factor.view.settings
   (:require [factor.components :as c]
             [re-frame.core :refer [dispatch subscribe]]
-            [reagent.core :as reagent :refer [with-let]]
-            [factor.presets.factorio :as factorio]))
-
-(defn navbar [] [c/navbar])
+            [reagent.core :as reagent :refer [with-let]]))
 
 (defn world-loader
   []

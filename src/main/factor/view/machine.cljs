@@ -41,21 +41,15 @@
                               :headerName "Created"}]}])))
 
 (defn tools []
-  (with-let [create-machine #(dispatch [:create-machine])
-             delete-machines   #(dispatch [:delete-machines %])
-             delete-machines-factory (callback-factory-factory delete-machines)]
-    (let [selected-machines @(subscribe [:selected-objects])
-          num-selected (count selected-machines)]
-      [:<>
-       [c/button {:class :bp3-minimal :on-click create-machine :icon :plus :text "New machine" :intent :success}]
-       (when (< 0 num-selected)
-         [:<>
-          [c/navbar-divider]
-          [:div (selected-text num-selected)]
-          [c/button {:class :bp3-minimal
-                     :on-click (delete-machines-factory selected-machines)
-                     :icon :minus :text "Delete"
-                     :disabled (= num-selected 0)}]])])))
+  (let [selected-machines @(subscribe [:selected-objects])
+        num-selected (count selected-machines)]
+    [:<>
+     [c/cmd-btn {:cmd :new-machine :intent :success :minimal true}]
+     (when (< 0 num-selected)
+       [:<>
+        [c/navbar-divider]
+        [:div (selected-text num-selected)]
+        [c/cmd-btn {:cmd :delete-selected-machines :intent :danger :minimal true}]])]))
 
 (defn page []
   (let [all-machines @(subscribe [:machine-seq])]

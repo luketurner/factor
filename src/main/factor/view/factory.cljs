@@ -11,69 +11,14 @@
   []
   (second @(subscribe [:page-route])))
 
-(defn delete-open-factory-button
-  []
-  (with-let [delete-factory #(dispatch [:delete-factories [%]])
-             delete-cb-factory (callback-factory-factory delete-factory)]
-    (let [id (open-factory-id)]
-      [c/alerting-button
-       {:text "Delete"
-        :class :bp3-minimal
-        :icon :delete
-        :intent :danger
-        :disabled (nil? id)}
-       {:on-confirm (delete-cb-factory id)
-        :intent :danger
-        :confirm-button-text "Delete It!"}
-       [:p "This will permanently delete this factory! (Your items/machines/recipes will stick around.)"]])))
-
-(defn select-open-factory-input
-  []
-  (with-let [select-factory #(dispatch [:open-factory %])]
-    [c/suggest {:type :factory
-                :value (open-factory-id)
-                :on-item-select select-factory}]))
-
-(defn create-factory-button
- []
- (with-let [create-factory #(dispatch [:create-factory])]
-   [c/button {:class :bp3-minimal
-              :intent :success
-              :on-click create-factory
-              :icon :plus
-              :text "New"}]))
-
-;; (defn pane-link
-;;   "A minimally styled button that, when clicked, will change the currently selected pane."
-;;   [pane icon text]
-;;   (with-let [on-click #(dispatch [:open-factory-pane %])
-;;              on-click-factory (callback-factory-factory on-click)]
-;;     (let [open-pane @(subscribe [:open-factory-pane])]
-;;       [c/button {:class :bp3-minimal
-;;                  :on-click (on-click-factory pane)
-;;                  :icon icon
-;;                  :text text
-;;                  :disabled (= open-pane pane)}])))
-
-(defn navbar []
-  [c/navbar
-   [c/navbar-group-left
-    [c/navbar-heading "Factories"]
-    [select-open-factory-input]
-    [delete-open-factory-button]
-    [create-factory-button]
-    [c/navbar-divider]
-    [c/undo-redo]
-    [c/navbar-divider]
-    ;; [pane-link :pgraph :diagram-tree "Production Graph"]
-    ;; [pane-link :filters :filter-list "Filters"]
-    ;; [pane-link :debug :array "Debug"]
-    ]])
+(defn tools []
+  [:<>
+   [c/cmd-btn {:cmd :new-factory :minimal true :intent :success}]
+   [c/navbar-divider]
+   [c/cmd-btn {:cmd :delete-open-factory :minimal true :intent :danger}]])
 
 
 (defn get-item-name [id] (:name @(subscribe [:item id])))
-(defn get-machine-name [id] (:name @(subscribe [:machine id])))
-(defn get-recipe-name [id] (:name @(subscribe [:recipe id])))
 
 (defn pgraph-tree-node
   [pg node-states seen-nodes parent-id node-id]

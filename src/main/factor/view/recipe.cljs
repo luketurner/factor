@@ -37,21 +37,15 @@
                               :headerName "Created"}]}])))
 
 (defn tools []
-  (with-let [create-recipe  #(dispatch [:create-recipe])
-             delete-recipes #(dispatch [:delete-recipes %])
-             delete-recipes-factory (callback-factory-factory delete-recipes)]
-    (let [selected-recipes   @(subscribe [:selected-objects])
-          num-selected        (count selected-recipes)]
-      [:<>
-       [c/button {:class :bp3-minimal :on-click create-recipe :icon :plus :text "New recipe" :intent :success}]
-       (when (< 0 num-selected)
-         [:<>
-          [c/navbar-divider]
-          [:div (str "(" num-selected " recipes selected)")]
-          [c/button {:class :bp3-minimal
-                     :on-click (delete-recipes-factory selected-recipes)
-                     :icon :minus :text "Delete"
-                     :disabled (= num-selected 0)}]])])))
+  (let [selected-recipes   @(subscribe [:selected-objects])
+        num-selected        (count selected-recipes)]
+    [:<>
+     [c/cmd-btn {:cmd :new-recipe :intent :success :minimal true}]
+     (when (< 0 num-selected)
+       [:<>
+        [c/navbar-divider]
+        [:div (str "(" num-selected " recipes selected)")]
+        [c/cmd-btn {:cmd :delete-selected-recipes :intent :danger :minimal true}]])]))
 
 (defn input-editor
   [id]

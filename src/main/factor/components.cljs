@@ -103,6 +103,16 @@
 ;;                     :item-renderer item-renderer
 ;;                     :input-props input-props}])))
 
+(defcomponent cmd-btn
+  [{:keys [minimal intent class cmd]} _]
+  (let [{:keys [ev name icon disabled]} (cmds/cmd cmd)]
+    [button {:on-click (reagent/partial dispatch ev)
+             :text name
+             :intent intent
+             :icon icon
+             :disabled disabled
+             :class (if minimal "bp3-minimal" class)}]))
+
 (defcomponent omnibar
   "General omnibar component. Manages open/closed and query state using the app-db.
    
@@ -584,12 +594,3 @@
                           :cancel-button-text "Cancel"
                           :on-close close} alert-props)]
            children)]))
-
-(defn undo-redo
-  "A control group containing undo/redo buttons. The buttons are wired to the global undo/redo stack."
-  []
-  (with-let [undo #(dispatch [:undo])
-             redo #(dispatch [:redo])]
-    [control-group
-     [button {:class :bp3-minimal :disabled (not @(subscribe [:undos?])) :on-click undo :icon :undo :title "Undo"}]
-     [button {:class :bp3-minimal :disabled (not @(subscribe [:redos?])) :on-click redo :icon :redo :title "Redo"}]]))

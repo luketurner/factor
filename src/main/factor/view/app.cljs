@@ -18,6 +18,8 @@
 
 (defn view-specific-tools []
   (match @(subscribe [:page-route])
+    [:factory _] [factory/tools]
+    [:factory _ _] [factory/tools]
     [:items] [item/tools]
     [:machines] [machine/tools]
     [:recipes] [recipe/tools]
@@ -30,7 +32,9 @@
     [c/navbar-divider]
     [menus/menus]
     [c/navbar-divider]
-    [c/undo-redo]
+    [c/control-group
+     [c/cmd-btn {:minimal true :cmd :undo}]
+     [c/cmd-btn {:minimal true :cmd :redo}]]
     [c/navbar-divider]
     [view-specific-tools]]])
 
