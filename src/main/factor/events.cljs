@@ -227,6 +227,9 @@
                                                                   db)))
   (reg-event-db :close-omnibar (fn [db] (s/setval [nav/VALID-UI nav/OMNIBAR-MODE] :closed db)))
 
+  (reg-event-db :set-app-menu (fn [db [_ v]] (s/setval [nav/VALID-UI nav/APP-MENU] v db)))
+
+
   (reg-event-db :select-objects
                 (fn [db [_ xs]] (s/setval [nav/VALID-UI nav/SELECTED-OBJECT-LIST] xs db)))
 

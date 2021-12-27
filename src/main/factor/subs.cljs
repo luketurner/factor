@@ -23,6 +23,8 @@
   (reg-sub :selected-objects  :<- [:ui] (fn [ui] (select     [nav/SELECTED-OBJECTS]  ui)))
   (reg-sub :page-route        :<- [:ui] (fn [ui] (select-any [nav/PAGE-ROUTE]     ui)))
 
+  (reg-sub :app-menu :<- [:ui] (fn [ui] (select-any [nav/APP-MENU] ui)))
+
   (reg-sub :omnibar-state :<- [:ui] (fn [ui] (select-any [nav/OMNIBAR-STATE] ui)))
   (reg-sub :omnibar-mode  :<- [:omnibar-state] (fn [ui] (select-any [nav/MODE] ui)))
 

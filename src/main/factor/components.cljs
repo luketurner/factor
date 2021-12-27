@@ -308,6 +308,58 @@
   [popover p
    (into [menu] c)])
 
+(defcomponent app-menu
+  "Component for an application menu (e.g. File, Edit, etc.) Stores open-menu state in the `app-db`,
+   so only one menu can be opened at once, menus can be invoked with global hotkeys, etc.
+
+   The UI design for the button will probably look best in a navbar.
+   
+   Accepts props:
+   
+   :key a unique keyword identifying this menu
+   :name human-readable menu name (title case)
+   :icon Icon to display alongside menu (optional)
+   :hotkey Single-character string to be used as the menu's global hotkey.
+           e.g. if \"f\", menu can be toggled with alt+f
+           will be underlined in name if present (a la Windows menus)"
+  [{:keys [key hotkey name icon]} c]
+  (with-let [set-menu-open #(dispatch [:set-app-menu (if % [key] [])])]
+   (let [[p1] @(subscribe [:app-menu])
+         is-open (= p1 key)
+         toggle-open (reagent/partial set-menu-open (not is-open))]
+    [popover-raw {:is-open is-open
+                  :on-interaction set-menu-open
+                  :position "bottom-left"
+                  :minimal true
+                  :interaction-kind "click"}
+     [hotkeys-target {:hotkeys (if-not hotkey []
+                                       [{:combo (str "alt+" hotkey)
+                                         :label (str "Open " name " menu")
+                                         :onKeyDown toggle-open
+                                         :preventDefault true
+                                         :stopPropagation true
+                                         :global true}])}
+      [button {:on-click toggle-open
+               :icon icon
+               :minimal true}
+       [hotkey-label {:char hotkey} name]]]
+     (into [menu] c)])))
+
+(defcomponent menu-item-cmd
+  [{:keys [cmd]} _]
+  (let [{:keys [name disabled ev] [{:keys [choices]}] :params :as cmd-data} (cmds/cmd cmd)]
+    (into [menu-item {:text name
+                      :key cmd
+                      :disabled disabled
+                      :on-click (reagent/partial dispatch ev)}
+           (when (not-empty choices)
+             (for [{:keys [name key value disabled]} choices]
+               [menu-item {:text name
+                           :key key
+                                                          ;;  :label (subs (str key) 0 3)
+                           :disabled disabled
+                           :on-click (reagent/partial cmds/dispatch-cmd cmd-data value)}]))])))
+
 (defcomponent select-enum
   "A wrapper around Blueprint's Select component, designed for selecting one of an enumerated set of possible values."
   [{:keys [items on-item-select initial-value]} _]

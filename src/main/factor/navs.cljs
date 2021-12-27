@@ -123,6 +123,7 @@
 (def FOCUSED              (path :focused))
 
 (def OMNIBAR-STATE (path :omnibar-state))
+(def APP-MENU (path :app-menu))
 
 (def MODE (path :mode))
 (def QUERY (path :query))

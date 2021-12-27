@@ -8,16 +8,12 @@
    the command's name, disabld status, event, etc. can change dynamically.
    
    The `cmd` helper function automatically derefs the command, so you don't need to remember this
-   implementation detail in your views. But if you want un-derefed command, use `cmd-atom`
+   implementation detail in your views. But if you want un-derefed command, use `cmd-atom`.
    
-   Field reference:
-   :name -- Command name (used for button text, searching, etc.)
-   :ev -- vector to dispatch when command is clicked
-   :icon -- icon to display alongside command name
-   :disabled -- whether command should be invokeable
-   :global-hotkey -- the global hotkey to invoke the command"
-  (:require [re-frame.core :refer [subscribe]]
-            [reagent.ratom :refer [reaction]]))
+   Reference the Command schema in the factor.schema namespace for what fields are supported."
+  (:require [re-frame.core :refer [subscribe dispatch]]
+            [reagent.ratom :refer [reaction]]
+            [factor.util :refer [ipairs]]))
 
 (def all-cmds
   {:open-command-palette (reaction {:name "Open command palette"
@@ -26,20 +22,28 @@
 
    :new-factory (reaction {:name "New factory"
                            :icon :plus
-                           :ev [:omnibar-create-factory]})
+                           :params [{:name "Name"}]
+                           :ev [:create-factory]})
 
-   :open-factory (reaction {:name "Open factory..."
-                            :ev [:omnibar-open-factory]})
+   :open-factory (reaction {:name "Open factory"
+                            :params [{:name "Factory"
+                                      :choices (for [[id name] @(subscribe [:factory-ids->names])]
+                                                 {:key id
+                                                  :name name
+                                                  :value [:factory id]})}]
+                            :ev [:update-route]})
 
-   :delete-factory (reaction {:name "Delete factory..."
-                              :ev [:omnibar-delete-factory]})
+   :delete-factory (reaction {:name "Delete factory"
+                              :params [{:name "Factory"
+                                        :choices (for [[id name] @(subscribe [:factory-ids->names])]
+                                                   {:key id
+                                                    :name name
+                                                    :value [id]})}]
+                              :ev [:delete-factories]})
 
    :delete-open-factory (reaction {:name "Delete open factory"
                                    :icon :delete
                                    :ev [:delete-factories [(second @(subscribe [:page-route]))]]})
-
-   :edit-filters (reaction {:name "Edit filters"
-                            :ev [:edit-filters]})
 
    :undo (reaction {:name "Undo"
                     :disabled (not @(subscribe [:undos?]))
@@ -51,14 +55,23 @@
                     :disabled (not @(subscribe [:redos?]))
                     :ev [:redo]})
 
-   :undo-multi (reaction {:name "Undo multiple..."
-                          :ev [:undo-multi]})
+   :undo-multi (reaction {:name "Undo multiple"
+                          :disabled (not @(subscribe [:undos?]))
+                          :params [{:name "Undo target"
+                                    :choices (for [[ex ix] (rest (ipairs @(subscribe [:undo-explanations])))]
+                                               {:name ex
+                                                :key ix
+                                                :value ix})}]
+                          :ev [:undo]})
 
-   :redo-multi (reaction {:name "Redo multiple..."
-                          :ev [:redo-multi]})
-
-   :open-debug-view (reaction {:name "Open debug view"
-                               :ev [:open-debug-view]})
+   :redo-multi (reaction {:name "Redo multiple"
+                          :disabled (not @(subscribe [:redos?]))
+                          :params [{:name "Redo target"
+                                    :choices (for [[ex ix] (rest (ipairs @(subscribe [:redo-explanations])))]
+                                               {:name ex
+                                                :key ix
+                                                :value ix})}]
+                          :ev [:redo]})
 
    :open-item-editor (reaction {:name "Open item editor"
                                 :ev [:update-route [:items]]})
@@ -69,8 +82,11 @@
    :open-machine-editor (reaction {:name "Open machine editor"
                                    :ev [:update-route [:machines]]})
 
-   :open-factory-editor (reaction {:name "Open factory editor"
-                                   :ev [:update-route [:factories]]})
+   :open-import-export (reaction {:name "Import/export world"
+                                  :ev [:update-route [:settings]]})
+   
+   :open-help (reaction {:name "Open help"
+                         :ev [:update-route [:help]]})
 
    :import-world (reaction {:name "Import world"
                             :ev [:import-world]})
@@ -81,8 +97,8 @@
    :load-preset-world (reaction {:name "Load preset world"
                                  :ev [:load-preset-world]})
 
-   :reset-world (reaction {:name "Delete world"
-                           :ev [:delete-world]})
+   :delete-world (reaction {:name "Delete world"
+                            :ev [:world-reset]})
 
    :new-item (reaction {:name "New item"
                         :icon :plus
@@ -114,8 +130,41 @@
                                           :disabled (empty? objects)
                                           :ev [:delete-machines objects]}))
 
-   :change-item-unit (reaction {:name "Change unit: Item rate"
-                                :ev [:change-item-rate]})})
+   :change-item-rate-unit (reaction (let [cur @(subscribe [:unit :item-rate])
+                                          choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
+                                      {:name "Item rate unit"
+                                       :params [{:name "Unit" :choices [(choice "items/sec") (choice "items/min")]}]
+                                       :ev [:set-unit :item-rate]}))
+
+   :change-energy-unit (reaction (let [cur @(subscribe [:unit :energy])
+                                       choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
+                                   {:name "Energy unit"
+                                    :params [{:name "Unit" :choices [(choice "J")]}]
+                                    :ev [:set-unit :energy]}))
+
+   :change-power-unit (reaction (let [cur @(subscribe [:unit :power])
+                                      choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
+                                  {:name "Power unit"
+                                   :params [{:name "Unit" :choices [(choice "W")]}]
+                                   :ev [:set-unit :power]}))
+
+   :toggle-filter-view (reaction (let [[p1 p2 p3] @(subscribe [:page-route])]
+                                   {:name "Toggle filter view"
+                                    :disabled (not= p1 :factory)
+                                    :ev (if (= p3 :filters)
+                                          [:update-route [p1 p2]]
+                                          [:update-route [p1 p2 :filters]])}))
+
+   :toggle-debug-view (reaction (let [[p1 p2 p3] @(subscribe [:page-route])]
+                                  {:name "Toggle debug view"
+                                   :disabled (not= p1 :factory)
+                                   :ev (if (= p3 :filters)
+                                         [:update-route [p1 p2]]
+                                         [:update-route [p1 p2 :debug]])}))})
 
 (defn cmd-atom [kw] (get all-cmds kw))
 (defn cmd [kw] (when-let [v (cmd-atom kw)] @v))
+
+(defn dispatch-cmd
+  [{:keys [ev params]} & args]
+  (dispatch (into ev (take (count params) args))))

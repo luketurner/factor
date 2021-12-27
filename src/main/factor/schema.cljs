@@ -102,6 +102,7 @@
    [:selected-objects [:vector Id]]
    [:page-route PageRoute]
    [:focused {:default :none} [:or [:= :none] :string]]
+   [:app-menu [:vector :keyword]]
    [:omnibar-state
     [:map {:closed true}
      [:mode {:default :closed}
@@ -114,6 +115,28 @@
    [:world World]
    [:config Config]
    [:ui Ui]])
+
+;; reference schemas (not used anywhere yet)
+
+(def Choice
+  [:map {:closed true}
+   [:name :string]
+   [:key :any]
+   [:value :any]
+   [:disabled :boolean]])
+
+(def CommandParam
+  [:map {:closed true}
+   [:name :string]
+   [:choices [:vector Choice]]])
+
+(def Command
+  [:map {:closed true}
+   [:name :string]
+   [:disabled :boolean]
+   [:icon :keyword]
+   [:ev [:vector :any]]
+   [:params [:vector CommandParam]]])
 
 ;; transformers
 
