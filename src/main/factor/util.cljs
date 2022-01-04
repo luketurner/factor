@@ -13,7 +13,7 @@
 
 (defn add-fx
   "Appends the effect vec to the end of the :fx effect for the given context.
-   If there is no :fx effect, it will be added automatically.e"
+   If there is no :fx effect, it will be added automatically."
   [context fx]
   (assoc-effect context :fx (conj (get-effect context :fx []) fx)))
 

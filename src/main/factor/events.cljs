@@ -6,13 +6,175 @@
             [factor.navs :as nav]
             [factor.schema :refer [make edn-decode edn-encode json-decode Config Factory Item Recipe Machine World AppDb]]
             [factor.util :refer [json->clj edn->clj new-uuid route->url]]
-            [factor.interceptors :refer [->purge-redos ->purge-undos ->fragment-updater ->focuser]]))
+            [factor.interceptors :refer [->purge-redos ->purge-undos ->fragment-updater ->focuser]]
+            [cljs.core.match :refer [match]]))
 
 (defn reg-all []
 
   ;; General events
 
   (reg-event-db :initialize-db (fn [] (make AppDb nil)))
+
+  ;; Command events
+
+  (reg-event-db :open-command-palette (fn [db] (s/multi-transform [nav/VALID-UI nav/OMNIBAR-STATE
+                                                                   (s/multi-path [nav/MODE (s/terminal-val :command-palette)]
+                                                                                 [nav/QUERY (s/terminal-val "")])]
+                                                                  db)))
+
+  (reg-event-db :new-factory [(undoable "New factory")
+                              (->fragment-updater)]
+                (fn [db [_ name]]
+                  (let [id (new-uuid)
+                        factory (make Factory {:created-at (.now js/Date)
+                                               :id id
+                                               :name name})]
+                    (s/multi-transform
+                     [(s/multi-path
+                       [nav/VALID-UI nav/PAGE-ROUTE (s/terminal-val [:factory id])]
+                       [nav/WORLD (nav/valid-factory id) (s/terminal-val factory)])]
+                     db))))
+
+  (reg-event-db :open-factory
+                (fn [db [_ id]]
+                  (s/setval [nav/VALID-UI
+                             nav/PAGE-ROUTE]
+                            [:factory id] db)))
+
+  (reg-event-db :open-item-editor (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:items] db)))
+  (reg-event-db :open-recipe-editor (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:recipes] db)))
+  (reg-event-db :open-machine-editor (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:machines] db)))
+  (reg-event-db :open-import-export (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:settings] db)))
+  (reg-event-db :open-help (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:help] db)))
+
+  (reg-event-db :delete-world [(undoable "Delete world")] (fn [db] (s/setval [nav/WORLD] (make World nil) db)))
+
+  (reg-event-db :delete-factory [(undoable "Delete factory")
+                                 (->fragment-updater)]
+                (fn [db [_ id]]
+                  (s/multi-transform
+                   (s/multi-path
+                    [nav/VALID-WORLD (nav/factories [id]) (s/terminal-val s/NONE)]
+                      ; the below path benefit from some explaining. Basically, if
+                      ; the open factory was deleted, we want to open another,
+                      ; not-deleted factory if possible. The (collect-one) navigator
+                      ; collects the ID of another factory to open. The (s/terminal identity)
+                      ; line will then set the value of the navigated path to that collected value.
+                      ; Because multi-path transforms are run in order, the deleted
+                      ; factories have already been removed from FACTORIES-MAP when this runs.
+                    [(s/collect-one nav/WORLD nav/FACTORIES-MAP s/FIRST s/FIRST)
+                     nav/VALID-UI nav/PAGE-ROUTE
+                     (s/if-path (s/collected? [v] (some? v))
+                                [(s/selected? [s/FIRST (s/pred= :factory)])
+                                 (s/nthpath 1)
+                                 (s/pred= id)
+                                 (s/terminal identity)]
+                                (s/terminal-val [:home]))
+                     ])
+                   db)))
+
+  (reg-event-db :delete-open-factory [(undoable "Delete factory")
+                                      (->fragment-updater)]
+                (fn [db]
+                  (let [id (s/select [nav/UI
+                                      nav/PAGE-ROUTE
+                                      (s/selected? [s/FIRST (s/pred= :factory)])
+                                      (s/nthpath 1)]
+                                     db)]
+                    (s/multi-transform
+                     (s/multi-path
+                      [nav/VALID-WORLD (nav/factories [id]) (s/terminal-val s/NONE)]
+                      ; the below path benefit from some explaining. Basically, if
+                      ; the open factory was deleted, we want to open another,
+                      ; not-deleted factory if possible. The (collect-one) navigator
+                      ; collects the ID of another factory to open. The (s/terminal identity)
+                      ; line will then set the value of the navigated path to that collected value.
+                      ; Because multi-path transforms are run in order, the deleted
+                      ; factories have already been removed from FACTORIES-MAP when this runs.
+                      [(s/collect-one nav/WORLD nav/FACTORIES-MAP s/FIRST s/FIRST)
+                       nav/VALID-UI nav/PAGE-ROUTE (s/selected? [s/FIRST (s/pred= :factory)]) (s/nthpath 1) (s/pred= id) (s/terminal identity)])
+                     db))))
+
+
+  (reg-event-db :new-item [(undoable "New item")]
+                (fn [db [_ item]]
+                  (let [id (new-uuid)
+                        item (->> item
+                                  (merge {:created-at (.now js/Date) :id id})
+                                  (make Item))]
+                    (s/setval [nav/WORLD (nav/valid-item id)] item db))))
+
+  (reg-event-db :new-recipe [(undoable "New recipe")]
+                (fn [db [_ recipe]]
+                  (let [id (new-uuid)
+                        recipe (->> recipe
+                                    (merge {:created-at (.now js/Date) :id id})
+                                    (make Recipe))]
+                    (s/setval [nav/WORLD (nav/valid-recipe id)] recipe db))))
+
+  (reg-event-db :new-machine [(undoable "New machine")]
+                (fn [db [_ machine]]
+                  (let [id (new-uuid)
+                        machine (->> machine
+                                     (merge {:created-at (.now js/Date) :id id})
+                                     (make Machine))]
+                    (s/setval [nav/WORLD (nav/valid-machine id)] machine db))))
+
+  (reg-event-db :delete-selected-recipes [(undoable "Delete recipe(s)")]
+                (fn [db]
+                  (let [xs (s/select [nav/UI nav/SELECTED-OBJECTS (s/view set)] db)]
+                    (s/setval
+                     (s/multi-path
+                      [nav/VALID-UI nav/SELECTED-OBJECTS]
+                      [nav/WORLD (s/multi-path
+                                  [nav/FACTORIES nav/FACTORY->RECIPES xs]
+                                  (nav/recipes xs))])
+                     s/NONE
+                     db))))
+
+  (reg-event-db :delete-selected-machines [(undoable "Delete machine(s)")]
+                (fn [db]
+                  (let [xs (s/select [nav/UI nav/SELECTED-OBJECTS (s/view set)] db)]
+                    (s/setval
+                     (s/multi-path
+                      [nav/VALID-UI nav/SELECTED-OBJECTS]
+                      [nav/WORLD (s/multi-path
+                                  [nav/FACTORIES nav/FACTORY->MACHINES xs]
+                                  [nav/RECIPES nav/RECIPE->MACHINES xs]
+                                  (nav/machines xs))])
+                     s/NONE
+                     db))))
+
+  (reg-event-db :delete-selected-items [(undoable "Delete item(s)")]
+                (fn [db]
+                  (let [xs (s/select [nav/UI nav/SELECTED-OBJECTS (s/view set)] db)]
+                    (s/setval
+                     (s/multi-path
+                      [nav/VALID-UI nav/SELECTED-OBJECTS]
+                      [nav/WORLD (s/multi-path
+                                  [nav/FACTORIES nav/FACTORY->ITEMS xs]
+                                  [nav/RECIPES nav/RECIPE->ITEMS xs]
+                                  (nav/items xs))])
+                     s/NONE
+                     db))))
+
+  (reg-event-db :change-item-rate-unit (fn [db [_ v]] (s/setval [nav/VALID-CONFIG nav/UNIT :item-rate] v db)))
+  (reg-event-db :change-power-unit (fn [db [_ v]] (s/setval [nav/VALID-CONFIG nav/UNIT :power] v db)))
+  (reg-event-db :change-energy-unit (fn [db [_ v]] (s/setval [nav/VALID-CONFIG nav/UNIT :energy] v db)))
+
+  (reg-event-db :toggle-filter-view (fn [db] (s/transform [nav/VALID-UI
+                                                           nav/PAGE-ROUTE
+                                                           (s/selected? s/FIRST (s/pred= :factory))
+                                                           (s/nthpath 2)] #(if (= % :filters) s/NONE :filters) db)))
+
+  (reg-event-db :toggle-debug-view (fn [db] (s/transform [nav/VALID-UI
+                                                          nav/PAGE-ROUTE]
+                                                         #(match %
+                                                            [:factory x :debug] [:factory x]
+                                                            [:factory x       ] [:factory x :debug]
+                                                            [:factory x _     ] [:factory x :debug]
+                                                            x                   x)
+                                                         db)))
 
   ;; World-mutating events
   ;; Undoable
@@ -215,7 +377,7 @@
                 [(->fragment-updater)]
                 (fn [db [_ route]] (s/multi-transform [nav/VALID-UI (s/multi-path [nav/PAGE-ROUTE (s/terminal-val route)]
                                                                                   [nav/SELECTED-OBJECT-LIST (s/terminal-val [])])] db)))
-  
+
   (reg-event-db :focus
                 [(->focuser)]
                 (fn [db [_ el-id]] (s/setval [nav/VALID-UI nav/FOCUSED] el-id db)))

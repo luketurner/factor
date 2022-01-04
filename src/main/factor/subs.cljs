@@ -22,6 +22,7 @@
 
   (reg-sub :selected-objects  :<- [:ui] (fn [ui] (select     [nav/SELECTED-OBJECTS]  ui)))
   (reg-sub :page-route        :<- [:ui] (fn [ui] (select-any [nav/PAGE-ROUTE]     ui)))
+  (reg-sub :open-factory?     :<- [:page-route]  (fn [[x]] (= x :factory)))
 
   (reg-sub :app-menu :<- [:ui] (fn [ui] (select-any [nav/APP-MENU] ui)))
 
@@ -35,6 +36,11 @@
   (reg-sub :items     :<- [:world] (fn [w] (select-any nav/ITEMS-MAP     w)))
   (reg-sub :machines  :<- [:world] (fn [w] (select-any nav/MACHINES-MAP  w)))
   (reg-sub :recipes   :<- [:world] (fn [w] (select-any nav/RECIPES-MAP   w)))
+
+  (reg-sub :any-factories? :<- [:factories] (fn [xs] (not-empty xs)))
+  (reg-sub :any-items?     :<- [:items]     (fn [xs] (not-empty xs)))
+  (reg-sub :any-recipes?   :<- [:recipes]   (fn [xs] (not-empty xs)))
+  (reg-sub :any-machines?  :<- [:machines]  (fn [xs] (not-empty xs)))
 
   (reg-sub :factory :<- [:factories] (fn [xs [_ id]] (select-any id xs)))
   (reg-sub :machine :<- [:machines]  (fn [xs [_ id]] (select-any id xs)))

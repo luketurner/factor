@@ -23,27 +23,30 @@
    :new-factory (reaction {:name "New factory"
                            :icon :plus
                            :params [{:name "Name"}]
-                           :ev [:create-factory]})
+                           :ev [:new-factory]})
 
    :open-factory (reaction {:name "Open factory"
+                            :disabled (not @(subscribe [:any-factories?]))
                             :params [{:name "Factory"
                                       :choices (for [[id name] @(subscribe [:factory-ids->names])]
                                                  {:key id
                                                   :name name
-                                                  :value [:factory id]})}]
-                            :ev [:update-route]})
+                                                  :value id})}]
+                            :ev [:open-factory]})
 
    :delete-factory (reaction {:name "Delete factory"
+                              :disabled (not @(subscribe [:any-factories?]))
                               :params [{:name "Factory"
                                         :choices (for [[id name] @(subscribe [:factory-ids->names])]
                                                    {:key id
                                                     :name name
-                                                    :value [id]})}]
-                              :ev [:delete-factories]})
+                                                    :value id})}]
+                              :ev [:delete-factory]})
 
    :delete-open-factory (reaction {:name "Delete open factory"
                                    :icon :delete
-                                   :ev [:delete-factories [(second @(subscribe [:page-route]))]]})
+                                   :disabled (not @(subscribe [:open-factory?]))
+                                   :ev [:delete-open-factory]})
 
    :undo (reaction {:name "Undo"
                     :disabled (not @(subscribe [:undos?]))
@@ -74,93 +77,80 @@
                           :ev [:redo]})
 
    :open-item-editor (reaction {:name "Open item editor"
-                                :ev [:update-route [:items]]})
+                                :ev [:open-item-editor]})
 
    :open-recipe-editor (reaction {:name "Open recipe editor"
-                                  :ev [:update-route [:recipes]]})
+                                  :ev [:open-recipe-editor]})
 
    :open-machine-editor (reaction {:name "Open machine editor"
-                                   :ev [:update-route [:machines]]})
+                                   :ev [:open-machine-editor]})
 
    :open-import-export (reaction {:name "Import/export world"
-                                  :ev [:update-route [:settings]]})
+                                  :ev [:open-import-export]})
    
    :open-help (reaction {:name "Open help"
-                         :ev [:update-route [:help]]})
-
-   :import-world (reaction {:name "Import world"
-                            :ev [:import-world]})
-
-   :export-world (reaction {:name "Export world"
-                            :ev [:export-world]})
-
-   :load-preset-world (reaction {:name "Load preset world"
-                                 :ev [:load-preset-world]})
+                         :ev [:open-help]})
 
    :delete-world (reaction {:name "Delete world"
-                            :ev [:world-reset]})
+                            :ev [:delete-world]})
 
    :new-item (reaction {:name "New item"
                         :icon :plus
-                        :ev [:create-item]})
+                        :ev [:new-item]})
 
    :new-recipe (reaction {:name "New recipe"
                           :icon :plus
-                          :ev [:create-recipe]})
+                          :ev [:new-recipe]})
 
    :new-machine (reaction {:name "New machine"
                            :icon :plus
-                           :ev [:create-machine]})
+                           :ev [:new-machine]})
 
    :delete-selected-items (reaction (let [objects @(subscribe [:selected-objects])]
                                       {:name "Delete selected item(s)"
                                        :icon :delete
                                        :disabled (empty? objects)
-                                       :ev [:delete-items objects]}))
+                                       :ev [:delete-selected-items]}))
 
    :delete-selected-recipes (reaction (let [objects @(subscribe [:selected-objects])]
                                         {:name "Delete selected recipe(s)"
                                          :icon :delete
                                          :disabled (empty? objects)
-                                         :ev [:delete-recipes objects]}))
+                                         :ev [:delete-selected-recipes]}))
 
    :delete-selected-machines (reaction (let [objects @(subscribe [:selected-objects])]
                                          {:name "Delete selected machine(s)"
                                           :icon :delete
                                           :disabled (empty? objects)
-                                          :ev [:delete-machines objects]}))
+                                          :ev [:delete-selected-machines]}))
 
    :change-item-rate-unit (reaction (let [cur @(subscribe [:unit :item-rate])
                                           choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
                                       {:name "Item rate unit"
                                        :params [{:name "Unit" :choices [(choice "items/sec") (choice "items/min")]}]
-                                       :ev [:set-unit :item-rate]}))
+                                       :ev [:change-item-rate-unit]}))
 
    :change-energy-unit (reaction (let [cur @(subscribe [:unit :energy])
                                        choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
                                    {:name "Energy unit"
                                     :params [{:name "Unit" :choices [(choice "J")]}]
-                                    :ev [:set-unit :energy]}))
+                                    :ev [:change-energy-unit]}))
 
    :change-power-unit (reaction (let [cur @(subscribe [:unit :power])
                                       choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
                                   {:name "Power unit"
                                    :params [{:name "Unit" :choices [(choice "W")]}]
-                                   :ev [:set-unit :power]}))
+                                   :ev [:change-power-unit]}))
 
-   :toggle-filter-view (reaction (let [[p1 p2 p3] @(subscribe [:page-route])]
+   :toggle-filter-view (reaction (let [[p1] @(subscribe [:page-route])]
                                    {:name "Toggle filter view"
                                     :disabled (not= p1 :factory)
-                                    :ev (if (= p3 :filters)
-                                          [:update-route [p1 p2]]
-                                          [:update-route [p1 p2 :filters]])}))
+                                    :ev [:toggle-filter-view]}))
 
-   :toggle-debug-view (reaction (let [[p1 p2 p3] @(subscribe [:page-route])]
+   :toggle-debug-view (reaction (let [[p1] @(subscribe [:page-route])]
                                   {:name "Toggle debug view"
                                    :disabled (not= p1 :factory)
-                                   :ev (if (= p3 :filters)
-                                         [:update-route [p1 p2]]
-                                         [:update-route [p1 p2 :debug]])}))})
+                                   :ev [:toggle-debug-view]}))})
 
 (defn cmd-atom [kw] (get all-cmds kw))
 (defn cmd [kw] (when-let [v (cmd-atom kw)] @v))
