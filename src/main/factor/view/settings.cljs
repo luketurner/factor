@@ -1,7 +1,8 @@
 (ns factor.view.settings
-  (:require [factor.components :as c]
-            [re-frame.core :refer [dispatch subscribe]]
-            [reagent.core :as reagent :refer [with-let]]))
+  (:require [re-frame.core :refer [dispatch subscribe]]
+            [reagent.core :as reagent :refer [with-let]]
+            [factor.components.wrappers :refer [textarea card-lg form-group]]
+            [factor.components.inputs :refer [alerting-button]]))
 
 (defn world-loader
   []
@@ -14,8 +15,8 @@
     [:<>
      ;; TODO -- update textarea to extract value from on-change within component
      ;; instead of having to do the .-target .-value jazz everywhere
-     [c/textarea {:on-change on-change}]
-     [c/alerting-button
+     [textarea {:on-change on-change}]
+     [alerting-button
       {:text "Import"}
       {:on-confirm on-confirm
        :confirm-button-text "Confirm Import"
@@ -25,9 +26,9 @@
 
 (defn world-exporter
   []
-  [c/textarea {:value @(subscribe [:world-as-edn]) :read-only true}])
+  [textarea {:value @(subscribe [:world-as-edn]) :read-only true}])
 
 (defn page []
   [:div.card-stack
-   [c/card-lg [c/form-group {:label "Export (Copy World Data)"} [world-exporter]]]
-   [c/card-lg [c/form-group {:label "Import (Paste World Data)"} [world-loader]]]])
+   [card-lg [form-group {:label "Export (Copy World Data)"} [world-exporter]]]
+   [card-lg [form-group {:label "Import (Paste World Data)"} [world-loader]]]])

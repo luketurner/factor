@@ -97,6 +97,12 @@
    [:tuple [:= :factory] Id]
    [:tuple [:= :factory] Id [:enum :debug :filters]]])
 
+(def CommandInvocation
+  [:map {:closed true}
+   [:cmd {:optional true} :keyword]
+   ;; FIXME
+   [:params [:vector any?]]])
+
 (def Ui
   [:map {:closed true}
    [:selected-objects [:vector Id]]
@@ -105,10 +111,9 @@
    [:app-menu [:vector :keyword]]
    [:omnibar-state
     [:map {:closed true}
-     [:mode {:default :closed}
-      [:enum :closed :command-palette
-       :open-factory :create-factory :delete-factory]]
-     [:query :string]]]])
+     [:mode {:default :closed} [:enum :closed :cmd-invocation]]
+     [:query {:optional true} :string]
+     [:invocation {:optional true} CommandInvocation]]]])
 
 (def AppDb
   [:map {:closed true}
@@ -116,27 +121,29 @@
    [:config Config]
    [:ui Ui]])
 
-;; reference schemas (not used anywhere yet)
+;; reference types (not used anywhere yet)
 
 (def Choice
   [:map {:closed true}
    [:name :string]
-   [:key :any]
-   [:value :any]
+   [:key any?]
+   [:value any?]
    [:disabled :boolean]])
 
 (def CommandParam
   [:map {:closed true}
    [:name :string]
-   [:choices [:vector Choice]]])
+   [:choice-sub {:optional true} [:vector any?]]])
 
 (def Command
   [:map {:closed true}
+   [:id :keyword]
    [:name :string]
-   [:disabled :boolean]
-   [:icon :keyword]
-   [:ev [:vector :any]]
-   [:params [:vector CommandParam]]])
+   [:disabled-sub {:optional true} [:vector any?]]
+   [:icon {:optional true} :keyword]
+   [:ev [:vector any?]]
+   [:global-hotkey {:optional true} :string]
+   [:params {:optional true} [:vector CommandParam]]])
 
 ;; transformers
 

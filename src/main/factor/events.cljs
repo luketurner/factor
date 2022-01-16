@@ -7,7 +7,8 @@
             [factor.schema :refer [make edn-decode edn-encode json-decode Config Factory Item Recipe Machine World AppDb]]
             [factor.util :refer [json->clj edn->clj new-uuid route->url]]
             [factor.interceptors :refer [->purge-redos ->purge-undos ->fragment-updater ->focuser]]
-            [cljs.core.match :refer [match]]))
+            [cljs.core.match :refer [match]]
+            [factor.cmds :as cmds]))
 
 (defn reg-all []
 
@@ -36,16 +37,17 @@
                      db))))
 
   (reg-event-db :open-factory
+                [(->fragment-updater)]
                 (fn [db [_ id]]
                   (s/setval [nav/VALID-UI
                              nav/PAGE-ROUTE]
                             [:factory id] db)))
 
-  (reg-event-db :open-item-editor (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:items] db)))
-  (reg-event-db :open-recipe-editor (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:recipes] db)))
-  (reg-event-db :open-machine-editor (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:machines] db)))
-  (reg-event-db :open-import-export (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:settings] db)))
-  (reg-event-db :open-help (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:help] db)))
+  (reg-event-db :open-item-editor [(->fragment-updater)] (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:items] db)))
+  (reg-event-db :open-recipe-editor [(->fragment-updater)] (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:recipes] db)))
+  (reg-event-db :open-machine-editor [(->fragment-updater)] (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:machines] db)))
+  (reg-event-db :open-import-export [(->fragment-updater)] (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:settings] db)))
+  (reg-event-db :open-help [(->fragment-updater)] (fn [db] (s/setval [nav/VALID-UI nav/PAGE-ROUTE] [:help] db)))
 
   (reg-event-db :delete-world [(undoable "Delete world")] (fn [db] (s/setval [nav/WORLD] (make World nil) db)))
 
@@ -69,17 +71,16 @@
                                  (s/nthpath 1)
                                  (s/pred= id)
                                  (s/terminal identity)]
-                                (s/terminal-val [:home]))
-                     ])
+                                (s/terminal-val [:home]))])
                    db)))
 
-  (reg-event-db :delete-open-factory [(undoable "Delete factory")
+  (reg-event-db :delete-open-factory [(undoable "Delete open factory")
                                       (->fragment-updater)]
                 (fn [db]
-                  (let [id (s/select [nav/UI
-                                      nav/PAGE-ROUTE
-                                      (s/selected? [s/FIRST (s/pred= :factory)])
-                                      (s/nthpath 1)]
+                  (let [id (s/select-any [nav/UI
+                                          nav/PAGE-ROUTE
+                                          (s/selected? [s/FIRST (s/pred= :factory)])
+                                          (s/nthpath 1)]
                                      db)]
                     (s/multi-transform
                      (s/multi-path
@@ -92,7 +93,13 @@
                       ; Because multi-path transforms are run in order, the deleted
                       ; factories have already been removed from FACTORIES-MAP when this runs.
                       [(s/collect-one nav/WORLD nav/FACTORIES-MAP s/FIRST s/FIRST)
-                       nav/VALID-UI nav/PAGE-ROUTE (s/selected? [s/FIRST (s/pred= :factory)]) (s/nthpath 1) (s/pred= id) (s/terminal identity)])
+                       nav/VALID-UI nav/PAGE-ROUTE
+                       (s/if-path (s/collected? [v] (some? v))
+                                  [(s/selected? [s/FIRST (s/pred= :factory)])
+                                   (s/nthpath 1)
+                                   (s/pred= id)
+                                   (s/terminal identity)]
+                                  (s/terminal-val [:home]))])
                      db))))
 
 
@@ -162,19 +169,21 @@
   (reg-event-db :change-power-unit (fn [db [_ v]] (s/setval [nav/VALID-CONFIG nav/UNIT :power] v db)))
   (reg-event-db :change-energy-unit (fn [db [_ v]] (s/setval [nav/VALID-CONFIG nav/UNIT :energy] v db)))
 
-  (reg-event-db :toggle-filter-view (fn [db] (s/transform [nav/VALID-UI
-                                                           nav/PAGE-ROUTE
-                                                           (s/selected? s/FIRST (s/pred= :factory))
-                                                           (s/nthpath 2)] #(if (= % :filters) s/NONE :filters) db)))
+  (reg-event-db :toggle-filter-view [(->fragment-updater)]
+                (fn [db] (s/transform [nav/VALID-UI
+                                       nav/PAGE-ROUTE
+                                       (s/selected? s/FIRST (s/pred= :factory))
+                                       (s/nthpath 2)] #(if (= % :filters) s/NONE :filters) db)))
 
-  (reg-event-db :toggle-debug-view (fn [db] (s/transform [nav/VALID-UI
-                                                          nav/PAGE-ROUTE]
-                                                         #(match %
-                                                            [:factory x :debug] [:factory x]
-                                                            [:factory x       ] [:factory x :debug]
-                                                            [:factory x _     ] [:factory x :debug]
-                                                            x                   x)
-                                                         db)))
+  (reg-event-db :toggle-debug-view [(->fragment-updater)]
+                (fn [db] (s/transform [nav/VALID-UI
+                                       nav/PAGE-ROUTE]
+                                      #(match %
+                                         [:factory x :debug] [:factory x]
+                                         [:factory x] [:factory x :debug]
+                                         [:factory x _] [:factory x :debug]
+                                         x                   x)
+                                      db)))
 
   ;; World-mutating events
   ;; Undoable
@@ -383,42 +392,57 @@
                 (fn [db [_ el-id]] (s/setval [nav/VALID-UI nav/FOCUSED] el-id db)))
 
   (reg-event-db :update-omnibar-query (fn [db [_ v]] (s/setval [nav/VALID-UI nav/OMNIBAR-QUERY] v db)))
-  (reg-event-db :open-command-palette (fn [db] (s/multi-transform [nav/VALID-UI nav/OMNIBAR-STATE
-                                                                   (s/multi-path [nav/MODE (s/terminal-val :command-palette)]
-                                                                                 [nav/QUERY (s/terminal-val "")])]
-                                                                  db)))
-  (reg-event-db :close-omnibar (fn [db] (s/setval [nav/VALID-UI nav/OMNIBAR-MODE] :closed db)))
+  ;; (reg-event-db :open-command-palette (fn [db] (s/multi-transform [nav/VALID-UI nav/OMNIBAR-STATE
+  ;;                                                                  (s/multi-path [nav/MODE (s/terminal-val :command-palette)]
+  ;;                                                                                [nav/QUERY (s/terminal-val "")])]
+  ;;                                                                 db)))
+  ;; (reg-event-db :omnibar-param-input (fn [db [_ param]]
+  ;;                                      (s/multi-transform [nav/VALID-UI nav/OMNIBAR-STATE
+  ;;                                                          (s/multi-path [nav/MODE (s/terminal-val :param-input)]
+  ;;                                                                        [nav/QUERY (s/terminal-val "")]
+  ;;                                                                        [nav/PARAM param])]
+  ;;                                                         db)))
+  
+  ;; Starts a command invocation. If the command has parameters, the omnibar is opened to prompt the user
+  ;; for arguments. If there are no parameters, the command is invoked (dispatched) immediately.
+  (reg-event-fx :cmd-invoke
+                (fn [{:keys [db]} [_ cmd-id]]
+                  (let [cmd (cmds/cmd cmd-id)]
+                    (if (empty? (:params cmd))
+                      {:fx [:dispatch (:ev cmd)]}
+                      {:db (s/setval [nav/VALID-UI nav/OMNIBAR-STATE]
+                                     {:mode :cmd-invocation
+                                      :query ""
+                                      :invocation {:cmd cmd-id
+                                                   :params []}} db)}))))
+
+  ;; Collects an argument's value for a currently executing command invocation.
+  ;; If there are no more arguments to be collected, the command is invoked (dispatched) with all collected arguments.
+  (reg-event-fx :cmd-invoke-collect
+                (fn [{:keys [db]} [_ v]]
+                    (let [invocation (s/select-any [nav/UI nav/OMNIBAR-STATE nav/INVOCATION] db)
+                          params (s/select-any [nav/PARAM-LIST] invocation)
+                          cmd (cmds/cmd (s/select-any [nav/CMD] invocation))
+                          cmd-ev (into (:ev cmd) (conj params v))
+                          more-params? (not= (inc (count params)) (count (:params cmd)))]
+                      (if more-params?
+                        ;; more params -- collect value and keep omnibar open
+                        {:db (s/multi-transform
+                              [nav/VALID-UI nav/OMNIBAR-STATE
+                               (s/multi-path
+                                [nav/QUERY (s/terminal-val "")]
+                                [nav/INVOCATION nav/PARAM-LIST s/END (s/terminal-val [v])])]
+                              db)}
+                        ;; no more params -- reset omnibar and dispatch the event
+                        {:db (s/setval [nav/VALID-UI nav/OMNIBAR-STATE]
+                                       {:mode :closed}
+                                       db)
+                         :fx [[:dispatch cmd-ev]]}))))
+
+  (reg-event-db :close-omnibar (fn [db] (s/setval [nav/VALID-UI nav/OMNIBAR-STATE] {:mode :closed} db)))
 
   (reg-event-db :set-app-menu (fn [db [_ v]] (s/setval [nav/VALID-UI nav/APP-MENU] v db)))
 
-
   (reg-event-db :select-objects
-                (fn [db [_ xs]] (s/setval [nav/VALID-UI nav/SELECTED-OBJECT-LIST] xs db)))
-
-  ;; Command events
-  ;; Sometimes undoable
-
-  (reg-event-db :omnibar-open-factory
-                (fn [db] (s/multi-transform
-                          [nav/VALID-UI nav/OMNIBAR-STATE
-                           (s/multi-path
-                            [nav/MODE (s/terminal-val :open-factory)]
-                            [nav/QUERY (s/terminal-val "")])]
-                          db)))
-
-  (reg-event-db :omnibar-create-factory
-                (fn [db] (s/multi-transform
-                          [nav/VALID-UI nav/OMNIBAR-STATE
-                           (s/multi-path
-                            [nav/MODE (s/terminal-val :create-factory)]
-                            [nav/QUERY (s/terminal-val "")])]
-                          db)))
-
-  (reg-event-db :omnibar-delete-factory
-                (fn [db] (s/multi-transform
-                          [nav/VALID-UI nav/OMNIBAR-STATE
-                           (s/multi-path
-                            [nav/MODE (s/terminal-val :delete-factory)]
-                            [nav/QUERY (s/terminal-val "")])]
-                          db))))
+                (fn [db [_ xs]] (s/setval [nav/VALID-UI nav/SELECTED-OBJECT-LIST] xs db))))
 

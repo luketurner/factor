@@ -1,4 +1,4 @@
-(ns factor.components)
+(ns factor.components.macros)
 
 (defmacro defcomponent
   "Macro for conveniently defining Reagent components, especially wrapper components.

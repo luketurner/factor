@@ -3,7 +3,6 @@
             [reagent.core :as reagent :refer [as-element]]
             [factor.styles :as styles]
             [garden.core :refer [css]]
-            [factor.components :as c]
             [factor.components.menus :as menus]
             [factor.view.settings :as settings]
             [factor.view.item :as item]
@@ -14,7 +13,16 @@
             [factor.view.notfound :as notfound]
             [factor.schema :as schema :refer [json-encode]]
             [cljs.core.match :refer [match]]
-            [factor.view.help :as help]))
+            [factor.view.help :as help]
+            [factor.components.cmd :refer [cmd-invocation-omnibar cmd-btn cmd-global-hotkeys]]
+            [factor.components.wrappers :refer [navbar navbar-group-left navbar-heading anchor-button navbar-divider control-group breadcrumbs navbar-group-right hotkeys-provider]]))
+
+(defn global-omnibar
+  []
+  (let [mode @(subscribe [:omnibar-mode])]
+    (case mode
+      :cmd-invocation [cmd-invocation-omnibar]
+      :closed nil)))
 
 (defn view-specific-tools []
   (match @(subscribe [:page-route])
@@ -26,16 +34,16 @@
     :else [:<>]))
 
 (defn primary-navbar []
-  [c/navbar
-   [c/navbar-group-left
-    [c/navbar-heading [c/anchor-button {:class "bp3-minimal" :on-click (reagent/partial dispatch [:update-route [:home]])} [:strong "factor."]]]
-    [c/navbar-divider]
+  [navbar
+   [navbar-group-left
+    [navbar-heading [anchor-button {:class "bp3-minimal" :on-click (reagent/partial dispatch [:update-route [:home]])} [:strong "factor."]]]
+    [navbar-divider]
     [menus/menus]
-    [c/navbar-divider]
-    [c/control-group
-     [c/cmd-btn {:minimal true :cmd :undo}]
-     [c/cmd-btn {:minimal true :cmd :redo}]]
-    [c/navbar-divider]
+    [navbar-divider]
+    [control-group
+     [cmd-btn {:minimal true :cmd :undo}]
+     [cmd-btn {:minimal true :cmd :redo}]]
+    [navbar-divider]
     [view-specific-tools]]])
 
 
@@ -54,17 +62,17 @@
 
 (defn route-breadcrumbs []
   (let [route (json-encode schema/PageRoute @(subscribe [:page-route]))]
-    [c/breadcrumbs {:items (for [r route] {:text r})}]))
+    [breadcrumbs {:items (for [r route] {:text r})}]))
 
 (defn footer []
-  [c/navbar
-   [c/navbar-group-left
+  [navbar
+   [navbar-group-left
     [route-breadcrumbs]]
-   [c/navbar-group-right
-    [c/anchor-button {:class :bp3-minimal
+   [navbar-group-right
+    [anchor-button {:class :bp3-minimal
                       :href "https://git.sr.ht/~luketurner/factor"
                       :text "sourcehut"}]
-    [c/anchor-button {:class :bp3-minimal
+    [anchor-button {:class :bp3-minimal
                       :href "https://github.com/luketurner/factor"
                       :text "github"}]
     [:span {:style {:margin-left "0.5rem"}} "Copyright 2021 Luke Turner"]]])
@@ -72,9 +80,9 @@
 (defn app []
   [:<>
    [:style (apply css styles/css-rules)]
-   [c/hotkeys-provider
-    [c/global-omnibar]
-    [c/global-hotkeys]
+   [hotkeys-provider
+    [global-omnibar]
+    [cmd-global-hotkeys]
     [:div.app-container
      [primary-navbar]
      [main-content]

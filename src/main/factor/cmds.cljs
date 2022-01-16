@@ -11,150 +11,154 @@
    implementation detail in your views. But if you want un-derefed command, use `cmd-atom`.
    
    Reference the Command schema in the factor.schema namespace for what fields are supported."
-  (:require [re-frame.core :refer [subscribe dispatch]]
-            [reagent.ratom :refer [reaction]]
-            [factor.util :refer [ipairs]]))
+  (:require [com.rpl.specter :as s]))
 
-(def all-cmds
-  {:open-command-palette (reaction {:name "Open command palette"
-                                    :global-hotkey "/"
-                                    :ev [:open-command-palette]})
+(def all-cmds-raw
+  {:open-command-palette {:id :open-command-palette
+                          :name "Open command palette"
+                          :global-hotkey "/"
+                          :params [{:name "Command Palette"
+                                    :choice-sub [:command-choices]}]
+                          :ev [:cmd-invoke]}
 
-   :new-factory (reaction {:name "New factory"
-                           :icon :plus
-                           :params [{:name "Name"}]
-                           :ev [:new-factory]})
+   :new-factory {:id :new-factory
+                 :name "New factory"
+                 :icon :plus
+                 :params [{:name "Name"}]
+                 :ev [:new-factory]}
 
-   :open-factory (reaction {:name "Open factory"
-                            :disabled (not @(subscribe [:any-factories?]))
-                            :params [{:name "Factory"
-                                      :choices (for [[id name] @(subscribe [:factory-ids->names])]
-                                                 {:key id
-                                                  :name name
-                                                  :value id})}]
-                            :ev [:open-factory]})
+   :open-factory {:id :open-factory
+                  :name "Open factory"
+                  :disabled-sub [:open-factory-disabled?]
+                  :params [{:name "Factory"
+                            :choice-sub [:open-factory-choices]}]
+                  :ev [:open-factory]}
 
-   :delete-factory (reaction {:name "Delete factory"
-                              :disabled (not @(subscribe [:any-factories?]))
-                              :params [{:name "Factory"
-                                        :choices (for [[id name] @(subscribe [:factory-ids->names])]
-                                                   {:key id
-                                                    :name name
-                                                    :value id})}]
-                              :ev [:delete-factory]})
+   :delete-factory {:id :delete-factory
+                    :name "Delete factory"
+                    :disabled-sub [:delete-factory-disabled?]
+                    :params [{:name "Factory"
+                              :choice-sub [:delete-factory-choices]}]
+                    :ev [:delete-factory]}
 
-   :delete-open-factory (reaction {:name "Delete open factory"
-                                   :icon :delete
-                                   :disabled (not @(subscribe [:open-factory?]))
-                                   :ev [:delete-open-factory]})
+   :delete-open-factory {:id :delete-open-factory
+                         :name "Delete open factory"
+                         :icon :delete
+                         :disabled-sub [:delete-open-factory-disabled?]
+                         :ev [:delete-open-factory]}
 
-   :undo (reaction {:name "Undo"
-                    :disabled (not @(subscribe [:undos?]))
-                    :icon :undo
-                    :ev [:undo]})
+   :undo {:id :undo
+          :name "Undo"
+          :disabled-sub [:undo-disabled?]
+          :icon :undo
+          :ev [:undo]}
 
-   :redo (reaction {:name "Redo"
-                    :icon :redo
-                    :disabled (not @(subscribe [:redos?]))
-                    :ev [:redo]})
+   :redo {:id :redo
+          :name "Redo"
+          :icon :redo
+          :disabled-sub [:redo-disabled?]
+          :ev [:redo]}
 
-   :undo-multi (reaction {:name "Undo multiple"
-                          :disabled (not @(subscribe [:undos?]))
-                          :params [{:name "Undo target"
-                                    :choices (for [[ex ix] (rest (ipairs @(subscribe [:undo-explanations])))]
-                                               {:name ex
-                                                :key ix
-                                                :value ix})}]
-                          :ev [:undo]})
+   :undo-multi {:id :undo-multi
+                :name "Undo multiple"
+                :disabled-sub [:undo-disabled?]
+                :params [{:name "Undo target"
+                          :choice-sub [:undo-choices]}]
+                :ev [:undo]}
 
-   :redo-multi (reaction {:name "Redo multiple"
-                          :disabled (not @(subscribe [:redos?]))
-                          :params [{:name "Redo target"
-                                    :choices (for [[ex ix] (rest (ipairs @(subscribe [:redo-explanations])))]
-                                               {:name ex
-                                                :key ix
-                                                :value ix})}]
-                          :ev [:redo]})
+   :redo-multi {:id :redo-multi
+                :name "Redo multiple"
+                :disabled-sub [:redo-disabled?]
+                :params [{:name "Redo target"
+                          :choice-sub [:redo-choices]}]
+                :ev [:redo]}
 
-   :open-item-editor (reaction {:name "Open item editor"
-                                :ev [:open-item-editor]})
+   :open-item-editor {:id :open-item-editor
+                      :name "Open item editor"
+                      :ev [:open-item-editor]}
 
-   :open-recipe-editor (reaction {:name "Open recipe editor"
-                                  :ev [:open-recipe-editor]})
+   :open-recipe-editor {:id :open-recipe-editor
+                        :name "Open recipe editor"
+                        :ev [:open-recipe-editor]}
 
-   :open-machine-editor (reaction {:name "Open machine editor"
-                                   :ev [:open-machine-editor]})
+   :open-machine-editor {:id :open-machine-editor
+                         :name "Open machine editor"
+                         :ev [:open-machine-editor]}
 
-   :open-import-export (reaction {:name "Import/export world"
-                                  :ev [:open-import-export]})
-   
-   :open-help (reaction {:name "Open help"
-                         :ev [:open-help]})
+   :open-import-export {:id :open-import-export
+                        :name "Import/export world"
+                        :ev [:open-import-export]}
 
-   :delete-world (reaction {:name "Delete world"
-                            :ev [:delete-world]})
+   :open-help {:id :open-help
+               :name "Open help"
+               :ev [:open-help]}
 
-   :new-item (reaction {:name "New item"
-                        :icon :plus
-                        :ev [:new-item]})
+   :delete-world {:id :delete-world
+                  :name "Delete world"
+                  :ev [:delete-world]}
 
-   :new-recipe (reaction {:name "New recipe"
-                          :icon :plus
-                          :ev [:new-recipe]})
+   :new-item {:id :new-item
+              :name "New item"
+              :icon :plus
+              :ev [:new-item]}
 
-   :new-machine (reaction {:name "New machine"
-                           :icon :plus
-                           :ev [:new-machine]})
+   :new-recipe {:id :new-recipe
+                :name "New recipe"
+                :icon :plus
+                :ev [:new-recipe]}
 
-   :delete-selected-items (reaction (let [objects @(subscribe [:selected-objects])]
-                                      {:name "Delete selected item(s)"
-                                       :icon :delete
-                                       :disabled (empty? objects)
-                                       :ev [:delete-selected-items]}))
+   :new-machine {:id :new-machine
+                 :name "New machine"
+                 :icon :plus
+                 :ev [:new-machine]}
 
-   :delete-selected-recipes (reaction (let [objects @(subscribe [:selected-objects])]
-                                        {:name "Delete selected recipe(s)"
-                                         :icon :delete
-                                         :disabled (empty? objects)
-                                         :ev [:delete-selected-recipes]}))
+   :delete-selected-items {:id :delete-selected-items
+                           :name "Delete selected item(s)"
+                           :icon :delete
+                           :disabled-sub [:delete-selected-items-disabled?]
+                           :ev [:delete-selected-items]}
 
-   :delete-selected-machines (reaction (let [objects @(subscribe [:selected-objects])]
-                                         {:name "Delete selected machine(s)"
-                                          :icon :delete
-                                          :disabled (empty? objects)
-                                          :ev [:delete-selected-machines]}))
+   :delete-selected-recipes {:id :delete-selected-recipes
+                             :name "Delete selected recipe(s)"
+                             :icon :delete
+                             :disabled-sub [:delete-selected-recipes-disabled?]
+                             :ev [:delete-selected-recipes]}
 
-   :change-item-rate-unit (reaction (let [cur @(subscribe [:unit :item-rate])
-                                          choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
-                                      {:name "Item rate unit"
-                                       :params [{:name "Unit" :choices [(choice "items/sec") (choice "items/min")]}]
-                                       :ev [:change-item-rate-unit]}))
+   :delete-selected-machines {:id :delete-selected-recipes
+                              :name "Delete selected machine(s)"
+                              :icon :delete
+                              :disabled-sub [:delete-selected-machines-disabled?]
+                              :ev [:delete-selected-machines]}
 
-   :change-energy-unit (reaction (let [cur @(subscribe [:unit :energy])
-                                       choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
-                                   {:name "Energy unit"
-                                    :params [{:name "Unit" :choices [(choice "J")]}]
-                                    :ev [:change-energy-unit]}))
+   :change-item-rate-unit {:id :change-item-rate-unit
+                           :name "Item rate unit"
+                           :params [{:name "Unit"
+                                     :choice-sub [:item-rate-unit-choices]}]
+                           :ev [:change-item-rate-unit]}
 
-   :change-power-unit (reaction (let [cur @(subscribe [:unit :power])
-                                      choice (fn [v] {:key v :name v :value v :disabled (= v cur)})]
-                                  {:name "Power unit"
-                                   :params [{:name "Unit" :choices [(choice "W")]}]
-                                   :ev [:change-power-unit]}))
+   :change-energy-unit {:id :change-energy-unit
+                        :name "Energy unit"
+                        :params [{:name "Unit"
+                                  :choice-sub [:energy-unit-choices]}]
+                        :ev [:change-energy-unit]}
 
-   :toggle-filter-view (reaction (let [[p1] @(subscribe [:page-route])]
-                                   {:name "Toggle filter view"
-                                    :disabled (not= p1 :factory)
-                                    :ev [:toggle-filter-view]}))
+   :change-power-unit {:id :change-power-unit
+                       :name "Power unit"
+                       :params [{:name "Unit"
+                                 :choice-sub [:power-unit-choices]}]
+                       :ev [:change-power-unit]}
 
-   :toggle-debug-view (reaction (let [[p1] @(subscribe [:page-route])]
-                                  {:name "Toggle debug view"
-                                   :disabled (not= p1 :factory)
-                                   :ev [:toggle-debug-view]}))})
+   :toggle-filter-view {:id :toggle-filter-view
+                        :name "Toggle filter view"
+                        :disabled-sub [:toggle-filter-view-disabled?]
+                        :ev [:toggle-filter-view]}
 
-(defn cmd-atom [kw] (get all-cmds kw))
-(defn cmd [kw] (when-let [v (cmd-atom kw)] @v))
+   :toggle-debug-view {:id :toggle-debug-view
+                       :name "Toggle debug view"
+                       :disabled-sub [:toggle-debug-view-disabled?]
+                       :ev [:toggle-debug-view]}})
 
-(defn dispatch-cmd
-  [{:keys [ev params]} & args]
-  (dispatch (into ev (take (count params) args))))
+(defn cmd [kw] (get all-cmds-raw kw))
+
+(defn all-cmds [] (vals all-cmds-raw))
+(defn all-cmd-ids [] (keys all-cmds-raw))

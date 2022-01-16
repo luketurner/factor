@@ -4,10 +4,11 @@
   (:require [re-frame.core :refer [reg-sub reg-sub-raw subscribe]]
             [reagent.ratom :refer [reaction]]
             [factor.pgraph :as pgraph]
-            [factor.util :refer [clj->json clj->edn]]
+            [factor.util :refer [clj->json clj->edn ipairs]]
             [com.rpl.specter :as s :refer [select select-any transform setval]]
             [factor.navs :as nav]
-            [factor.schema :refer [json-encode World edn-encode]]))
+            [factor.schema :refer [json-encode World edn-encode]]
+            [factor.cmds :as cmds]))
 
 
 (defn reg-all []
@@ -22,14 +23,19 @@
 
   (reg-sub :selected-objects  :<- [:ui] (fn [ui] (select     [nav/SELECTED-OBJECTS]  ui)))
   (reg-sub :page-route        :<- [:ui] (fn [ui] (select-any [nav/PAGE-ROUTE]     ui)))
-  (reg-sub :open-factory?     :<- [:page-route]  (fn [[x]] (= x :factory)))
+  (reg-sub :open-factory-id   :<- [:page-route]      (fn [[x1 x2]] (when (= x1 :factory) x2)))
+  (reg-sub :open-factory?     :<- [:open-factory-id] (fn [v] (some? v)))
 
   (reg-sub :app-menu :<- [:ui] (fn [ui] (select-any [nav/APP-MENU] ui)))
 
   (reg-sub :omnibar-state :<- [:ui] (fn [ui] (select-any [nav/OMNIBAR-STATE] ui)))
-  (reg-sub :omnibar-mode  :<- [:omnibar-state] (fn [ui] (select-any [nav/MODE] ui)))
+  (reg-sub :omnibar-mode  :<- [:omnibar-state] (fn [v] (select-any [nav/MODE] v)))
+  (reg-sub :cmd-invocation :<- [:omnibar-state] (fn [v] (select-any [nav/INVOCATION] v)))
 
   (reg-sub :units :<- [:config] (fn [config]      (select-any [nav/UNIT] config)))
+  (reg-sub :item-rate-unit :<- [:units] (fn [config] (select-any :item-rate config)))
+  (reg-sub :energy-unit    :<- [:units] (fn [config] (select-any :energy    config)))
+  (reg-sub :power-unit     :<- [:units] (fn [config] (select-any :power     config)))
   (reg-sub :unit  :<- [:units]  (fn [units [_ u]] (select-any u          units)))
 
   (reg-sub :factories :<- [:world] (fn [w] (select-any nav/FACTORIES-MAP w)))
@@ -92,11 +98,55 @@
   (reg-sub :recipe-input-index  :<- [:recipe-index] (fn [m] (select-any :input m)))
   (reg-sub :recipe-output-index :<- [:recipe-index] (fn [m] (select-any :output m)))
 
+  ;; COMMAND SUBS
+
+  (reg-sub-raw :command-choices
+               (fn []
+                 (reaction
+                  (map (fn [{:keys [id disabled-sub] nm :name}]
+                         {:key (name id) :name nm :value id :disabled (and disabled-sub @(subscribe disabled-sub))})
+                       (cmds/all-cmds)))))
+
+  (reg-sub :open-factory-disabled?   :<- [:any-factories?] not)
+  (reg-sub :delete-factory-disabled? :<- [:any-factories?] not)
+
+  (reg-sub :undo-disabled? :<- [:undos?] not)
+  (reg-sub :redo-disabled? :<- [:redos?] not)
+  (reg-sub :delete-selected-items-disabled? :<- [:selected-objects] not-empty)
+  (reg-sub :delete-selected-recipes-disabled? :<- [:selected-objects] not-empty)
+  (reg-sub :delete-selected-machines-disabled? :<- [:selected-objects] not-empty)
+
+  (reg-sub :undo-choices :<- [:undo-explanations] #(map (fn [[s ix]] {:key (str ix) :name s :value ix}) (ipairs %)))
+  (reg-sub :redo-choices :<- [:redo-explanations] #(map (fn [[s ix]] {:key (str ix) :name s :value ix}) (ipairs %)))
+
+  (reg-sub :delete-open-factory-disabled? :<- [:open-factory?] not)
+  (reg-sub :toggle-filter-view-disabled? :<- [:open-factory?] not)
+  (reg-sub :toggle-debug-view-disabled? :<- [:open-factory?] not)
+
+  (reg-sub :factory-choices :<- [:factory-ids->names] (fn [m] (map (fn [[id nm]] {:key id :name nm :value id}) m)))
+
+  (reg-sub :open-factory-choices
+           :<- [:factory-choices]
+           :<- [:open-factory-id]
+           (fn [[choices id]] (setval [(s/filterer :key (s/pred= id)) s/ALL :disabled] true choices)))
+  
+  (reg-sub :delete-factory-choices :<- [:factory-choices] identity)
+  (reg-sub :item-rate-unit-choices :<- [:item-rate-unit]
+           (fn [x]
+             [{:key :items/sec :name "items/sec" :value "items/sec" :disabled (= x "items/sec")}
+              {:key :items/min :name "items/min" :value "items/min" :disabled (= x "items/min")}]))
+  
+  (reg-sub :power-unit-choices  :<- [:power-unit]  (fn [x] [{:key :W :name "W" :value "W" :disabled (= x "W")}]))
+  (reg-sub :energy-unit-choices :<- [:energy-unit] (fn [x] [{:key :J :name "J" :value "J" :disabled (= x "J")}]))
+
+  ;; PGRAPH SUBS
+
   ; These subs exclude fields that don't matter for pgraph processing.
   ; This way, if e.g. a factory name changes, the whole pgraph doesn't recalculate.
   (reg-sub :factory-for-pgraph (fn [[_ id]] (subscribe [:factory id])) (fn [x] (setval [(s/multi-path nav/NAME nav/ID)] s/NONE x)))
   (reg-sub :machine-for-pgraph (fn [[_ id]] (subscribe [:machine id])) (fn [x] (setval nav/NAME s/NONE x)))
   (reg-sub :recipe-for-pgraph  (fn [[_ id]] (subscribe [:recipe id]))  (fn [x] (setval nav/NAME s/NONE x)))
+
 
   ; The :recipes-with-output sub accepts an item ID as a parameter, uses the recipe-index to
   ; look up all recipes that provide that item as output, and returns a set of recipe objects (NOT ids)

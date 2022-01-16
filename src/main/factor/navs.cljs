@@ -15,6 +15,7 @@
      (Specter convention)"
   (:require [com.rpl.specter :as s :refer [path]]
             [malli.core :as m]
+            [malli.error :refer [humanize]]
             [factor.schema :as sc]))
 
 ;; general/utility navigators
@@ -29,7 +30,7 @@
                (if (or (= next-x x)
                        (m/validate schema next-x))
                  next-x
-                 (throw (pr-str (m/explain schema next-x)))))))
+                 (throw (pr-str (humanize (m/explain schema next-x))))))))
 
 ;; navigators on AppDB
 
@@ -123,6 +124,10 @@
 (def FOCUSED              (path :focused))
 
 (def OMNIBAR-STATE (path :omnibar-state))
+(def INVOCATION (path :invocation))
+(def PARAM-LIST (path :params))
+(def CMD (path :cmd))
+
 (def APP-MENU (path :app-menu))
 
 (def MODE (path :mode))
