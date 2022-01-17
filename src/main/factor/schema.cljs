@@ -9,7 +9,9 @@
 
 (def Name :string)
 
-(def NumericDate [number? {:default 0}])
+; after https://github.com/metosin/malli/pull/582
+; this can have {:default-fn #(.now js/Date)}
+(def NumericTimestamp [number? {:default 0}])
 
 (def Quantity [number? {:default 0}])
 (def Ratio [number? {:default 1}])
@@ -42,19 +44,19 @@
    [:recipes Qmap]
    [:machines Qmap]
    [:filter Filter]
-   [:created-at NumericDate]])
+   [:created-at NumericTimestamp]])
 
 (def Item [:map {:closed true}
            [:id Id]
            [:name {:default "Unnamed Item"} Name]
-           [:created-at number?]])
+           [:created-at NumericTimestamp]])
 
 (def Machine [:map {:closed true}
               [:id Id]
               [:name {:default "Unnamed Machine"} Name]
               [:power Quantity]
               [:speed Ratio]
-              [:created-at NumericDate]])
+              [:created-at NumericTimestamp]])
 
 (def Recipe [:map {:closed true}
              [:id Id]
@@ -64,7 +66,7 @@
              [:catalysts Qmap]
              [:machines [:vector Id]]
              [:duration Ratio]
-             [:created-at NumericDate]])
+             [:created-at NumericTimestamp]])
 
 (def Factories [:map-of Id Factory])
 (def Items [:map-of Id Item])
