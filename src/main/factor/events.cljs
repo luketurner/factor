@@ -57,49 +57,26 @@
                   (s/multi-transform
                    (s/multi-path
                     [nav/VALID-WORLD (nav/factories [id]) (s/terminal-val s/NONE)]
-                      ; the below path benefit from some explaining. Basically, if
-                      ; the open factory was deleted, we want to open another,
-                      ; not-deleted factory if possible. The (collect-one) navigator
-                      ; collects the ID of another factory to open. The (s/terminal identity)
-                      ; line will then set the value of the navigated path to that collected value.
-                      ; Because multi-path transforms are run in order, the deleted
-                      ; factories have already been removed from FACTORIES-MAP when this runs.
-                    [(s/collect-one nav/WORLD nav/FACTORIES-MAP s/FIRST s/FIRST)
-                     nav/VALID-UI nav/PAGE-ROUTE
-                     (s/if-path (s/collected? [v] (some? v))
-                                [(s/selected? [s/FIRST (s/pred= :factory)])
-                                 (s/nthpath 1)
-                                 (s/pred= id)
-                                 (s/terminal identity)]
-                                (s/terminal-val [:home]))])
+                    ; Because multi-path transforms are run in order, the deleted
+                    ; factory has already been removed from FACTORIES-MAP when this collect-one runs.
+                    [(s/collect-one nav/WORLD nav/FIRST-FACTORY-ID)
+                     nav/VALID-UI nav/PAGE-ROUTE (nav/first= :factory) (nav/second= id)
+                     (nav/if-collected some? nav/TERM-COLLECTED (s/terminal-val [:home]))])
                    db)))
 
   (reg-event-db :delete-open-factory [(undoable "Delete open factory")
                                       (->fragment-updater)]
                 (fn [db]
-                  (let [id (s/select-any [nav/UI
-                                          nav/PAGE-ROUTE
-                                          (s/selected? [s/FIRST (s/pred= :factory)])
-                                          (s/nthpath 1)]
+                  (let [id (s/select-any [nav/UI nav/PAGE-ROUTE (nav/first= :factory) (nav/SECOND)]
                                      db)]
                     (s/multi-transform
                      (s/multi-path
                       [nav/VALID-WORLD (nav/factories [id]) (s/terminal-val s/NONE)]
-                      ; the below path benefit from some explaining. Basically, if
-                      ; the open factory was deleted, we want to open another,
-                      ; not-deleted factory if possible. The (collect-one) navigator
-                      ; collects the ID of another factory to open. The (s/terminal identity)
-                      ; line will then set the value of the navigated path to that collected value.
                       ; Because multi-path transforms are run in order, the deleted
-                      ; factories have already been removed from FACTORIES-MAP when this runs.
-                      [(s/collect-one nav/WORLD nav/FACTORIES-MAP s/FIRST s/FIRST)
-                       nav/VALID-UI nav/PAGE-ROUTE
-                       (s/if-path (s/collected? [v] (some? v))
-                                  [(s/selected? [s/FIRST (s/pred= :factory)])
-                                   (s/nthpath 1)
-                                   (s/pred= id)
-                                   (s/terminal identity)]
-                                  (s/terminal-val [:home]))])
+                      ; factory has already been removed from FACTORIES-MAP when this collect-one runs.
+                      [(s/collect-one nav/WORLD nav/FIRST-FACTORY-ID)
+                       nav/VALID-UI nav/PAGE-ROUTE (nav/first= :factory) (nav/second= id)
+                       (nav/if-collected some? nav/TERM-COLLECTED (s/terminal-val [:home]))])
                      db))))
 
 
@@ -172,8 +149,8 @@
   (reg-event-db :toggle-filter-view [(->fragment-updater)]
                 (fn [db] (s/transform [nav/VALID-UI
                                        nav/PAGE-ROUTE
-                                       (s/selected? s/FIRST (s/pred= :factory))
-                                       (s/nthpath 2)] #(if (= % :filters) s/NONE :filters) db)))
+                                       (nav/first= :factory)
+                                       nav/THIRD] #(if (= % :filters) s/NONE :filters) db)))
 
   (reg-event-db :toggle-debug-view [(->fragment-updater)]
                 (fn [db] (s/transform [nav/VALID-UI

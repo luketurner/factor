@@ -32,6 +32,18 @@
                  next-x
                  (throw (pr-str (humanize (m/explain schema next-x))))))))
 
+(defn if-collected
+  [pred path else-path]
+  (s/if-path (s/collected? [v] (pred v)) path else-path))
+
+(def SECOND (s/nthpath 1))
+(def THIRD (s/nthpath 2))
+
+(defn first= [v] (path (s/selected? [s/FIRST (s/pred= v)])))
+(defn second= [v] (path (s/selected? [SECOND (s/pred= v)])))
+
+(def TERM-COLLECTED (s/terminal identity))
+
 ;; navigators on AppDB
 
 (def CONFIG (path :config))
@@ -68,6 +80,8 @@
 (defn valid-recipe [id]  (path RECIPES-MAP   id (validate sc/Recipe)))
 (defn valid-machine [id] (path MACHINES-MAP  id (validate sc/Machine)))
 (defn valid-item [id]    (path ITEMS-MAP     id (validate sc/Item)))
+
+(def FIRST-FACTORY-ID (path FACTORIES-MAP s/FIRST s/FIRST))
 
 ;; navigators on factory/recipe/etc.
 
