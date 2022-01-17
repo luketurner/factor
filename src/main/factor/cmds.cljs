@@ -75,13 +75,16 @@
 
    :open-item-editor {:id :open-item-editor
                       :name "Open item editor"
+                      :icon :cube
                       :ev [:open-item-editor]}
 
    :open-recipe-editor {:id :open-recipe-editor
                         :name "Open recipe editor"
+                        :icon :data-lineage
                         :ev [:open-recipe-editor]}
 
    :open-machine-editor {:id :open-machine-editor
+                         :icon :oil-field
                          :name "Open machine editor"
                          :ev [:open-machine-editor]}
 
@@ -91,6 +94,7 @@
 
    :open-help {:id :open-help
                :name "Open help"
+               :icon :help
                :ev [:open-help]}
 
    :delete-world {:id :delete-world
