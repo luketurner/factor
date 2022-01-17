@@ -1,4 +1,23 @@
 (ns factor.view.help)
 
 (defn page []
-  [:p "Howdy"])
+  [:div.help-page
+   [:h2 "Help (Work In Progress)"]
+   [:h3 "Overview"]
+   [:p "Factor is an in-development Web app that aims to be an alternative to spreadsheets for calculating production rates and ratios in factory games (like Factorio or Satisfactory)."]
+   [:p "Factor is game-agnostic, meaning it's not pre-programmed to be aware of the items, machines, or processing recipes available in any particular game. You, the user, have to make Factor 'aware' of what-all is available in your game using the " [:strong "Open item editor"] ", " [:strong "Open machine editor"] ", and " [:strong "Open recipe editor"] " commands. (Note that Factor has no distinction for 'fluids', 'gases', etc. -- they're all just items.)"]
+   [:p "Factor provides both mouse-driven and keyboard-driven controls. Commands such as " [:strong "Open item editor"] " can be invoked using the menus at the top of the window (mouse-driven), or they can be invoked using the Command Palette (keyboard-driven). The Command Palette's hotkey is " [:strong "/"] " and it provides autocomplete of all available commands. You can also open a window displaying all the currently-available keybinds using " [:strong "?"] "."]
+   [:p "Once your items, machines, and recipes are created, you can use the " [:strong "New factory"] " command to define a new factory."]
+   [:h3 "Factories"]
+   [:p "A factory is a self-contained unit that processes items through multiple stages of recipes to produce some kind of desired output. Once you configure the factory's desired output items, Factor will automatically calculate a 'production graph' for the factory, indicating which recipes/machines/inputs are required to produce the wished-for items. Factories can also specify filters to exclude certain recipes/machines/items from being used in the production graph. You can have as many factories as you want, each with their own filters and desired outputs."]
+   [:p "If there are any items that Factor doesn't know how to create (in other words, there are no recipes that output those items, or the recipes/items are excluded by the factory's filters), they're listed as required external inputs for the factory. A common example is raw materials -- ores, water, etc."]
+   [:p "If your factory has unexpected external inputs (e.g. an intermediate product that should be crafted within the factory), it's possible you need to add recipes to tell Factor how to produce the unexpected item(s) in question."]
+   [:p "If there are any unused outputs from the factory's processing -- items that aren't consumed as inputs by any other recipes -- they will be listed as 'Excess Output' for the factory. The total output of the factory is the Excess Output plus the Desired Output."]
+   [:p "The production graph algorithm is designed to handle cycles and byproducts, but there may be cases where Factor is unable to give you useful results. If this happens to you, feel free to open an issue on the Factor github page."]
+   [:h3 "Catalysts"]
+   [:p "Recipes can also define catalysts, which are one-time inputs required to start the recipe processing, but not for continued operation. Unlike recipe inputs/outputs, catalysts are not associated with a rate: a catalyst of 'one iron ingot' doesn't mean one ingot per second, just a one-time requirement of a single ingot. Catalysts are assumed to be provided manually by the player in-game, and are not included in the production graph's satisfaction algorithm."]
+   [:h3 "Units"]
+   [:p "Factor has a rudimentary system of units. By default item rates use the 'items/sec' unit, and all durations are in seconds. This can be changed to 'items/min' if desired. But, it's important to understand that Factor is not really unit-smart; they're just a UI thing. Changing the unit to 'items/min' will not automatically multiply your existing factory/recipe rates by 60, you'll have to do that yourself."]
+   [:h3 "Factor data storage"]
+   [:p "All Factor data is stored entirely client-side, in your browser's local storage. No accounts or servers are involved. It's easy to run Factor yourself with nothing more than static hosting. (See the Sourcehut/Github links in the footer for instructions.)"]
+   [:p "It's possible to import/export the locally stored data using the " [:strong "Import/export world"] " command. I recommend exporting your world occasionally in case you accidentally reset your browser's local storage."]])
