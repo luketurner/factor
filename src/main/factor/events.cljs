@@ -67,7 +67,7 @@
   (reg-event-db :delete-open-factory [(undoable "Delete open factory")
                                       (->fragment-updater)]
                 (fn [db]
-                  (let [id (s/select-any [nav/UI nav/PAGE-ROUTE (nav/first= :factory) (nav/SECOND)]
+                  (let [id (s/select-any [nav/UI nav/PAGE-ROUTE (nav/first= :factory) nav/SECOND]
                                          db)]
                     (s/multi-transform
                      (s/multi-path
