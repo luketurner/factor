@@ -68,7 +68,7 @@
                                       (->fragment-updater)]
                 (fn [db]
                   (let [id (s/select-any [nav/UI nav/PAGE-ROUTE (nav/first= :factory) (nav/SECOND)]
-                                     db)]
+                                         db)]
                     (s/multi-transform
                      (s/multi-path
                       [nav/VALID-WORLD (nav/factories [id]) (s/terminal-val s/NONE)]
@@ -148,9 +148,13 @@
 
   (reg-event-db :toggle-filter-view [(->fragment-updater)]
                 (fn [db] (s/transform [nav/VALID-UI
-                                       nav/PAGE-ROUTE
-                                       (nav/first= :factory)
-                                       nav/THIRD] #(if (= % :filters) s/NONE :filters) db)))
+                                       nav/PAGE-ROUTE]
+                                      #(match %
+                                         [:factory x :filters] [:factory x]
+                                         [:factory x] [:factory x :filters]
+                                         [:factory x _] [:factory x :filters]
+                                         x                   x)
+                                      db)))
 
   (reg-event-db :toggle-debug-view [(->fragment-updater)]
                 (fn [db] (s/transform [nav/VALID-UI
@@ -259,7 +263,7 @@
                 (fn [db [_ el-id]] (s/setval [nav/VALID-UI nav/FOCUSED] el-id db)))
 
   (reg-event-db :update-omnibar-query (fn [db [_ v]] (s/setval [nav/VALID-UI nav/OMNIBAR-QUERY] v db)))
-  
+
   ;; Starts a command invocation. If the command has parameters, the omnibar is opened to prompt the user
   ;; for arguments. If there are no parameters, the command is invoked (dispatched) immediately.
   (reg-event-fx :cmd-invoke
@@ -277,24 +281,24 @@
   ;; If there are no more arguments to be collected, the command is invoked (dispatched) with all collected arguments.
   (reg-event-fx :cmd-invoke-collect
                 (fn [{:keys [db]} [_ v]]
-                    (let [invocation (s/select-any [nav/UI nav/OMNIBAR-STATE nav/INVOCATION] db)
-                          params (s/select-any [nav/PARAM-LIST] invocation)
-                          cmd (cmds/cmd (s/select-any [nav/CMD] invocation))
-                          cmd-ev (into (:ev cmd) (conj params v))
-                          more-params? (not= (inc (count params)) (count (:params cmd)))]
-                      (if more-params?
+                  (let [invocation (s/select-any [nav/UI nav/OMNIBAR-STATE nav/INVOCATION] db)
+                        params (s/select-any [nav/PARAM-LIST] invocation)
+                        cmd (cmds/cmd (s/select-any [nav/CMD] invocation))
+                        cmd-ev (into (:ev cmd) (conj params v))
+                        more-params? (not= (inc (count params)) (count (:params cmd)))]
+                    (if more-params?
                         ;; more params -- collect value and keep omnibar open
-                        {:db (s/multi-transform
-                              [nav/VALID-UI nav/OMNIBAR-STATE
-                               (s/multi-path
-                                [nav/QUERY (s/terminal-val "")]
-                                [nav/INVOCATION nav/PARAM-LIST s/END (s/terminal-val [v])])]
-                              db)}
+                      {:db (s/multi-transform
+                            [nav/VALID-UI nav/OMNIBAR-STATE
+                             (s/multi-path
+                              [nav/QUERY (s/terminal-val "")]
+                              [nav/INVOCATION nav/PARAM-LIST s/END (s/terminal-val [v])])]
+                            db)}
                         ;; no more params -- reset omnibar and dispatch the event
-                        {:db (s/setval [nav/VALID-UI nav/OMNIBAR-STATE]
-                                       {:mode :closed}
-                                       db)
-                         :fx [[:dispatch cmd-ev]]}))))
+                      {:db (s/setval [nav/VALID-UI nav/OMNIBAR-STATE]
+                                     {:mode :closed}
+                                     db)
+                       :fx [[:dispatch cmd-ev]]}))))
 
   (reg-event-db :close-omnibar (fn [db] (s/setval [nav/VALID-UI nav/OMNIBAR-STATE] {:mode :closed} db)))
 
